@@ -98,7 +98,7 @@ echo "deb-src http://$repo_src/debian/ wheezy main non-free contrib" >> $repo
 echo "deb http://$repo_src/debian-security/ wheezy/updates main non-free contrib" >> $repo
 echo "deb-src http://$repo_src/debian-security/ wheezy/updates main non-free contrib" >> $repo
 echo "deb http://$repo_src/debian/ wheezy-updates main non-free contrib" >> $repo
-echo "deb-src http:/$repo_src/debian/ wheezy-updates main non-free contrib" >> $repo
+echo "deb-src http://$repo_src/debian/ wheezy-updates main non-free contrib" >> $repo
 if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '2' ]; then
   echo "" >> $repo
   echo "deb http://nginx.org/packages/mainline/debian/ wheezy nginx" >> $repo
@@ -123,8 +123,8 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2'  ]; then
   echo "" >> $repo
   echo "deb http://$repo_src/dotdeb wheezy all" >> $repo
   echo "deb-src http://$repo_src/dotdeb wheezy all" >> $repo
-  echo "deb http://$repo_src/dotdeb wheezy-php55 all" >> $repo
-  echo "deb-src http://$repo_src/dotdeb wheezy-php55 all" >> $repo
+  echo "deb http://$repo_src/dotdeb wheezy-php56 all" >> $repo
+  echo "deb-src http://$repo_src/dotdeb wheezy-php56 all" >> $repo
 fi
 ##############
 #get GPG Keys#
@@ -138,20 +138,33 @@ wget --quiet -O - http://nginx.org/keys/nginx_signing.key | apt-key add -
 #mariadb.org
 apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 0xcbcb082a1bb943db
 
+######################
+# performance tuning #
+######################
+
+echo "root soft nofile 65536" >> /etc/security/limits.conf
+echo "root hard nofile 65536" >> /etc/security/limits.conf
+echo "* soft nofile 65536" >> /etc/security/limits.conf
+echo "* hard nofile 65536" >> /etc/security/limits.conf
+
+echo "net.ipv4.tcp_tw_recycle = 1" >> /etc/sysctl.conf
+echo "net.ipv4.tcp_tw_reuse = 1" >> /etc/sysctl.conf
+echo "net.ipv4.ip_local_port_range = 10240    65535" >> /etc/sysctl.conf
+
 ############################
 #update the repository list#
 ############################
-apt-get update -y
 dpkg-reconfigure locales
-apt-get dist-upgrade -y
-apt-get install -y bash-completion consolekit firmware-linux-free gnupg-curl
+apt-get update -y && apt-get dist-upgrade -y && apt-get install -y --fix-missing bash-completion consolekit firmware-linux-free \
+                                                                   gnupg-curl unzip libexpat1-dev gettext libz-dev \
+                                                                   build-essential libssl-dev libgnutls-dev libcurl4-gnutls-dev
 
-########################
+#\#######################
 #install the newest git#
 ########################
 
 if [ "$which_repo" = '2' ]; then
-  apt-get install -y unzip libexpat1-dev gettext libz-dev build-essential libssl-dev libgnutls-dev libcurl4-gnutls-dev
+  apt-get install -y 
   mkdir -p /tmp/git
   cd /tmp/git
   wget --no-check-certificate https://github.com/git/git/archive/master.zip
@@ -166,22 +179,6 @@ else
   apt-get install -y unzip git git-core build-essential
 fi
 
-############################
-#install essential packages#
-############################
-apt-get install -y sudo locate whois curl lynx openssl python perl libaio1 hdparm rsync traceroute imagemagick libmcrypt-dev \
-                   python-software-properties pcregrep snmp-mibs-downloader tcpdump gawk checkinstall cdbs devscripts dh-make \
-                   libxml-parser-perl check python-pip libbz2-dev libpcre3-dev libxml2-dev unixodbc-bin sysv-rc-conf uuid-dev \
-                   libicu-dev libncurses5-dev libffi-dev debconf-utils libpng12-dev libjpeg-dev libgif-dev libevent-dev chrpath \
-                   libfontconfig1-dev libxft-dev optipng g++ fakeroot ntp zip p7zip-full zlib1g-dev libyaml-dev libgdbm-dev \
-                   libreadline-dev libxslt-dev
-
-###############
-#configure ntp#
-###############
-sed -i 's/debian.pool.ntp.org iburst/id.pool.ntp.org/g' /etc/ntp.conf
-service ntp restart
-
 ###############
 #configure git#
 ###############
@@ -194,6 +191,23 @@ git config --global color.ui true
 echo "alias sedot='wget --recursive --page-requisites --html-extension --convert-links --no-parent --random-wait -r -p -E -e robots=off'" >> /etc/bash.bashrc
 echo "alias commit='git add --all . && git commit -m'" >> /etc/bash.bashrc
 echo "alias push='git push -u origin master'" >> /etc/bash.bashrc
+echo "alias pull='git pull origin master'" >> /etc/bash.bashrc
+
+############################
+#install essential packages#
+############################
+apt-get install -y sudo locate whois curl lynx openssl python perl libaio1 hdparm rsync traceroute imagemagick libmcrypt-dev \
+                   python-software-properties pcregrep snmp-mibs-downloader tcpdump gawk checkinstall cdbs devscripts dh-make \
+                   libxml-parser-perl check python-pip libbz2-dev libpcre3-dev libxml2-dev unixodbc-bin sysv-rc-conf uuid-dev \
+                   libicu-dev libncurses5-dev libffi-dev debconf-utils libpng12-dev libjpeg-dev libgif-dev libevent-dev chrpath \
+                   libfontconfig1-dev libxft-dev optipng g++ fakeroot ntp zip p7zip-full zlib1g-dev libyaml-dev libgdbm-dev \
+                   libreadline-dev libxslt-dev ruby-full
+
+###############
+#configure ntp#
+###############
+sed -i 's/debian.pool.ntp.org iburst/id.pool.ntp.org/g' /etc/ntp.conf
+service ntp restart
 
 ################
 #install nodejs#
@@ -208,6 +222,33 @@ cd /tmp
 wget http://src.mokapedia.net/linux-x64/phantomjs-1.9.7-linux-x86_64.tar.bz2
 tar jxf phantomjs-1.9.7-linux-x86_64.tar.bz2
 cp phantomjs-1.9.7-linux-x86_64/bin/phantomjs /usr/bin
+
+############################
+# install grunt bower gulp #
+############################
+if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '2' ]; then
+  echo prefix = ~/.node >> ~/.npmrc
+  echo 'export PATH=$HOME/.node/bin:$PATH' >> ~/.bashrc
+  echo 'export NODE_PATH=/usr/local/lib/node_modules' >> ~/.bashrc
+  echo 'export NODE_PATH=$NODE_PATH:/root/.node/lib/node_modules' >> ~/.bashrc
+  source ~/.bashrc
+  . ~/.bashrc
+
+  mkdir -p /root/.node
+  npm install -g grunt bower less
+  npm install yo gulp
+fi
+
+##################
+# install java-8 #
+##################
+
+echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | sudo /usr/bin/debconf-set-selections
+echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee /etc/apt/sources.list.d/webupd8team-java.list
+echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list
+apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
+apt-get update -y && apt-get install -y oracle-java8-installer
+apt-get install -y oracle-java8-set-default
 
 #################################
 #install (and configure) mariadb#
@@ -256,7 +297,7 @@ if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '2' ]; then
   apt-get install -y nginx php5 php5-fpm php5-cgi php5-cli php5-common php5-curl php5-dbg php5-dev php5-enchant php5-gd \
                      php5-gmp php5-imap php5-ldap php5-mcrypt php5-mysqlnd php5-odbc php5-pgsql \
                      php5-pspell php5-readline php5-recode php5-sqlite php5-sybase php5-tidy php5-xmlrpc php5-xsl php-pear \
-                     php5-geoip php5-mongo php5-imagick php-fpdf php5-apcu
+                     php5-geoip php5-mongo php5-imagick php-fpdf php5-apcu 
   # install client libraries
   if [ "$appserver_type" = '1' ]; then
     # app_server_type is nginx/php5-fpm/mariadb
@@ -346,22 +387,6 @@ if [ "$appserver_type" = '4' ]; then
   if [ $postgresql_version = '3' ] ; then
     apt-get install -y postgresql-9.4 postgresql-client-9.4 postgresql-contrib-9.4 libpq-dev
   fi
-fi
-
-############################
-# install grunt bower gulp #
-############################
-if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '2' ]; then
-  echo prefix = ~/.node >> ~/.npmrc
-  echo 'export PATH=$HOME/.node/bin:$PATH' >> ~/.bashrc
-  echo 'export NODE_PATH=/usr/local/lib/node_modules' >> ~/.bashrc
-  echo 'export NODE_PATH=$NODE_PATH:/root/.node/lib/node_modules' >> ~/.bashrc
-  source ~/.bashrc
-  . ~/.bashrc
-
-  mkdir -p /root/.node
-  npm install -g grunt bower less
-  npm install yo gulp
 fi
 
 #########################################################################
