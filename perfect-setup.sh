@@ -243,7 +243,7 @@ fi
 # install java-8 #
 ##################
 
-echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | sudo /usr/bin/debconf-set-selections
+echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | sudo /usr/bin/debconf-set-selections
 echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee /etc/apt/sources.list.d/webupd8team-java.list
 echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list
 apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
@@ -258,12 +258,12 @@ if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '3' ]; then
   export DEBIAN_FRONTEND=noninteractive
   mariadb_root_password=123123password
   if [ "$mariadb_version" = '1' ]; then
-    debconf-set-selections <<< 'mariadb-server-10.0 mysql-server/root_password password 123123password'
-    debconf-set-selections <<< 'mariadb-server-10.0 mysql-server/root_password_again password 123123password'
+    echo "mariadb-server-10.0 mysql-server/root_password password 123123password" | sudo /usr/bin/debconf-set-selections
+    echo "mariadb-server-10.0 mysql-server/root_password_again password 123123password" | sudo /usr/bin/debconf-set-selections
     apt-get install -y mariadb-server-10.0 mariadb-client-10.0 libmariadbclient-dev mariadb-connect-engine-10.0 mariadb-oqgraph-engine-10.0 mariadb-test-10.0
   else
-    debconf-set-selections <<< 'mariadb-server-10.1 mysql-server/root_password password 123123password'
-    debconf-set-selections <<< 'mariadb-server-10.1 mysql-server/root_password_again password 123123password'
+    echo "mariadb-server-10.1 mysql-server/root_password password 123123password" | sudo /usr/bin/debconf-set-selections
+    echo "mariadb-server-10.1 mysql-server/root_password_again password 123123password" | sudo /usr/bin/debconf-set-selections
     apt-get install -y mariadb-server-10.1 mariadb-client-10.1 libmariadbclient-dev mariadb-connect-engine-10.1 mariadb-oqgraph-engine-10.1 mariadb-test-10.1
   fi
 
