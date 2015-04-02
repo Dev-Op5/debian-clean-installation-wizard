@@ -107,11 +107,11 @@ fi
 if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '3' ]; then
   echo "" >> $repo
   if [ "$mariadb_version" = '1' ]; then
-    echo "deb http://mariadb.biz.net.id//repo/10.0/debian wheezy main" >> $repo
-    echo "deb-src http://mariadb.biz.net.id//repo/10.0/debian wheezy main" >> $repo
+    echo "deb http://kartolo.sby.datautama.net.id/mariadb/repo/10.0/debian wheezy main" >> $repo
+    echo "deb-src http://kartolo.sby.datautama.net.id/mariadb/repo/10.0/debian wheezy main" >> $repo
   else
-    echo "deb http://mariadb.biz.net.id//repo/10.1/debian wheezy main" >> $repo
-    echo "deb-src http://mariadb.biz.net.id//repo/10.1/debian wheezy main" >> $repo
+    echo "deb http://kartolo.sby.datautama.net.id/mariadb/repo/10.1/debian wheezy main" >> $repo
+    echo "deb-src http://kartolo.sby.datautama.net.id/mariadb/repo/10.1/debian wheezy main" >> $repo
   fi
 fi
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ]; then
@@ -136,7 +136,7 @@ wget --no-check-certificate --quiet -O - https://www.postgresql.org/media/keys/A
 #nginx.org
 wget --quiet -O - http://nginx.org/keys/nginx_signing.key | apt-key add -
 #mariadb.org
-apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 0xcbcb082a1bb943db
+apt-key adv --recv-keys --keyserver keyserver.ubuntu.com:80 0xcbcb082a1bb943db
 
 ######################
 # performance tuning #
@@ -201,7 +201,7 @@ apt-get install -y sudo locate whois curl lynx openssl python perl libaio1 hdpar
                    libxml-parser-perl check python-pip libbz2-dev libpcre3-dev libxml2-dev unixodbc-bin sysv-rc-conf uuid-dev \
                    libicu-dev libncurses5-dev libffi-dev debconf-utils libpng12-dev libjpeg-dev libgif-dev libevent-dev chrpath \
                    libfontconfig1-dev libxft-dev optipng g++ fakeroot ntp zip p7zip-full zlib1g-dev libyaml-dev libgdbm-dev \
-                   libreadline-dev libxslt-dev ruby-full
+                   libreadline-dev libxslt-dev ruby-full gperf bison g++ libsqlite3-dev libfreetype6 libpng-dev ttf-mscorefonts-installer
 
 ###############
 #configure ntp#
@@ -269,7 +269,7 @@ if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '3' ]; then
 
   # reconfigure my.cnf
   cd /tmp
-  wget http://src.mokapedia.net/others/config/my.cnf
+  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/my.cnf
   mv /etc/mysql/my.cnf /etc/mysql/my.cnf.original
   cp /tmp/my.cnf /etc/mysql/my.cnf
 
@@ -297,7 +297,7 @@ if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '2' ]; then
   apt-get install -y nginx php5 php5-fpm php5-cgi php5-cli php5-common php5-curl php5-dbg php5-dev php5-enchant php5-gd \
                      php5-gmp php5-imap php5-ldap php5-mcrypt php5-mysqlnd php5-odbc php5-pgsql \
                      php5-pspell php5-readline php5-recode php5-sqlite php5-sybase php5-tidy php5-xmlrpc php5-xsl php-pear \
-                     php5-geoip php5-mongo php5-imagick php-fpdf php5-apcu 
+                     php5-geoip php5-mongo php5-imagick php-fpdf php5-apcu
   # install client libraries
   if [ "$appserver_type" = '1' ]; then
     # app_server_type is nginx/php5-fpm/mariadb
@@ -321,15 +321,15 @@ if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '2' ]; then
   mkdir -p /etc/nginx/sites-enabled
   mkdir -p /tmp/config/
   cd /tmp/config
-  wget http://src.mokapedia.net/others/config/fastcgi_params
+  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/fastcgi_params
   mv /etc/nginx/fastcgi_params /etc/nginx/original.fastcgi_params
   cp fastcgi_params /etc/nginx/fastcgi_params
 
-  wget http://src.mokapedia.net/others/config/nginx.conf
+  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/nginx.conf
   mv /etc/nginx/nginx.conf /etc/nginx/nginx.original.conf
   cp nginx.conf /etc/nginx/nginx.conf
 
-  wget http://src.mokapedia.net/others/config/security.conf
+  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/security.conf
   cp security.conf /etc/nginx/security.conf
 
   # configuring php5-fpm
@@ -339,8 +339,8 @@ if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '2' ]; then
   chmod -R 777 /var/lib/php5/cookies
   cd /tmp/config
 
-  wget http://src.mokapedia.net/others/config/php.ini
-  wget http://src.mokapedia.net/others/config/www.conf
+  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/php.ini
+  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/www.conf
 
   mv /etc/php5/fpm/php.ini /etc/php5/fpm/php.ini-original
   mv /etc/php5/cli/php.ini /etc/php5/cli/php.ini-original
