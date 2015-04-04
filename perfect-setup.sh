@@ -46,6 +46,7 @@ echo "1. Perfect Server for Nginx, PHP5-FPM, and MariaDB"
 echo "2. Dedicated Nginx & PHP5-FPM Web Server only"
 echo "3. Dedicated MariaDB Database Server only"
 echo "4. Dedicated PostgreSQL Database Server only"
+echo "5. Odoo8 Template"
 read -p "Your Choice (1/2/3/4) : " appserver_type
 if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '3' ]; then
   echo ""
@@ -74,6 +75,11 @@ if [ "$appserver_type" = '2' ]; then
   read -p "Your Choice (1/2/3) : " client_libraries_option
 fi
 
+if [ "$appserver_type" != '2' ]; then
+  echo ""
+  read -p "Enter the default database root password: " db_root_password
+fi
+
 ##############################
 #rebuild the software sources#
 ##############################
@@ -91,7 +97,9 @@ else
 fi
 
 repo=/etc/apt/sources.list
-repo_src="kartolo.sby.datautama.net.id"
+
+# uncomment line below to force using kartolo.sby.datautama.net.id
+# repo_src="kartolo.sby.datautama.net.id"
 
 echo "deb http://$repo_src/debian/ wheezy main non-free contrib" >> $repo
 echo "deb-src http://$repo_src/debian/ wheezy main non-free contrib" >> $repo
@@ -254,16 +262,16 @@ apt-get install -y oracle-java8-set-default
 #install (and configure) mariadb#
 #################################
 
-if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '3' ]; then
+if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '3' ] || [ "$app_server_type" = '5' ]; then
   export DEBIAN_FRONTEND=noninteractive
-  mariadb_root_password=123123password
+  mariadb_root_password=$db_root_password
   if [ "$mariadb_version" = '1' ]; then
-    echo "mariadb-server-10.0 mysql-server/root_password password 123123password" | sudo /usr/bin/debconf-set-selections
-    echo "mariadb-server-10.0 mysql-server/root_password_again password 123123password" | sudo /usr/bin/debconf-set-selections
+    echo "mariadb-server-10.0 mysql-server/root_password password $db_root_password" | sudo /usr/bin/debconf-set-selections
+    echo "mariadb-server-10.0 mysql-server/root_password_again password $db_root_password" | sudo /usr/bin/debconf-set-selections
     apt-get install -y mariadb-server-10.0 mariadb-client-10.0 libmariadbclient-dev mariadb-connect-engine-10.0 mariadb-oqgraph-engine-10.0 mariadb-test-10.0
   else
-    echo "mariadb-server-10.1 mysql-server/root_password password 123123password" | sudo /usr/bin/debconf-set-selections
-    echo "mariadb-server-10.1 mysql-server/root_password_again password 123123password" | sudo /usr/bin/debconf-set-selections
+    echo "mariadb-server-10.1 mysql-server/root_password password $db_root_password" | sudo /usr/bin/debconf-set-selections
+    echo "mariadb-server-10.1 mysql-server/root_password_again password $db_root_password" | sudo /usr/bin/debconf-set-selections
     apt-get install -y mariadb-server-10.1 mariadb-client-10.1 libmariadbclient-dev mariadb-connect-engine-10.1 mariadb-oqgraph-engine-10.1 mariadb-test-10.1
   fi
 
@@ -292,7 +300,7 @@ fi
 ##########################################
 #install (and configure) nginx & php5-fpm#
 ##########################################
-if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '2' ]; then
+if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '2' ] || [ "$app_server_type" = '5' ]; then
 
   apt-get install -y nginx php5 php5-fpm php5-cgi php5-cli php5-common php5-curl php5-dbg php5-dev php5-enchant php5-gd \
                      php5-gmp php5-imap php5-ldap php5-mcrypt php5-mysqlnd php5-odbc php5-pgsql \
@@ -376,7 +384,7 @@ fi
 # install (and configure) postgresql (!TODO)#
 #############################################
 if [ "$appserver_type" = '4' ]; then
-  postgresql_root_password=123123password
+  postgresql_root_password=$db_root_password
 
   if [ $postgresql_version = '1' ] ; then
     apt-get install -y postgresql-8.4 postgresql-client-8.4 postgresql-contrib-8.4 libpq-dev
