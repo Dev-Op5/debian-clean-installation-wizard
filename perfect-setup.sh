@@ -79,6 +79,10 @@ if [ "$appserver_type" != '2' ]; then
   echo ""
   read -p "Enter the default database root password: " db_root_password
 fi
+  echo ""
+  read -p "Git Identifier Username   : " $git_user_name
+  read -p "Git Identifier User Email : " $git_user_email
+
 
 ##############################
 #rebuild the software sources#
@@ -172,7 +176,7 @@ apt-get update -y && apt-get dist-upgrade -y && apt-get install -y --fix-missing
 ########################
 
 if [ "$which_repo" = '2' ]; then
-  apt-get install -y 
+  apt-get install -y
   mkdir -p /tmp/git
   cd /tmp/git
   wget --no-check-certificate https://github.com/git/git/archive/master.zip
@@ -190,9 +194,9 @@ fi
 ###############
 #configure git#
 ###############
-ssh-keygen -t rsa -C "commit@mokapedia.com" -N "" -f /root/.ssh/id_rsa
-git config --global user.name "CommitBot"
-git config --global user.email "commit@mokapedia.com"
+ssh-keygen -t rsa -C "$git_user_email" -N "" -f /root/.ssh/id_rsa
+git config --global user.name "$git_user_name"
+git config --global user.email "$git_user_email"
 git config --global core.editor nano
 git config --global color.ui true
 
