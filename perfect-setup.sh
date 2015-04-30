@@ -37,7 +37,7 @@ echo ""
 echo "Enter the IP/Hostname Information"
 echo "---------------------------------"
 read -p "The Computer Name     : " serverinfo_hostname
-read -p "Interface (eth0/eth1) : " serverinfo_ip
+read -p "Interface (eth0/eth1) : " serverinfo_eth
 read -p "IP Address            : " serverinfo_ip
 read -p "Subnet Mask           : " serverinfo_subnet
 read -p "Default Gateway       : " serverinfo_gateway
@@ -49,8 +49,8 @@ echo "auto lo" > $network_conf_file
 echo "iface lo inet loopback" >> $network_conf_file
 echo "" >> $network_conf_file
 echo "# The primary network interface" >> $network_conf_file
-echo "auto eth0" >> $network_conf_file
-echo "allow-hotplug eth0" >> $network_conf_file
+echo "auto $serverinfo_eth" >> $network_conf_file
+echo "allow-hotplug $serverinfo_eth" >> $network_conf_file
 echo "iface eth0 inet static" >> $network_conf_file
 echo "      address         $serverinfo_ip" >> $network_conf_file
 echo "      netmask         $serverinfo_subnet" >> $network_conf_file
