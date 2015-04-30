@@ -243,18 +243,16 @@ cp phantomjs-1.9.7-linux-x86_64/bin/phantomjs /usr/bin
 ############################
 # install grunt bower gulp #
 ############################
-if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '2' ]; then
-  echo prefix = ~/.node >> ~/.npmrc
-  echo 'export PATH=$HOME/.node/bin:$PATH' >> ~/.bashrc
-  echo 'export NODE_PATH=/usr/local/lib/node_modules' >> ~/.bashrc
-  echo 'export NODE_PATH=$NODE_PATH:/root/.node/lib/node_modules' >> ~/.bashrc
-  source ~/.bashrc
-  . ~/.bashrc
+echo prefix = ~/.node >> ~/.npmrc
+echo 'export PATH=$HOME/.node/bin:$PATH' >> ~/.bashrc
+echo 'export NODE_PATH=/usr/local/lib/node_modules' >> ~/.bashrc
+echo 'export NODE_PATH=$NODE_PATH:/root/.node/lib/node_modules' >> ~/.bashrc
+source ~/.bashrc
+. ~/.bashrc
 
-  mkdir -p /root/.node
-  npm install -g grunt bower less
-  npm install yo gulp
-fi
+mkdir -p /root/.node
+npm install -g grunt bower less
+npm install yo gulp
 
 ##################
 # install java-8 #
@@ -389,6 +387,8 @@ if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '2' ] || [ "$app_server
 
 fi
 
+cd /tmp
+
 #############################################
 # install (and configure) postgresql (!TODO)#
 #############################################
@@ -404,6 +404,77 @@ if [ "$appserver_type" = '4' ]; then
   if [ $postgresql_version = '3' ] ; then
     apt-get install -y postgresql-9.4 postgresql-client-9.4 postgresql-contrib-9.4 libpq-dev
   fi
+fi
+
+#############################################
+# install (and configure) odoo8 (!TODO)     #
+#############################################
+
+cd /tmp
+
+if [ "$appserver_type" = '5' ]; then
+
+  echo "--------------------------------"
+  echo ""
+  echo "INSTALLING odoo8........."
+  echo ""
+  echo "--------------------------------"
+  adduser --system --home=/opt/odoo --group odoo
+  postgresql_root_password=$db_root_password
+  echo "PostgreSQL 9.4"
+  apt-get install -y postgresql-9.4 postgresql-client-9.4 postgresql-contrib-9.4 libpq-dev
+  echo "Create PostgreSQL User"
+  sudo -u postgres -H createuser --createdb --username postgres --no-createrole --no-superuser odoo
+  service postgresql start
+  sudo -u postgres -H psql -c"ALTER user odoo WITH PASSWORD '$db_root_password'"
+  service postgresql restart
+
+  echo "Installing necessary python libraries"
+  apt-get install -y python-cups python-dateutil python-decorator python-docutils python-feedparser \
+		     python-gdata python-geoip python-gevent python-imaging python-jinja2 python-ldap python-libxslt1
+		     python-lxml python-mako python-mock python-openid python-passlib python-psutil python-psycopg2
+		     python-pybabel python-pychart python-pydot python-pyparsing python-pypdf python-reportlab python-requests \
+		     python-simplejson python-tz python-unicodecsv python-unittest2 python-vatnumber python-vobject \
+		     python-werkzeug python-xlwt python-yaml
+
+  echo "Installing wkhtmltopdf"
+  cd /tmp
+  wget http://jaist.dl.sourceforge.net/project/wkhtmltopdf/0.12.2.1/wkhtmltox-0.12.2.1_linux-wheezy-amd64.deb
+  dpkg -i wkhtmltox-0.12.2.1_linux-wheezy-amd64.deb
+  ln -s /usr/local/bin/wkhtmltopdf /usr/bin
+  ln -s /usr/local/bin/wkhtmltoimage /usr/bin
+  
+  echo "Clone the Odoo 8.0 latest sources"
+  cd /opt/odoo
+  sudo -u odoo -H git clone https://www.github.com/odoo/odoo --depth 1 --branch master --single-branch .
+  touch /etc/odoo-server.conf
+  echo "[options]" > /etc/odoo-server.conf
+  echo "; This is the password that allows database operations:" >> /etc/odoo-server.conf
+  echo "; admin_passwd = admin" >> /etc/odoo-server.conf
+  echo "db_host = False" >> /etc/odoo-server.conf
+  echo "db_port = False" >> /etc/odoo-server.conf
+  echo "db_user = odoo" >> /etc/odoo-server.conf
+  echo "db_password = $db_root_password" >> /etc/odoo-server.conf
+  echo "addons_path = /opt/odoo/addons" >> /etc/odoo-server.conf
+  echo "logfile = /var/log/odoo/odoo-server.log" >> /etc/odoo-server.conf
+
+  chown odoo: /etc/odoo-server.conf
+  chmod 640 /etc/odoo-server.conf
+
+  cd /tmp
+  wget http://www.theopensourcerer.com/wp-content/uploads/2014/09/odoo-server
+  cp /tmp/odoo-server /etc/init.d/odoo-server
+  chmod 755 /etc/init.d/odoo-server
+  chown root: /etc/init.d/odoo-server
+
+  mkdir -p /var/log/odoo
+  chown -R odoo:root /var/log/odoo
+  chmod -R 777 /var/log/odoo
+
+  update-rc.d odoo-server defaults
+
+  /etc/init.d/odoo-server start
+
 fi
 
 #########################################################################
