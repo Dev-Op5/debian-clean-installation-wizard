@@ -83,6 +83,10 @@ fi
   read -p "Git Identifier Username   : " $git_user_name
   read -p "Git Identifier User Email : " $git_user_email
 
+echo ""
+echo "-- starting the automated installer --"
+echo ""
+
 
 ##############################
 #rebuild the software sources#
