@@ -115,8 +115,8 @@ if [ "$appserver_type" != '2' ]; then
   read -p "Enter the default database root password: " db_root_password
 fi
   echo ""
-  read -p "Git Identifier Username   : " $git_user_name
-  read -p "Git Identifier User Email : " $git_user_email
+  read -p "Git Identifier Username   : " git_user_name
+  read -p "Git Identifier User Email : " git_user_email
 
 echo ""
 echo "-- starting the automated installer --"
