@@ -253,8 +253,8 @@ apt-get install -y sudo locate whois curl lynx openssl python perl libaio1 hdpar
                    libxml-parser-perl check python-pip libbz2-dev libpcre3-dev libxml2-dev unixodbc-bin sysv-rc-conf uuid-dev \
                    libicu-dev libncurses5-dev libffi-dev debconf-utils libpng12-dev libjpeg-dev libgif-dev libevent-dev chrpath \
                    libfontconfig1-dev libxft-dev optipng g++ fakeroot ntp zip p7zip-full zlib1g-dev libyaml-dev libgdbm-dev \
-                   libreadline-dev libxslt-dev ruby-full gperf bison g++ libsqlite3-dev libfreetype6 libpng-dev ttf-mscorefonts-installer
-
+                   libreadline-dev libxslt-dev ruby-full gperf bison g++ libsqlite3-dev libfreetype6 libpng-dev ttf-mscorefonts-installer \
+		   xfonts-scalable ttf-ubuntu-font-family poppler-utils libxrender-dev xfonts-base xfonts-75dpi
 ###############
 #configure ntp#
 ###############
