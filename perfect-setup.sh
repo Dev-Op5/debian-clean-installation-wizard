@@ -34,6 +34,41 @@ echo "   DEBIAN WHEEZY PERFECT APPLICATION SERVER INSTALLER   "
 echo "    -- proudly present by eRQee (q@mokapedia.com) --    "
 echo "********************************************************"
 echo ""
+echo "Enter the IP/Hostname Information"
+echo "---------------------------------"
+read -p "The Computer Name     : " serverinfo_hostname
+read -p "Interface (eth0/eth1) : " serverinfo_ip
+read -p "IP Address            : " serverinfo_ip
+read -p "Subnet Mask           : " serverinfo_subnet
+read -p "Default Gateway       : " serverinfo_gateway
+read -p "DNS                   : " serverinfo_dns
+echo ""
+
+network_conf_file=/etc/network/interfaces
+echo "auto lo" > $network_conf_file
+echo "iface lo inet loopback" >> $network_conf_file
+echo "" >> $network_conf_file
+echo "# The primary network interface" >> $network_conf_file
+echo "auto eth0" >> $network_conf_file
+echo "allow-hotplug eth0" >> $network_conf_file
+echo "iface eth0 inet static" >> $network_conf_file
+echo "      address         $serverinfo_ip" >> $network_conf_file
+echo "      netmask         $serverinfo_subnet" >> $network_conf_file
+echo "      gateway         $serverinfo_gateway" >> $network_conf_file
+echo "      dns-nameservers $serverinfo_dns" >> $network_conf_file
+
+network_conf_file=/etc/resolv.conf
+echo "domain mokapedia.net" > $network_conf_file
+echo "search mokapedia.net" >> $network_conf_file
+echo "nameserver $serverinfo_dns" > $network_conf_file
+
+echo "$serverinfo_hostname" > /etc/hostname
+
+network_conf_file=/etc/hosts
+echo "127.0.0.1 localhost localhost.localdomain" > $network_conf_file
+echo "127.0.1.1 $serverinfo_hostname" >> $network_conf_file
+echo ""
+echo ""
 echo "Which Debian Repository do you prefer?"
 echo "1. kambing.ui.ac.id"
 echo "2. kartolo.sby.datautama.net.id"
