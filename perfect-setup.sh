@@ -116,14 +116,15 @@ if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '2' ]; then
   echo "deb http://nginx.org/packages/mainline/debian/ wheezy nginx" >> $repo
   echo "deb-src http://nginx.org/packages/mainline/debian/ wheezy nginx" >> $repo
 fi
+
 if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '3' ]; then
   echo "" >> $repo
   if [ "$mariadb_version" = '1' ]; then
-    echo "deb http://kartolo.sby.datautama.net.id/mariadb/repo/10.0/debian wheezy main" >> $repo
-    echo "deb-src http://kartolo.sby.datautama.net.id/mariadb/repo/10.0/debian wheezy main" >> $repo
+    echo "deb http://mariadb.biz.net.id//repo/10.0/debian wheezy main" >> $repo
+    echo "deb-src http://mariadb.biz.net.id//repo/10.0/debian wheezy main" >> $repo
   else
-    echo "deb http://kartolo.sby.datautama.net.id/mariadb/repo/10.1/debian wheezy main" >> $repo
-    echo "deb-src http://kartolo.sby.datautama.net.id/mariadb/repo/10.1/debian wheezy main" >> $repo
+    echo "deb http://mariadb.biz.net.id//repo/10.1/debian wheezy main" >> $repo
+    echo "deb-src http://mariadb.biz.net.id//repo/10.1/debian wheezy main" >> $repo
   fi
 fi
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ]; then
@@ -148,7 +149,7 @@ wget --no-check-certificate --quiet -O - https://www.postgresql.org/media/keys/A
 #nginx.org
 wget --quiet -O - http://nginx.org/keys/nginx_signing.key | apt-key add -
 #mariadb.org
-apt-key adv --recv-keys --keyserver keyserver.ubuntu.com:80 0xcbcb082a1bb943db
+apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xcbcb082a1bb943db
 
 ######################
 # performance tuning #
