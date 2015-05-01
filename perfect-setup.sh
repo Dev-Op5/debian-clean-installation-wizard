@@ -254,7 +254,7 @@ apt-get install -y sudo locate whois curl lynx openssl python perl libaio1 hdpar
                    libicu-dev libncurses5-dev libffi-dev debconf-utils libpng12-dev libjpeg-dev libgif-dev libevent-dev chrpath \
                    libfontconfig1-dev libxft-dev optipng g++ fakeroot ntp zip p7zip-full zlib1g-dev libyaml-dev libgdbm-dev \
                    libreadline-dev libxslt-dev ruby-full gperf bison g++ libsqlite3-dev libfreetype6 libpng-dev ttf-mscorefonts-installer \
-		   xfonts-scalable ttf-ubuntu-font-family poppler-utils libxrender-dev xfonts-base xfonts-75dpi
+		   xfonts-scalable poppler-utils libxrender-dev xfonts-base xfonts-75dpi fontconfig libxrender1 xfonts-75dpi xfonts-base
 ###############
 #configure ntp#
 ###############
@@ -306,7 +306,6 @@ apt-get install -y oracle-java8-set-default
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
   export DEBIAN_FRONTEND=noninteractive
-  mariadb_root_password=$db_root_password
   if [ "$mariadb_version" = '1' ]; then
     echo "mariadb-server-10.0 mysql-server/root_password password $db_root_password" | sudo /usr/bin/debconf-set-selections
     echo "mariadb-server-10.0 mysql-server/root_password_again password $db_root_password" | sudo /usr/bin/debconf-set-selections
