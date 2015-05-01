@@ -81,9 +81,9 @@ echo "1. Perfect Server for Nginx, PHP5-FPM, and MariaDB"
 echo "2. Dedicated Nginx & PHP5-FPM Web Server only"
 echo "3. Dedicated MariaDB Database Server only"
 echo "4. Dedicated PostgreSQL Database Server only"
-echo "5. Odoo8 Template"
-read -p "Your Choice (1/2/3/4) : " appserver_type
-if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '3' ]; then
+echo "5. Odoo8 Perfect Server"
+read -p "Your Choice (1/2/3/4/5) : " appserver_type
+if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ]; then
   echo ""
   echo "Which MariaDB version you prefer?"
   echo "1. MariaDB 10.0.x"
@@ -150,13 +150,13 @@ echo "deb http://$repo_src/debian-security/ wheezy/updates main non-free contrib
 echo "deb-src http://$repo_src/debian-security/ wheezy/updates main non-free contrib" >> $repo
 echo "deb http://$repo_src/debian/ wheezy-updates main non-free contrib" >> $repo
 echo "deb-src http://$repo_src/debian/ wheezy-updates main non-free contrib" >> $repo
-if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '2' ]; then
+if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ]; then
   echo "" >> $repo
   echo "deb http://nginx.org/packages/mainline/debian/ wheezy nginx" >> $repo
   echo "deb-src http://nginx.org/packages/mainline/debian/ wheezy nginx" >> $repo
 fi
 
-if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '3' ]; then
+if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
   echo "" >> $repo
   if [ "$mariadb_version" = '1' ]; then
     echo "deb http://mariadb.biz.net.id//repo/10.0/debian wheezy main" >> $repo
@@ -166,12 +166,12 @@ if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '3' ]; then
     echo "deb-src http://mariadb.biz.net.id//repo/10.1/debian wheezy main" >> $repo
   fi
 fi
-if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ]; then
+if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
   echo "" >> $repo
   echo "deb http://kambing.ui.ac.id/postgresql/repos/apt/ wheezy-pgdg main" >> $repo
   echo "deb-src http://kambing.ui.ac.id/postgresql/repos/apt/ wheezy-pgdg main" >> $repo
 fi
-if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2'  ]; then
+if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2'  ] || [ "$appserver_type" = '5' ]; then
   echo "" >> $repo
   echo "deb http://$repo_src/dotdeb wheezy all" >> $repo
   echo "deb-src http://$repo_src/dotdeb wheezy all" >> $repo
@@ -304,7 +304,7 @@ apt-get install -y oracle-java8-set-default
 #install (and configure) mariadb#
 #################################
 
-if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '3' ] || [ "$app_server_type" = '5' ]; then
+if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
   export DEBIAN_FRONTEND=noninteractive
   mariadb_root_password=$db_root_password
   if [ "$mariadb_version" = '1' ]; then
@@ -332,7 +332,7 @@ if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '3' ] || [ "$app_server
   tar zxvf lib_mysqludf_debian.tar.gz
   cd /tmp/lib_mysqludf_debian
   cp bin/* /usr/lib/mysql/plugin
-  mysql -uroot --password=123123password < udf_initialize.sql
+  mysql -uroot --password=$db_root_password < udf_initialize.sql
 
   # restart the services again
   service mysql restart
@@ -342,7 +342,7 @@ fi
 ##########################################
 #install (and configure) nginx & php5-fpm#
 ##########################################
-if [ "$appserver_type" = '1' ] || [ "$app_server_type" = '2' ] || [ "$app_server_type" = '5' ]; then
+if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
 
   apt-get install -y nginx php5 php5-fpm php5-cgi php5-cli php5-common php5-curl php5-dbg php5-dev php5-enchant php5-gd \
                      php5-gmp php5-imap php5-ldap php5-mcrypt php5-mysqlnd php5-odbc php5-pgsql \
@@ -481,7 +481,7 @@ if [ "$appserver_type" = '5' ]; then
   
   echo "Clone the Odoo 8.0 latest sources"
   cd /opt/odoo
-  sudo -u odoo -H git clone https://www.github.com/odoo/odoo --depth 1 --branch master --single-branch .
+  sudo -u odoo -H git clone https://www.github.com/odoo/odoo --depth 1 --branch 8.0 --single-branch .
   touch /etc/odoo-server.conf
   echo "[options]" > /etc/odoo-server.conf
   echo "; This is the password that allows database operations:" >> /etc/odoo-server.conf
