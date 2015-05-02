@@ -143,6 +143,8 @@ repo=/etc/apt/sources.list
 
 # uncomment line below to force using kartolo.sby.datautama.net.id
 # repo_src="kartolo.sby.datautama.net.id"
+# uncomment line below to force using kambing.ui.ac.id
+# repo_src="kambing.ui.ac.id"
 
 echo "deb http://$repo_src/debian/ wheezy main non-free contrib" >> $repo
 echo "deb-src http://$repo_src/debian/ wheezy main non-free contrib" >> $repo
@@ -211,25 +213,20 @@ apt-get update -y && apt-get dist-upgrade -y && apt-get install -y --fix-missing
                                                                    gnupg-curl unzip libexpat1-dev gettext libz-dev \
                                                                    build-essential libssl-dev libgnutls-dev libcurl4-gnutls-dev
 
-#\#######################
+########################
 #install the newest git#
 ########################
 
-if [ "$which_repo" = '2' ]; then
-  apt-get install -y
-  mkdir -p /tmp/git
-  cd /tmp/git
-  wget --no-check-certificate https://github.com/git/git/archive/master.zip
-  unzip master.zip
-  cd git-master
-  make prefix=/usr/local all
-  make prefix=/usr/local install
-  ln -sf /usr/local/bin/git* /usr/bin
-  cd /tmp
-  rm -R /tmp/git
-else
-  apt-get install -y unzip git git-core build-essential
-fi
+mkdir -p /tmp/git
+cd /tmp/git
+wget --no-check-certificate https://github.com/git/git/archive/master.zip
+unzip master.zip
+cd git-master
+make prefix=/usr/local all
+make prefix=/usr/local install
+ln -sf /usr/local/bin/git* /usr/bin
+cd /tmp
+rm -R /tmp/git
 
 ###############
 #configure git#
