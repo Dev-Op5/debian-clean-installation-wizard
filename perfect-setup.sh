@@ -144,7 +144,7 @@ repo=/etc/apt/sources.list
 # uncomment line below to force using kartolo.sby.datautama.net.id
 # repo_src="kartolo.sby.datautama.net.id"
 # uncomment line below to force using kambing.ui.ac.id
-# repo_src="kambing.ui.ac.id"
+repo_src="kambing.ui.ac.id"
 
 echo "deb http://$repo_src/debian/ wheezy main non-free contrib" >> $repo
 echo "deb-src http://$repo_src/debian/ wheezy main non-free contrib" >> $repo
