@@ -464,12 +464,15 @@ if [ "$appserver_type" = '5' ]; then
   service postgresql restart
 
   echo "Installing necessary python libraries"
+  apt-get install python-pybabel
+  apt-get build-dep python-psycopg2
+  pip install psycopg2 werkzeug simplejson 
   apt-get install -y python-cups python-dateutil python-decorator python-docutils python-feedparser \
-		     python-gdata python-geoip python-gevent python-imaging python-jinja2 python-ldap python-libxslt1
-		     python-lxml python-mako python-mock python-openid python-passlib python-psutil python-psycopg2
-		     python-pybabel python-pychart python-pydot python-pyparsing python-pypdf python-reportlab python-requests \
-		     python-simplejson python-tz python-unicodecsv python-unittest2 python-vatnumber python-vobject \
-		     python-werkzeug python-xlwt python-yaml
+                     python-gdata python-geoip python-gevent python-imaging python-jinja2 python-ldap python-libxslt1 \
+                     python-mako python-mock python-openid python-passlib python-psutil python-psycopg2 \
+                     python-pychart python-pydot python-pyparsing python-pypdf python-reportlab python-requests \
+                     python-simplejson python-tz python-unicodecsv python-unittest2 python-vatnumber python-vobject \
+                     python-werkzeug python-xlwt python-yaml
 
   echo "Installing wkhtmltopdf"
   cd /tmp
@@ -477,7 +480,7 @@ if [ "$appserver_type" = '5' ]; then
   dpkg -i wkhtmltox-0.12.2.1_linux-wheezy-amd64.deb
   ln -s /usr/local/bin/wkhtmltopdf /usr/bin
   ln -s /usr/local/bin/wkhtmltoimage /usr/bin
-  
+
   echo "Clone the Odoo 8.0 latest sources"
   cd /opt/odoo
   sudo -u odoo -H git clone https://www.github.com/odoo/odoo --depth 1 --branch 8.0 --single-branch .
@@ -535,10 +538,10 @@ git_ver=$(git --version)
 node_ver=$(node -v)
 npm_ver=$(npm -v)
 phantomjs_ver=$(phantomjs -v)
-grunt_ver=$(grunt --version)
-bower_ver=$(bower --version)
-gulp_ver=$(gulp --version | grep "CLI")
-yeoman_ver=$(yeoman --version)
+grunt_ver=$( grunt --version )
+bower_ver=$( bower --version )
+gulp_ver=$( gulp --version | grep "CLI" )
+yeoman_ver=$( yeoman --version )
 
 echo "[Web Server Information]"  >> $install_summarize
 echo "$nginx_ver" >> $install_summarize
@@ -558,13 +561,13 @@ echo "$git_ver" >> $install_summarize
 git config --list >> $install_summarize 2>&1
 echo "" >> $install_summarize
 echo "[Web Dev Tools]"  >> $install_summarize
-echo "$node_ver" >> $install_summarize
-echo "$npm_ver" >> $install_summarize
-echo "$phantomjs_ver" >> $install_summarize
-echo "$grunt_ver" >> $install_summarize
-echo "$bower_ver" >> $install_summarize
-echo "$gulp_ver" >> $install_summarize
-echo "$yeoman_ver" >> $install_summarize
+echo "NodeJS    : $node_ver" >> $install_summarize
+echo "NPM       : $npm_ver" >> $install_summarize
+echo "PhantomJS : $phantomjs_ver" >> $install_summarize
+echo "Grunt     : $grunt_ver" >> $install_summarize
+echo "Bower     : $bower_ver" >> $install_summarize
+echo "Gulp      : $gulp_ver" >> $install_summarize
+echo "Yeoman    : $yeoman_ver" >> $install_summarize
 echo "" >> $install_summarize
 echo "*----------------------*" >> $install_summarize
 echo "* This Server SSH Keys *" >> $install_summarize
