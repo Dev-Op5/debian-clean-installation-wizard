@@ -51,7 +51,7 @@ echo "" >> $network_conf_file
 echo "# The primary network interface" >> $network_conf_file
 echo "auto $serverinfo_eth" >> $network_conf_file
 echo "allow-hotplug $serverinfo_eth" >> $network_conf_file
-echo "iface eth0 inet static" >> $network_conf_file
+echo "iface $serverinfo_eth inet static" >> $network_conf_file
 echo "      address         $serverinfo_ip" >> $network_conf_file
 echo "      netmask         $serverinfo_subnet" >> $network_conf_file
 echo "      gateway         $serverinfo_gateway" >> $network_conf_file
