@@ -30,50 +30,9 @@ fi
 
 echo ""
 echo "********************************************************"
-echo "   DEBIAN WHEEZY PERFECT APPLICATION SERVER INSTALLER   "
+echo "   DEBIAN JESSIE PERFECT APPLICATION SERVER INSTALLER   "
 echo "    -- proudly present by eRQee (q@mokapedia.com) --    "
 echo "********************************************************"
-echo ""
-echo "Enter the IP/Hostname Information"
-echo "---------------------------------"
-read -p "The Computer Name     : " serverinfo_hostname
-read -p "Interface (eth0/eth1) : " serverinfo_eth
-read -p "IP Address            : " serverinfo_ip
-read -p "Subnet Mask           : " serverinfo_subnet
-read -p "Default Gateway       : " serverinfo_gateway
-read -p "DNS                   : " serverinfo_dns
-echo ""
-
-network_conf_file=/etc/network/interfaces
-echo "auto lo" > $network_conf_file
-echo "iface lo inet loopback" >> $network_conf_file
-echo "" >> $network_conf_file
-echo "# The primary network interface" >> $network_conf_file
-echo "auto $serverinfo_eth" >> $network_conf_file
-echo "allow-hotplug $serverinfo_eth" >> $network_conf_file
-echo "iface eth0 inet static" >> $network_conf_file
-echo "      address         $serverinfo_ip" >> $network_conf_file
-echo "      netmask         $serverinfo_subnet" >> $network_conf_file
-echo "      gateway         $serverinfo_gateway" >> $network_conf_file
-echo "      dns-nameservers $serverinfo_dns" >> $network_conf_file
-
-network_conf_file=/etc/resolv.conf
-echo "domain mokapedia.net" > $network_conf_file
-echo "search mokapedia.net" >> $network_conf_file
-echo "nameserver $serverinfo_dns" > $network_conf_file
-
-echo "$serverinfo_hostname" > /etc/hostname
-
-network_conf_file=/etc/hosts
-echo "127.0.0.1 localhost localhost.localdomain" > $network_conf_file
-echo "127.0.1.1 $serverinfo_hostname" >> $network_conf_file
-echo ""
-echo ""
-echo "Which Debian Repository do you prefer?"
-echo "1. kambing.ui.ac.id"
-echo "2. kartolo.sby.datautama.net.id"
-echo ""
-read -p "Your choice? (1/2) : " which_repo
 echo ""
 echo ""
 echo "What kind of application server role do you want to apply?"
@@ -83,14 +42,7 @@ echo "3. Dedicated MariaDB Database Server only"
 echo "4. Dedicated PostgreSQL Database Server only"
 echo "5. Odoo8 Perfect Server"
 read -p "Your Choice (1/2/3/4/5) : " appserver_type
-if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ]; then
-  echo ""
-  echo "Which MariaDB version you prefer?"
-  echo "1. MariaDB 10.0.x"
-  echo "2. MariaDB 10.1.x"
-  echo ""
-  read -p "Your Choice (1/2) : " mariadb_version
-fi
+
 if [ "$appserver_type" = '4' ]; then
   echo ""
   echo "Which PostgreSQL version you prefer?"
@@ -133,53 +85,33 @@ if [ -f /etc/apt/sources.list.old ]; then
 fi
 mv $repo /etc/apt/sources.list.old && touch $repo
 
-if [ "$which_repo" = '1' ]; then
-  repo_src="kambing.ui.ac.id"
-else
-  repo_src="kartolo.sby.datautama.net.id"
-fi
-
 repo=/etc/apt/sources.list
 
-# uncomment line below to force using kartolo.sby.datautama.net.id
-# repo_src="kartolo.sby.datautama.net.id"
-# uncomment line below to force using kambing.ui.ac.id
-repo_src="kambing.ui.ac.id"
+echo "deb http://mirrors.linode.com/debian/ jessie main non-free contrib" >> $repo
+echo "deb-src http://mirrors.linode.com/debian/ jessie main non-free contrib" >> $repo
+echo "deb http://security.debian.org/ jessie/updates main non-free contrib" >> $repo
+echo "deb-src http://security.debian.org/ jessie/updates main non-free contrib" >> $repo
+echo "deb http://mirrors.linode.com/debian/ jessie-updates main non-free contrib" >> $repo
+echo "deb-src http://mirrors.linode.com/debian/ jessie-updates main non-free contrib" >> $repo
 
-echo "deb http://$repo_src/debian/ wheezy main non-free contrib" >> $repo
-echo "deb-src http://$repo_src/debian/ wheezy main non-free contrib" >> $repo
-echo "deb http://$repo_src/debian-security/ wheezy/updates main non-free contrib" >> $repo
-echo "deb-src http://$repo_src/debian-security/ wheezy/updates main non-free contrib" >> $repo
-echo "deb http://$repo_src/debian/ wheezy-updates main non-free contrib" >> $repo
-echo "deb-src http://$repo_src/debian/ wheezy-updates main non-free contrib" >> $repo
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ]; then
   echo "" >> $repo
-  echo "deb http://nginx.org/packages/mainline/debian/ wheezy nginx" >> $repo
-  echo "deb-src http://nginx.org/packages/mainline/debian/ wheezy nginx" >> $repo
+  echo "deb http://nginx.org/packages/mainline/debian/ jessie nginx" >> $repo
+  echo "deb-src http://nginx.org/packages/mainline/debian/ jessie nginx" >> $repo
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
   echo "" >> $repo
-  if [ "$mariadb_version" = '1' ]; then
-    echo "deb http://mariadb.biz.net.id//repo/10.0/debian wheezy main" >> $repo
-    echo "deb-src http://mariadb.biz.net.id//repo/10.0/debian wheezy main" >> $repo
-  else
-    echo "deb http://mariadb.biz.net.id//repo/10.1/debian wheezy main" >> $repo
-    echo "deb-src http://mariadb.biz.net.id//repo/10.1/debian wheezy main" >> $repo
-  fi
+  echo "deb http://sgp1.mirrors.digitalocean.com/mariadb/repo/10.0/debian jessie main" >> $repo
+  echo "deb-src http://sgp1.mirrors.digitalocean.com/mariadb/repo/10.0/debian jessie main" >> $repo
 fi
-if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
-  echo "" >> $repo
-  echo "deb http://kambing.ui.ac.id/postgresql/repos/apt/ wheezy-pgdg main" >> $repo
-  echo "deb-src http://kambing.ui.ac.id/postgresql/repos/apt/ wheezy-pgdg main" >> $repo
-fi
+
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2'  ] || [ "$appserver_type" = '5' ]; then
   echo "" >> $repo
-  echo "deb http://$repo_src/dotdeb wheezy all" >> $repo
-  echo "deb-src http://$repo_src/dotdeb wheezy all" >> $repo
-  echo "deb http://$repo_src/dotdeb wheezy-php56 all" >> $repo
-  echo "deb-src http://$repo_src/dotdeb wheezy-php56 all" >> $repo
+  echo "deb http://mirrors.teraren.com/dotdeb jessie all" >> $repo
+  echo "deb-src http://mirrors.teraren.com/dotdeb jessie all" >> $repo
 fi
+
 ##############
 #get GPG Keys#
 ##############
@@ -209,9 +141,10 @@ echo "net.ipv4.ip_local_port_range = 10240    65535" >> /etc/sysctl.conf
 #update the repository list#
 ############################
 dpkg-reconfigure locales
-apt-get update -y && apt-get dist-upgrade -y && apt-get install -y --fix-missing bash-completion consolekit firmware-linux-free \
-                                                                   gnupg-curl unzip libexpat1-dev gettext libz-dev \
-                                                                   build-essential libssl-dev libgnutls-dev libcurl4-gnutls-dev
+apt-get update -y && apt-get dist-upgrade -y 
+apt-get install -y --fix-missing bash-completion consolekit firmware-linux-free \
+                                 gnupg-curl unzip libexpat1-dev gettext libz-dev \
+                                 build-essential libssl-dev libcurl4-gnutls-dev
 
 ########################
 #install the newest git#
@@ -251,26 +184,34 @@ apt-get install -y sudo locate whois curl lynx openssl python perl libaio1 hdpar
                    libicu-dev libncurses5-dev libffi-dev debconf-utils libpng12-dev libjpeg-dev libgif-dev libevent-dev chrpath \
                    libfontconfig1-dev libxft-dev optipng g++ fakeroot ntp zip p7zip-full zlib1g-dev libyaml-dev libgdbm-dev \
                    libreadline-dev libxslt-dev ruby-full gperf bison g++ libsqlite3-dev libfreetype6 libpng-dev ttf-mscorefonts-installer \
-                   xfonts-scalable poppler-utils libxrender-dev xfonts-base xfonts-75dpi fontconfig libxrender1
+                   xfonts-scalable poppler-utils libxrender-dev xfonts-base xfonts-75dpi fontconfig libxrender1 libldap2-dev libsasl2-dev
 ###############
 #configure ntp#
 ###############
 sed -i 's/debian.pool.ntp.org iburst/id.pool.ntp.org/g' /etc/ntp.conf
 service ntp restart
 
-################
-#install nodejs#
-################
-curl -sL https://deb.nodesource.com/setup | bash -
-apt-get install -y nodejs
-
 ###################
 #install phantomjs#
 ###################
+apt-get install -y build-essential g++ flex bison gperf ruby perl libsqlite3-dev libfontconfig1-dev libicu-dev libfreetype6 libssl-dev \
+                   libpng-dev libjpeg-dev python libX11-dev libxext-dev
+
 cd /tmp
-wget http://src.mokapedia.net/linux-x64/phantomjs-1.9.7-linux-x86_64.tar.bz2
-tar jxf phantomjs-1.9.7-linux-x86_64.tar.bz2
-cp phantomjs-1.9.7-linux-x86_64/bin/phantomjs /usr/bin
+rm -R phantomjs
+git clone git://github.com/ariya/phantomjs.git phantomjs
+cd /tmp/phantomjs
+git checkout 2.0
+./build.sh
+cp /tmp/phantomjs/bin/phantomjs /usr/bin
+cd /tmp
+rm -R phantomjs
+
+################
+#install nodejs#
+################
+curl -sL https://deb.nodesource.com/setup_0.12 | sudo bash -
+apt-get install -y nodejs
 
 ############################
 # install grunt bower gulp #
@@ -283,8 +224,9 @@ source ~/.bashrc
 . ~/.bashrc
 
 mkdir -p /root/.node
-npm install -g grunt bower less
-npm install yo gulp
+npm install -g npm@latest
+npm install -g grunt-cli bower gulp karma less less-plugin-clean-css
+npm install yo
 
 ##################
 # install java-8 #
@@ -303,15 +245,9 @@ apt-get install -y oracle-java8-set-default
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
   export DEBIAN_FRONTEND=noninteractive
-  if [ "$mariadb_version" = '1' ]; then
-    echo "mariadb-server-10.0 mysql-server/root_password password $db_root_password" | sudo /usr/bin/debconf-set-selections
-    echo "mariadb-server-10.0 mysql-server/root_password_again password $db_root_password" | sudo /usr/bin/debconf-set-selections
-    apt-get install -y mariadb-server-10.0 mariadb-client-10.0 libmariadbclient-dev mariadb-connect-engine-10.0 mariadb-oqgraph-engine-10.0 mariadb-test-10.0
-  else
-    echo "mariadb-server-10.1 mysql-server/root_password password $db_root_password" | sudo /usr/bin/debconf-set-selections
-    echo "mariadb-server-10.1 mysql-server/root_password_again password $db_root_password" | sudo /usr/bin/debconf-set-selections
-    apt-get install -y mariadb-server-10.1 mariadb-client-10.1 libmariadbclient-dev mariadb-connect-engine-10.1 mariadb-oqgraph-engine-10.1 mariadb-test-10.1
-  fi
+  echo "mariadb-server-10.0 mysql-server/root_password password $db_root_password" | sudo /usr/bin/debconf-set-selections
+  echo "mariadb-server-10.0 mysql-server/root_password_again password $db_root_password" | sudo /usr/bin/debconf-set-selections
+  apt-get install -y mariadb-server-10.0 mariadb-client-10.0 libmariadbclient-dev mariadb-connect-engine-10.0 mariadb-oqgraph-engine-10.0 mariadb-test-10.0
 
   # reconfigure my.cnf
   cd /tmp
@@ -324,10 +260,9 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_t
 
   # install mysql udf
   cd /tmp
-  wget http://src.mokapedia.net/others/lib_mysqludf_debian.tar.gz
-  tar zxvf lib_mysqludf_debian.tar.gz
-  cd /tmp/lib_mysqludf_debian
-  cp bin/* /usr/lib/mysql/plugin
+  git clone http://code.mokapedia.net/automagic/lib_mysqludf_debian.git lib_mysqludf_debian
+  cd lib_mysqludf_debian
+  sudo cp bin/* /usr/lib/mysql/plugin
   mysql -uroot --password=$db_root_password < udf_initialize.sql
 
   # restart the services again
@@ -413,8 +348,18 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   curl -sS https://getcomposer.org/installer | php
   mv composer.phar /usr/local/bin/composer
 
-  ### TODO
-  ### - install premium maxmind geoip
+  #################################
+  # install Premium MaxMind GeoIP #
+  #################################
+
+  apt-get install -y libgeoip-dev
+  cd /tmp
+  git clone http://code.mokapedia.net/automagic/premium-geoip-database.git
+  mv /usr/share/GeoIP/ /usr/share/GeoIP.old
+  mkdir -p /usr/share/GeoIP
+  cp database/*.dat /usr/share/GeoIP
+  
+
 
 fi
 
@@ -461,8 +406,8 @@ if [ "$appserver_type" = '5' ]; then
   service postgresql restart
 
   echo "Installing necessary python libraries"
-  apt-get install python-pybabel
-  apt-get build-dep python-psycopg2
+  apt-get install -y python-pybabel
+  apt-get build-dep -y python-psycopg2
   pip install psycopg2 werkzeug simplejson 
   apt-get install -y python-cups python-dateutil python-decorator python-docutils python-feedparser \
                      python-gdata python-geoip python-gevent python-imaging python-jinja2 python-ldap python-libxslt1 \
@@ -473,8 +418,8 @@ if [ "$appserver_type" = '5' ]; then
 
   echo "Installing wkhtmltopdf"
   cd /tmp
-  wget http://jaist.dl.sourceforge.net/project/wkhtmltopdf/0.12.2.1/wkhtmltox-0.12.2.1_linux-wheezy-amd64.deb
-  dpkg -i wkhtmltox-0.12.2.1_linux-wheezy-amd64.deb
+  wget http://jaist.dl.sourceforge.net/project/wkhtmltopdf/0.12.2.1/wkhtmltox-0.12.2.1_linux-jessie-amd64.deb
+  dpkg -i wkhtmltox-0.12.2.1_linux-jessie-amd64.deb
   ln -s /usr/local/bin/wkhtmltopdf /usr/bin
   ln -s /usr/local/bin/wkhtmltoimage /usr/bin
 
@@ -494,6 +439,11 @@ if [ "$appserver_type" = '5' ]; then
 
   chown odoo: /etc/odoo-server.conf
   chmod 640 /etc/odoo-server.conf
+
+  cd /opt/odoo
+  easy_install --upgrade pip
+  pip install requests==2.6.0
+  pip install -r requirements.txt
 
   cd /tmp
   wget http://www.theopensourcerer.com/wp-content/uploads/2014/09/odoo-server
@@ -517,7 +467,7 @@ fi
 touch $install_summarize
 timestamp_flag=` date +%F\ %H:%M:%S`
 echo "*********************************************************" > $install_summarize
-echo "   DEBIAN WHEEZY PERFECT APPLICATION SERVER INSTALLER    " >> $install_summarize
+echo "   DEBIAN JESSIE PERFECT APPLICATION SERVER INSTALLER    " >> $install_summarize
 echo "    -- proudly present by eRQee (q@mokapedia.com) --     " >> $install_summarize
 echo "                       *   *   *                         " >> $install_summarize
 echo "                   INSTALL SUMMARIZE                     " >> $install_summarize

@@ -118,8 +118,8 @@ echo "deb http://mariadb.biz.net.id//repo/10.1/debian wheezy main" >> $repo
 echo "deb-src http://mariadb.biz.net.id//repo/10.1/debian wheezy main" >> $repo
 echo "deb http://$repo_src/dotdeb wheezy all" >> $repo
 echo "deb-src http://$repo_src/dotdeb wheezy all" >> $repo
-echo "deb http://$repo_src/dotdeb wheezy-php55 all" >> $repo
-echo "deb-src http://$repo_src/dotdeb wheezy-php55 all" >> $repo
+echo "deb http://$repo_src/dotdeb wheezy-php56 all" >> $repo
+echo "deb-src http://$repo_src/dotdeb wheezy-php56 all" >> $repo
 echo "deb http://dl.google.com/linux/deb/ stable main" >> $repo
 echo "deb http://download.virtualbox.org/virtualbox/debian trusty contrib" >> $repo
 
@@ -146,7 +146,7 @@ apt-get update -y
 dpkg-reconfigure locales
 apt-get autoremove gedit gedit-common
 aptitude full-upgrade -y
-apt-get install -y ia32-libs bash-completion consolekit firmware-linux-free gnupg-curl members libuser openssh-server openssh-client
+apt-get install -y ia32-libs bash-completion consolekit gnupg-curl members libuser openssh-server openssh-client
 
 ########################
 #install the newest git#
