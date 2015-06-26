@@ -357,7 +357,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   git clone http://code.mokapedia.net/automagic/premium-geoip-database.git
   mv /usr/share/GeoIP/ /usr/share/GeoIP.old
   mkdir -p /usr/share/GeoIP
-  cp database/*.dat /usr/share/GeoIP
+  cp premium-geoip-database/database/*.dat /usr/share/GeoIP
   
 
 
