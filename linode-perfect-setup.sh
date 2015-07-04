@@ -141,6 +141,7 @@ echo "net.ipv4.ip_local_port_range = 10240    65535" >> /etc/sysctl.conf
 #update the repository list#
 ############################
 dpkg-reconfigure locales
+dpkg --add-architecture i386
 apt-get update -y && apt-get dist-upgrade -y 
 apt-get install -y --fix-missing bash-completion consolekit firmware-linux-free \
                                  gnupg-curl unzip libexpat1-dev gettext libz-dev \
@@ -331,7 +332,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   cp www.conf /etc/php5/fpm/pool.d/www.conf
 
   cd /tmp/config
-  wget http://src.mokapedia.net/others/config/000default.conf
+  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/000default.conf
   cp 000default.conf /etc/nginx/sites-enabled/
 
   # restart the services
@@ -357,7 +358,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   git clone http://code.mokapedia.net/automagic/premium-geoip-database.git
   mv /usr/share/GeoIP/ /usr/share/GeoIP.old
   mkdir -p /usr/share/GeoIP
-  cp database/*.dat /usr/share/GeoIP
+  cp premium-geoip-database/database/*.dat /usr/share/GeoIP
   
 
 
