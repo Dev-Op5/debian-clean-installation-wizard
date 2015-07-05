@@ -443,8 +443,8 @@ if [ "$appserver_type" = '5' ]; then
 
   cd /opt/odoo
   easy_install --upgrade pip
-  pip install requests==2.6.0
   pip install -r requirements.txt
+  pip install requests==2.6.0
 
   cd /tmp
   wget http://www.theopensourcerer.com/wp-content/uploads/2014/09/odoo-server
@@ -457,7 +457,6 @@ if [ "$appserver_type" = '5' ]; then
   chmod -R 777 /var/log/odoo
 
   update-rc.d odoo-server defaults
-
   /etc/init.d/odoo-server start
 
 fi
