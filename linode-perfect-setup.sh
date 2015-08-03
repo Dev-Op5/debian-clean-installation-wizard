@@ -226,8 +226,8 @@ source ~/.bashrc
 
 mkdir -p /root/.node
 npm install -g npm@latest
-npm install -g grunt-cli bower gulp karma less less-plugin-clean-css
-npm install yo
+npm install -g grunt-cli bower gulp less less-plugin-clean-css
+npm install yo karma 
 
 ##################
 # install java-8 #
@@ -359,8 +359,6 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   mv /usr/share/GeoIP/ /usr/share/GeoIP.old
   mkdir -p /usr/share/GeoIP
   cp premium-geoip-database/database/*.dat /usr/share/GeoIP
-  
-
 
 fi
 
@@ -384,7 +382,7 @@ if [ "$appserver_type" = '4' ]; then
 fi
 
 #############################################
-# install (and configure) odoo8 (!TODO)     #
+# install (and configure) odoo8             #
 #############################################
 
 cd /tmp
