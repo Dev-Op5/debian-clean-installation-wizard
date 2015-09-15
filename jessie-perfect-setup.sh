@@ -40,7 +40,7 @@ echo "1. Perfect Server for Nginx, PHP5-FPM, and MariaDB"
 echo "2. Dedicated Nginx & PHP5-FPM Web Server only"
 echo "3. Dedicated MariaDB Database Server only"
 echo "4. Dedicated PostgreSQL Database Server only"
-echo "5. Odoo8 Perfect Server"
+echo "5. Odoo v9 Perfect Server"
 read -p "Your Choice (1/2/3/4/5) : " appserver_type
 
 if [ "$appserver_type" = '4' ]; then
@@ -66,9 +66,17 @@ if [ "$appserver_type" != '2' ]; then
   echo ""
   read -p "Enter the default database root password: " db_root_password
 fi
-  echo ""
-  read -p "Git Identifier Username   : " git_user_name
-  read -p "Git Identifier User Email : " git_user_email
+
+echo "Which Debian Repository do you prefer?"
+echo "1. kambing.ui.ac.id"
+echo "2. mirrors.linode.com"
+echo ""
+read -p "Your choice? (1/2) : " which_repo
+echo ""
+
+echo ""
+read -p "Git Identifier Username   : " git_user_name
+read -p "Git Identifier User Email : " git_user_email
 
 echo ""
 echo "-- starting the automated installer --"
@@ -87,12 +95,23 @@ mv $repo /etc/apt/sources.list.old && touch $repo
 
 repo=/etc/apt/sources.list
 
-echo "deb http://mirrors.linode.com/debian/ jessie main non-free contrib" >> $repo
-echo "deb-src http://mirrors.linode.com/debian/ jessie main non-free contrib" >> $repo
-echo "deb http://security.debian.org/ jessie/updates main non-free contrib" >> $repo
-echo "deb-src http://security.debian.org/ jessie/updates main non-free contrib" >> $repo
-echo "deb http://mirrors.linode.com/debian/ jessie-updates main non-free contrib" >> $repo
-echo "deb-src http://mirrors.linode.com/debian/ jessie-updates main non-free contrib" >> $repo
+if [ "$which_repo" = '2' ]; then
+  echo "deb http://mirrors.linode.com/debian/ jessie main non-free contrib" >> $repo
+  echo "deb-src http://mirrors.linode.com/debian/ jessie main non-free contrib" >> $repo
+  echo "deb http://mirrors.linode.com/debian/ jessie-updates main non-free contrib" >> $repo
+  echo "deb-src http://mirrors.linode.com/debian/ jessie-updates main non-free contrib" >> $repo
+  echo "deb http://mirrors.linode.com/debian-security/ jessie/updates main non-free contrib" >> $repo
+  echo "deb-src http://mirrors.linode.com/debian-security/ jessie/updates main non-free contrib" >> $repo
+fi
+
+if [ "$which_repo" = '1' ]; then
+  echo "deb http://kambing.ui.ac.id/debian/ jessie main non-free contrib" >> $repo
+  echo "deb-src http://kambing.ui.ac.id/debian/ jessie main non-free contrib" >> $repo
+  echo "deb http://kambing.ui.ac.id/debian/ jessie-updates main non-free contrib" >> $repo
+  echo "deb-src http://kambing.ui.ac.id/debian/ jessie-updates main non-free contrib" >> $repo
+  echo "deb http://kambing.ui.ac.id/debian-security/ jessie/updates main non-free contrib" >> $repo
+  echo "deb-src http://kambing.ui.ac.id/debian-security/ jessie/updates main non-free contrib" >> $repo
+fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ]; then
   echo "" >> $repo
@@ -101,15 +120,42 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ]; then
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
-  echo "" >> $repo
-  echo "deb http://sgp1.mirrors.digitalocean.com/mariadb/repo/10.0/debian jessie main" >> $repo
-  echo "deb-src http://sgp1.mirrors.digitalocean.com/mariadb/repo/10.0/debian jessie main" >> $repo
+  if [ "$which_repo" = '2' ]; then
+    echo "" >> $repo
+    echo "deb http://sgp1.mirrors.digitalocean.com/mariadb/repo/10.1/debian jessie main" >> $repo
+    echo "deb-src http://sgp1.mirrors.digitalocean.com/mariadb/repo/10.1/debian jessie main" >> $repo
+  fi
+  if [ "$which_repo" = '1' ]; then
+    echo "" >> $repo
+    echo "deb http://mariadb.biz.net.id/repo/10.1/debian jessie main" >> $repo
+    echo "deb-src http://mariadb.biz.net.id/repo/10.1/debian jessie main" >> $repo
+  fi
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2'  ] || [ "$appserver_type" = '5' ]; then
-  echo "" >> $repo
-  echo "deb http://mirrors.teraren.com/dotdeb jessie all" >> $repo
-  echo "deb-src http://mirrors.teraren.com/dotdeb jessie all" >> $repo
+  if [ "$which_repo" = '2' ]; then
+    echo "" >> $repo
+    echo "deb http://mirrors.teraren.com/dotdeb jessie all" >> $repo
+    echo "deb-src http://mirrors.teraren.com/dotdeb jessie all" >> $repo
+  fi
+  if [ "$which_repo" = '1' ]; then
+    echo "" >> $repo
+    echo "deb http://kambing.ui.ac.id/dotdeb jessie all" >> $repo
+    echo "deb-src http://kambing.ui.ac.id/dotdeb jessie all" >> $repo
+  fi
+fi
+
+if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
+  if [ "$which_repo" = '1' ]; then
+    echo "" >> $repo
+    echo "deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main" >> $repo
+    echo "deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main" >> $repo
+  fi
+  if [ "$which_repo" = '1' ]; then
+    echo "" >> $repo
+    echo "deb http://kambing.ui.ac.id/postgresql/repos/apt/ jessie-pgdg main" >> $repo
+    echo "deb-src http://kambing.ui.ac.id/postgresql/repos/apt/ jessie-pgdg main" >> $repo
+  fi
 fi
 
 ##############
@@ -142,7 +188,7 @@ echo "net.ipv4.ip_local_port_range = 10240    65535" >> /etc/sysctl.conf
 ############################
 dpkg-reconfigure locales
 dpkg --add-architecture i386
-apt-get update -y && apt-get dist-upgrade -y 
+apt-get update -y && apt-get dist-upgrade -y
 apt-get install -y --fix-missing bash-completion consolekit firmware-linux-free \
                                  gnupg-curl unzip libexpat1-dev gettext libz-dev \
                                  build-essential libssl-dev libcurl4-gnutls-dev
@@ -171,6 +217,8 @@ git config --global user.email "$git_user_email"
 git config --global core.editor nano
 git config --global color.ui true
 
+echo "" >> /etc/bash.bashrc
+echo "" >> /etc/bash.bashrc
 echo "alias sedot='wget --recursive --page-requisites --html-extension --convert-links --no-parent --random-wait -r -p -E -e robots=off'" >> /etc/bash.bashrc
 echo "alias commit='git add --all . && git commit -m'" >> /etc/bash.bashrc
 echo "alias push='git push -u origin master'" >> /etc/bash.bashrc
@@ -180,11 +228,11 @@ echo "alias pull='git pull origin master'" >> /etc/bash.bashrc
 #install essential packages#
 ############################
 apt-get install -y sudo locate whois curl lynx openssl python perl libaio1 hdparm rsync traceroute imagemagick libmcrypt-dev \
-                   python-software-properties pcregrep snmp-mibs-downloader tcpdump gawk checkinstall cdbs devscripts dh-make \
+                   python-software-properties pcregrep tcpdump gawk checkinstall cdbs devscripts dh-make \
                    libxml-parser-perl check python-pip libbz2-dev libpcre3-dev libxml2-dev unixodbc-bin sysv-rc-conf uuid-dev \
                    libicu-dev libncurses5-dev libffi-dev debconf-utils libpng12-dev libjpeg-dev libgif-dev libevent-dev chrpath \
                    libfontconfig1-dev libxft-dev optipng g++ fakeroot ntp zip p7zip-full zlib1g-dev libyaml-dev libgdbm-dev \
-                   libreadline-dev libxslt-dev ruby-full gperf bison g++ libsqlite3-dev libfreetype6 libpng-dev ttf-mscorefonts-installer \
+                   libreadline-dev libxslt-dev ruby-full gperf bison g++ libsqlite3-dev libfreetype6 libpng-dev \
                    xfonts-scalable poppler-utils libxrender-dev xfonts-base xfonts-75dpi fontconfig libxrender1 libldap2-dev libsasl2-dev
 ###############
 #configure ntp#
@@ -211,13 +259,15 @@ rm -R phantomjs
 ################
 #install nodejs#
 ################
-curl -sL https://deb.nodesource.com/setup_0.12 | sudo bash -
+curl -sL https://deb.nodesource.com/setup_4.x | sudo bash -
 apt-get install -y nodejs
 
 ############################
 # install grunt bower gulp #
 ############################
+echo "" >> ~/.npmrc
 echo prefix = ~/.node >> ~/.npmrc
+echo "" >> ~/.bashrc
 echo 'export PATH=$HOME/.node/bin:$PATH' >> ~/.bashrc
 echo 'export NODE_PATH=/usr/local/lib/node_modules' >> ~/.bashrc
 echo 'export NODE_PATH=$NODE_PATH:/root/.node/lib/node_modules' >> ~/.bashrc
@@ -227,7 +277,7 @@ source ~/.bashrc
 mkdir -p /root/.node
 npm install -g npm@latest
 npm install -g grunt-cli bower gulp less less-plugin-clean-css
-npm install yo karma 
+npm install yo karma
 
 ##################
 # install java-8 #
@@ -246,9 +296,9 @@ apt-get install -y oracle-java8-set-default
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
   export DEBIAN_FRONTEND=noninteractive
-  echo "mariadb-server-10.0 mysql-server/root_password password $db_root_password" | sudo /usr/bin/debconf-set-selections
-  echo "mariadb-server-10.0 mysql-server/root_password_again password $db_root_password" | sudo /usr/bin/debconf-set-selections
-  apt-get install -y mariadb-server-10.0 mariadb-client-10.0 libmariadbclient-dev mariadb-connect-engine-10.0 mariadb-oqgraph-engine-10.0 mariadb-test-10.0
+  echo "mariadb-server-10.1 mysql-server/root_password password $db_root_password" | sudo /usr/bin/debconf-set-selections
+  echo "mariadb-server-10.1 mysql-server/root_password_again password $db_root_password" | sudo /usr/bin/debconf-set-selections
+  apt-get install -y mariadb-server-10.1 mariadb-client-10.1 libmariadbclient-dev mariadb-connect-engine-10.1 mariadb-oqgraph-engine-10.1 mariadb-test-10.1
 
   # reconfigure my.cnf
   cd /tmp
@@ -391,10 +441,10 @@ if [ "$appserver_type" = '5' ]; then
 
   echo "--------------------------------"
   echo ""
-  echo "INSTALLING odoo8........."
+  echo "INSTALLING odoo v9........."
   echo ""
   echo "--------------------------------"
-  adduser --system --home=/opt/odoo --group odoo
+  adduser --system --quiet --shell=/bin/bash --home=/opt/odoo --gecos 'odoo' --group odoo
   postgresql_root_password=$db_root_password
   echo "PostgreSQL 9.4"
   apt-get install -y postgresql-9.4 postgresql-client-9.4 postgresql-contrib-9.4 libpq-dev
@@ -407,7 +457,7 @@ if [ "$appserver_type" = '5' ]; then
   echo "Installing necessary python libraries"
   apt-get install -y python-pybabel
   apt-get build-dep -y python-psycopg2
-  pip install psycopg2 werkzeug simplejson 
+  pip install psycopg2 werkzeug simplejson
   apt-get install -y python-cups python-dateutil python-decorator python-docutils python-feedparser \
                      python-gdata python-geoip python-gevent python-imaging python-jinja2 python-ldap python-libxslt1 \
                      python-mako python-mock python-openid python-passlib python-psutil python-psycopg2 \
@@ -424,7 +474,7 @@ if [ "$appserver_type" = '5' ]; then
 
   echo "Clone the Odoo 8.0 latest sources"
   cd /opt/odoo
-  sudo -u odoo -H git clone https://www.github.com/odoo/odoo --depth 1 --branch 8.0 --single-branch .
+  sudo -u odoo -H git clone https://www.github.com/odoo/odoo --depth 1 --branch 9.0 --single-branch .
   touch /etc/odoo-server.conf
   echo "[options]" > /etc/odoo-server.conf
   echo "; This is the password that allows database operations:" >> /etc/odoo-server.conf

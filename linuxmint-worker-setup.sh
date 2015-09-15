@@ -97,8 +97,8 @@ touch $repo
 rm /etc/apt/sources.list.d/official-package-repositories.list
 rm /etc/apt/sources.list.d/official-source-repositories.list
 
-echo "deb http://repo.udkw.ac.id/linuxmint $lmversion main upstream import" >> $repo
-echo "deb-src http://repo.udkw.ac.id/linuxmint $lmversion main upstream import" >> $repo
+echo "deb http://repo.ukdw.ac.id/linuxmint $lmversion main upstream import" >> $repo
+echo "deb-src http://repo.ukdw.ac.id/linuxmint $lmversion main upstream import" >> $repo
 echo "deb http://extra.linuxmint.com $lmversion main" >> $repo
 echo "deb-src http://extra.linuxmint.com $lmversion main" >> $repo
 
@@ -187,21 +187,21 @@ apt-get install -y oracle-java8-set-default
 # install nice-to-have packages #
 #################################
 
-apt-get install -y guake shutter libgoo-canvas-perl dconf-editor arandr gparted leafpad google-chrome-stable chromium-browser pdftk telegram gpicview 
+apt-get install -y guake shutter libgoo-canvas-perl dconf-editor arandr gparted leafpad google-chrome-stable chromium-browser pdftk telegram gpicview
 
 # font from the repo
 echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
 apt-get install -y ttf-mscorefonts-installer ttf-bitstream-vera ttf-anonymous-pro fonts-cantarell fonts-comfortaa \
-                  fonts-crosextra-caladea fonts-crosextra-carlito 
+                  fonts-crosextra-caladea fonts-crosextra-carlito
 
 # font pilihan mokapedia
 mkdir -p /tmp/fnts
 cd /tmp/fnts
-wget http://src.mokapedia.net/linux-x64/ttf-mokapedia-favorites.tar.gz 
-tar zxvf ttf-mokapedia-favorites.tar.gz 
-mv ttf-mokapedia-favorites /usr/share/fonts/truetype 
+wget http://src.mokapedia.net/linux-x64/ttf-mokapedia-favorites.tar.gz
+tar zxvf ttf-mokapedia-favorites.tar.gz
+mv ttf-mokapedia-favorites /usr/share/fonts/truetype
 
-fc-cache -fv  
+fc-cache -fv
 
 ####################################
 # instal apps di src.mokapedia.net #
@@ -212,22 +212,21 @@ fc-cache -fv
 # d) epson 310 driver              #
 ####################################
 
-gdebi -i sublime-text_build-3083_amd64.deb
+mkdir -p /tmp/debs
+cd /tmp/debs
+wget http://src.mokapedia.net/linux-x64/sublime-text_build-3083_amd64.deb
+wget http://src.mokapedia.net/linux-x64/master-pdf-editor-3.4.03_amd64.deb
+wget http://src.mokapedia.net/linux-x64/teamviewer_i386.deb
+
+dpkg -i *.deb
+
+apt-get install -f -y
+
+dpkg -i *.deb
+
 cd /opt/sublime_text/
 cp /opt/sublime_text/sublime_text ori_st3
 printf '\x39' | dd seek=$((0xcbe3)) conv=notrunc bs=1 of=/opt/sublime_text/sublime_text
-
-mkdir -p /tmp/debs
-cd /tmp/debs
-wget http://src.mokapedia.net/linux-x64/master-pdf-editor-3.4.03_amd64.deb 
-wget http://src.mokapedia.net/linux-x64/teamviewer_i386.deb 
-wget http://src.mokapedia.net/linux-x64/epson-inkjet-printer-201310w_1.0.0-1lsb3.2_amd64.deb
-
-dpkg -i *.deb 
-
-apt-get install -f -y 
-
-dpkg -i *.deb 
 
 
 ####################################
@@ -236,7 +235,7 @@ dpkg -i *.deb
 
 echo "" >> /etc/bash.bashrc
 echo "" >> /etc/bash.bashrc
-echo "EXPORT WINEARCH=win32" >> /etc/bash.bashrc
+echo "export WINEARCH=win32" >> /etc/bash.bashrc
 echo "alias sedot='wget --recursive --page-requisites --html-extension --convert-links --no-parent --random-wait -r -p -E -e robots=off'" >> /etc/bash.bashrc
 
 ###########################################################################

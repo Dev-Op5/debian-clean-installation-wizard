@@ -75,6 +75,13 @@ echo "6. Composer (latest)"
 echo "7. AdobeAIR 2.6 (latest supported version for linux)"
 echo "8. Guake, Shutter, LeafPad, SublimeText 3, Google Chrome"
 echo ""
+echo ""
+read -p "Enter the default database root password: " db_root_password
+echo ""
+read -p "Git Identifier Username   : " git_user_name
+read -p "Git Identifier User Email : " git_user_email
+echo ""
+echo ""
 read -p "Proceed to Install? (Y/N) : " lets_go
 
 if [ "$lets_go" != 'Y' ]; then
@@ -92,7 +99,6 @@ lmversion="qiana"
 if [ $TVer = "17.1" ]; then
   lmversion="rebecca"
 fi
-
 
 mv $repo /etc/apt/old.sources.list
 touch $repo
@@ -137,6 +143,10 @@ wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add
 #virtualbox.org
 wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | apt-key add -
 
+#telegram PPA
+add-apt-repository -y ppa:atareao/telegram
+
+
 
 ############################
 #update the repository list#
@@ -176,7 +186,8 @@ apt-get install -y libxt6:i386 libnspr4-0d:i386 libgtk2.0-0:i386 libstdc++6:i386
                    libxml-parser-perl check python-pip libbz2-dev libpcre3-dev libxml2-dev unixodbc-bin sysv-rc-conf uuid-dev \
                    libicu-dev libncurses5-dev libffi-dev debconf-utils libpng12-dev libjpeg-dev libgif-dev libevent-dev chrpath \
                    libfontconfig1-dev libxft-dev optipng g++ fakeroot ntp zip p7zip-full zlib1g-dev libyaml-dev libgdbm-dev \
-                   libreadline-dev libxslt-dev
+                   libreadline-dev libxslt-dev libctemplate2 g++ flex bison gperf ruby perl libsqlite3-dev libfontconfig1-dev \
+                   libicu-dev libfreetype6 libssl-dev libpng-dev libjpeg-dev python libX11-dev libxext-dev
 
 ###############
 #configure ntp#
@@ -189,47 +200,65 @@ service ntp restart
 #install nodejs#
 ################
 echo "Install Node.JS"
-curl -sL https://deb.nodesource.com/setup | bash -
+curl -sL https://deb.nodesource.com/setup_4.x | sudo bash -
 apt-get install -y nodejs
+
+npm install -g npm@latest
+npm install -g grunt-cli bower gulp less less-plugin-clean-css
 
 ###################
 #install phantomjs#
 ###################
 echo "Install PhantomJS"
 cd /tmp
-wget http://src.mokapedia.net/linux-x64/phantomjs-1.9.7-linux-x86_64.tar.bz2
-tar jxf phantomjs-1.9.7-linux-x86_64.tar.bz2
-cp phantomjs-1.9.7-linux-x86_64/bin/phantomjs /usr/bin
+rm -R phantomjs
+git clone git://github.com/ariya/phantomjs.git phantomjs
+cd /tmp/phantomjs
+git checkout 2.0
+./build.sh
+cp /tmp/phantomjs/bin/phantomjs /usr/bin
+cd /tmp
+rm -R phantomjs
+
+##################
+# install java-8 #
+##################
+
+echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | sudo /usr/bin/debconf-set-selections
+echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee /etc/apt/sources.list.d/webupd8team-java.list
+echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list
+apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
+apt-get update -y && apt-get install -y oracle-java8-installer
+apt-get install -y oracle-java8-set-default
 
 #################################
 #install (and configure) mariadb#
 #################################
 
 #export DEBIAN_FRONTEND=noninteractive
-echo "Install MariaDB 10.1.x with default root password '123123password'"
-#debconf-set-selections <<< 'mariadb-server-10.1 mysql-server/root_password password 123123password'
-#debconf-set-selections <<< 'mariadb-server-10.1 mysql-server/root_password_again password 123123password'
+echo "Install MariaDB 10.1.x with default root password supplied before"
+echo "mariadb-server-10.1 mysql-server/root_password password $db_root_password" | sudo /usr/bin/debconf-set-selections
+echo "mariadb-server-10.1 mysql-server/root_password_again password $db_root_password" | sudo /usr/bin/debconf-set-selections
 apt-get install -y mariadb-server-10.1 mariadb-client-10.1 libmariadbclient-dev mariadb-connect-engine-10.1 mariadb-oqgraph-engine-10.1 mariadb-test-10.1
 
-echo "Reconfigure the MariaDB my.cnf"
-  cd /tmp
-  wget http://src.mokapedia.net/others/config/my.cnf
-  mv /etc/mysql/my.cnf /etc/mysql/my.cnf.original
-  cp /tmp/my.cnf /etc/mysql/my.cnf
+ # reconfigure my.cnf
+cd /tmp
+wget http://code.mokapedia.net/automagic/default-server-config/raw/master/my.cnf
+mv /etc/mysql/my.cnf /etc/mysql/my.cnf.original
+cp /tmp/my.cnf /etc/mysql/my.cnf
 
-  # restart the services
-  service mysql restart
+# restart the services
+service mysql restart
 
-echo "Install MySQL UDF"
-  cd /tmp
-  wget http://src.mokapedia.net/others/lib_mysqludf_debian.tar.gz
-  tar zxvf lib_mysqludf_debian.tar.gz
-  cd /tmp/lib_mysqludf_debian
-  cp bin/* /usr/lib/mysql/plugin
-  mysql -uroot --password=123123password mysql < udf_initialize.sql
+# install mysql udf
+cd /tmp
+git clone http://code.mokapedia.net/automagic/lib_mysqludf_debian.git lib_mysqludf_debian
+cd lib_mysqludf_debian
+sudo cp bin/* /usr/lib/mysql/plugin
+mysql -uroot --password=$db_root_password < udf_initialize.sql
 
-  # restart the services again
-  service mysql restart
+# restart the services again
+service mysql restart
 
 echo "Install Nginx 1.7x & PHP5-FPM 5.6.x"
 
@@ -242,15 +271,15 @@ echo "Configuring nginx..."
   mkdir -p /etc/nginx/sites-enabled
   mkdir -p /tmp/config/
   cd /tmp/config
-  wget http://src.mokapedia.net/others/config/fastcgi_params
+  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/fastcgi_params
   mv /etc/nginx/fastcgi_params /etc/nginx/original.fastcgi_params
   cp fastcgi_params /etc/nginx/fastcgi_params
 
-  wget http://src.mokapedia.net/others/config/nginx.conf
+  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/nginx.conf
   mv /etc/nginx/nginx.conf /etc/nginx/nginx.original.conf
   cp nginx.conf /etc/nginx/nginx.conf
 
-  wget http://src.mokapedia.net/others/config/security.conf
+  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/security.conf
   cp security.conf /etc/nginx/security.conf
 
 echo "Configuring PHP5-FPM..."
@@ -260,8 +289,8 @@ echo "Configuring PHP5-FPM..."
   chmod -R 777 /var/lib/php5/cookies
   cd /tmp/config
 
-  wget http://src.mokapedia.net/others/config/php.ini
-  wget http://src.mokapedia.net/others/config/www.conf
+  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/php.ini
+  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/www.conf
 
   mv /etc/php5/fpm/php.ini /etc/php5/fpm/php.ini-original
   mv /etc/php5/cli/php.ini /etc/php5/cli/php.ini-original
@@ -272,38 +301,67 @@ echo "Configuring PHP5-FPM..."
 
 echo "Configuring the website workspaces..."
 
-  cd /tmp/config
-  wget http://src.mokapedia.net/others/config/000default.conf
-  cp 000default.conf /etc/nginx/sites-enabled/
+cd /tmp/config
+wget http://code.mokapedia.net/automagic/default-server-config/raw/master/000default.conf
+cp 000default.conf /etc/nginx/sites-enabled/
 
-  # restart the services
-  service nginx restart && service php5-fpm restart
+# restart the services
+service nginx restart && service php5-fpm restart
 
-  # create the webroot workspaces
-  mkdir -p /var/www
-  chown -R www-data:www-data /var/www
+# create the webroot workspaces
+mkdir -p /var/www
+chown -R www-data:www-data /var/www
 
-  #########################
-  # install composer.phar #
-  #########################
+#########################
+# install composer.phar #
+#########################
 
 echo "Install composer..."
 
-  curl -sS https://getcomposer.org/installer | php
-  mv composer.phar /usr/local/bin/composer
+curl -sS https://getcomposer.org/installer | php
+mv composer.phar /usr/local/bin/composer
 
-  ###############################
-  # install python dependencies #
-  ###############################
+#################################
+# install Premium MaxMind GeoIP #
+#################################
 
-  apt-get install -y python-dateutil python-docutils python-feedparser python-gdata python-jinja2 python-ldap python-libxslt1 python-lxml \
-                     python-mako python-mock python-openid python-passlib python-psycopg2 python-psutil python-pybabel python-pychart \
-                     python-pydot python-pyparsing python-pypdf python-reportlab python-simplejson python-tz python-unittest2 python-vatnumber \
-                     python-vobject python-webdav python-werkzeug python-xlwt python-yaml python-zsi
+apt-get install -y libgeoip-dev
+cd /tmp
+git clone http://code.mokapedia.net/automagic/premium-geoip-database.git
+mv /usr/share/GeoIP/ /usr/share/GeoIP.old
+mkdir -p /usr/share/GeoIP
+cp premium-geoip-database/database/*.dat /usr/share/GeoIP
 
-  ########################
-  # install AdobeAIR     #
-  ########################
+###############################
+# install python dependencies #
+###############################
+
+apt-get install -y python-dateutil python-docutils python-feedparser python-gdata python-jinja2 python-ldap python-libxslt1 python-lxml \
+                   python-mako python-mock python-openid python-passlib python-psycopg2 python-psutil python-pybabel python-pychart \
+                   python-pydot python-pyparsing python-pypdf python-reportlab python-simplejson python-tz python-unittest2 python-vatnumber \
+                   python-vobject python-webdav python-werkzeug python-xlwt python-yaml python-zsi
+
+
+########################
+# install AdobeAIR     #
+########################
+# font from the repo
+echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
+apt-get install -y ttf-mscorefonts-installer ttf-bitstream-vera ttf-anonymous-pro fonts-cantarell fonts-comfortaa \
+                  fonts-crosextra-caladea fonts-crosextra-carlito
+
+# font pilihan mokapedia
+mkdir -p /tmp/fnts
+cd /tmp/fnts
+wget http://src.mokapedia.net/linux-x64/ttf-mokapedia-favorites.tar.gz
+tar zxvf ttf-mokapedia-favorites.tar.gz
+mv ttf-mokapedia-favorites /usr/share/fonts/truetype
+
+fc-cache -fv
+
+########################
+# install AdobeAIR     #
+########################
 
 echo "Installing AdobeAIR ..."
 ln -sf /usr/lib/x86_64-linux-gnu/libgnome-keyring.so.0 /usr/lib/libgnome-keyring.so.0
@@ -317,30 +375,50 @@ rm AdobeAIRInstaller.bin
 rm /usr/lib/libgnome-keyring.so.0
 rm /usr/lib/libgnome-keyring.so.0.2.0
 
-  #########################
-  # install SublimeText 3 #
-  #########################
+#########################
+# install SublimeText 3 #
+#########################
 
 echo "Installing SublimeText3"
 cd /tmp/
-wget http://src.mokapedia.net/linux-x64/sublime-text_build-3065_amd64.deb
-dpkg -i sublime-text_build-3065_amd64.deb
-mv /opt/sublime_text/sublime_text /opt/sublime_text/sublime_text_original
-wget http://src.mokapedia.net/linux-x64/sublime_text_crack
-mv sublime_text_crack /opt/sublime_text/sublime_text
-chmod +x /opt/sublime_text/sublime_text
+wget http://src.mokapedia.net/linux-x64/sublime-text_build-3083_amd64.deb
+dpkg -i sublime-text_build-3083_amd64.deb
+cd /opt/sublime_text/
+cp /opt/sublime_text/sublime_text ori_st3
+printf '\x39' | dd seek=$((0xcbe3)) conv=notrunc bs=1 of=/opt/sublime_text/sublime_text
 
-  #################################
-  # install Nice-To-Have Packages #
-  #################################
+#########################
+# install local apps    #
+#########################
 
-echo "Installing guake, shutter, leafpad, virtualbox, and google chrome"
-apt-get install -y guake shutter libgoo-canvas-perl dconf-editor arandr gparted leafpad virtualbox-4.3 google-chrome-stable chromium-browser
+mkdir -p /tmp/debs
+cd /tmp/debs
+wget http://src.mokapedia.net/linux-x64/master-pdf-editor-3.4.03_amd64.deb
+wget http://src.mokapedia.net/linux-x64/teamviewer_i386.deb
 
-  ####################################
-  # Config the command-line shortcut #
-  ####################################
+dpkg -i *.deb 
+apt-get install -f -y
+dpkg -i *.deb 
 
+#################################
+# install Nice-To-Have Packages #
+#################################
+
+echo "Installing nice-to-have packages"
+apt-get install -y guake shutter libgoo-canvas-perl dconf-editor arandr gparted leafpad virtualbox-4.3 google-chrome-stable \
+                   chromium-browser p11-kit-modules:i386 wine winetricks telegram geary cheese qbittorrent comic gpicview \
+                   pdftk dia remmina* figlet toilet emma
+
+#linuxmint PPA
+add-apt-repository -y ppa:libreoffice/libreoffice-5-0
+apt-get update && apt-get dist-upgrade -y
+
+####################################
+# Config the command-line shortcut #
+####################################
+
+echo "" >> /etc/bash.bashrc
+echo "export WINEARCH=win32" >> /etc/bash.bashrc
 echo "alias sedot='wget --recursive --page-requisites --html-extension --convert-links --no-parent --random-wait -r -p -E -e robots=off'" >> /etc/bash.bashrc
 echo "alias commit='git add --all . && git commit -m'" >> /etc/bash.bashrc
 echo "alias push='git push -u origin master'" >> /etc/bash.bashrc

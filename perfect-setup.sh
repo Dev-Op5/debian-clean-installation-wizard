@@ -396,7 +396,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   cp www.conf /etc/php5/fpm/pool.d/www.conf
 
   cd /tmp/config
-  wget http://src.mokapedia.net/others/config/000default.conf
+  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/000default.conf
   cp 000default.conf /etc/nginx/sites-enabled/
 
   # restart the services
