@@ -1,4 +1,3 @@
-#!/bin/bash
 clear
 ##############
 # Am I root? #
@@ -302,7 +301,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_t
 
   # reconfigure my.cnf
   cd /tmp
-  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/my.cnf
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/my.cnf
   mv /etc/mysql/my.cnf /etc/mysql/my.cnf.original
   cp /tmp/my.cnf /etc/mysql/my.cnf
 
@@ -311,7 +310,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_t
 
   # install mysql udf
   cd /tmp
-  git clone http://code.mokapedia.net/automagic/lib_mysqludf_debian.git lib_mysqludf_debian
+  git clone http://code.mokapedia.net/server/lib_mysqludf_debian.git lib_mysqludf_debian
   cd lib_mysqludf_debian
   sudo cp bin/* /usr/lib/mysql/plugin
   mysql -uroot --password=$db_root_password < udf_initialize.sql
@@ -353,15 +352,15 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   mkdir -p /etc/nginx/sites-enabled
   mkdir -p /tmp/config/
   cd /tmp/config
-  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/fastcgi_params
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/fastcgi_params
   mv /etc/nginx/fastcgi_params /etc/nginx/original.fastcgi_params
   cp fastcgi_params /etc/nginx/fastcgi_params
 
-  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/nginx.conf
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/nginx.conf
   mv /etc/nginx/nginx.conf /etc/nginx/nginx.original.conf
   cp nginx.conf /etc/nginx/nginx.conf
 
-  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/security.conf
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/security.conf
   cp security.conf /etc/nginx/security.conf
 
   # configuring php5-fpm
@@ -371,8 +370,8 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   chmod -R 777 /var/lib/php5/cookies
   cd /tmp/config
 
-  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/php.ini
-  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/www.conf
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/php.ini
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/www.conf
 
   mv /etc/php5/fpm/php.ini /etc/php5/fpm/php.ini-original
   mv /etc/php5/cli/php.ini /etc/php5/cli/php.ini-original
@@ -382,7 +381,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   cp www.conf /etc/php5/fpm/pool.d/www.conf
 
   cd /tmp/config
-  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/000default.conf
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/000default.conf
   cp 000default.conf /etc/nginx/sites-enabled/
 
   # restart the services
@@ -405,7 +404,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
 
   apt-get install -y libgeoip-dev
   cd /tmp
-  git clone http://code.mokapedia.net/automagic/premium-geoip-database.git
+  git clone http://code.mokapedia.net/server/premium-geoip-database.git
   mv /usr/share/GeoIP/ /usr/share/GeoIP.old
   mkdir -p /usr/share/GeoIP
   cp premium-geoip-database/database/*.dat /usr/share/GeoIP
@@ -432,7 +431,7 @@ if [ "$appserver_type" = '4' ]; then
 fi
 
 #############################################
-# install (and configure) odoo8             #
+# install (and configure) odoo9             #
 #############################################
 
 cd /tmp
@@ -467,7 +466,7 @@ if [ "$appserver_type" = '5' ]; then
 
   echo "Installing wkhtmltopdf"
   cd /tmp
-  wget http://jaist.dl.sourceforge.net/project/wkhtmltopdf/0.12.2.1/wkhtmltox-0.12.2.1_linux-jessie-amd64.deb
+  wget http://download.gna.org/wkhtmltopdf/0.12/0.12.2.1/wkhtmltox-0.12.2.1_linux-jessie-amd64.deb
   dpkg -i wkhtmltox-0.12.2.1_linux-jessie-amd64.deb
   ln -s /usr/local/bin/wkhtmltopdf /usr/bin
   ln -s /usr/local/bin/wkhtmltoimage /usr/bin
