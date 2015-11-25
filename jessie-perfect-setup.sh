@@ -258,7 +258,7 @@ rm -R phantomjs
 ################
 #install nodejs#
 ################
-curl -sL https://deb.nodesource.com/setup_4.x | sudo bash -
+curl -sL https://deb.nodesource.com/setup_5.x | sudo bash -
 apt-get install -y nodejs
 
 ############################
