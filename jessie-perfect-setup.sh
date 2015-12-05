@@ -168,6 +168,9 @@ wget --no-check-certificate --quiet -O - https://www.postgresql.org/media/keys/A
 wget --quiet -O - http://nginx.org/keys/nginx_signing.key | apt-key add -
 #mariadb.org
 apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xcbcb082a1bb943db
+#ubuntu repository
+apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 40976EAF437D05B5
+apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 3B4FE6ACC0B21F32
 
 ######################
 # performance tuning #
@@ -185,12 +188,12 @@ echo "net.ipv4.ip_local_port_range = 10240    65535" >> /etc/sysctl.conf
 ############################
 #update the repository list#
 ############################
+locale-gen en_US en_US.UTF-8 id_ID id_ID.UTF-8
 dpkg-reconfigure locales
 dpkg --add-architecture i386
 apt-get update -y && apt-get dist-upgrade -y
-apt-get install -y --fix-missing bash-completion consolekit firmware-linux-free \
-                                 gnupg-curl unzip libexpat1-dev gettext libz-dev \
-                                 build-essential libssl-dev libcurl4-gnutls-dev
+apt-get install -y --fix-missing bash-completion consolekit libexpat1-dev gettext libz-dev \
+                                 gnupg-curl unzip build-essential libssl-dev libcurl4-gnutls-dev
 
 ########################
 #install the newest git#
@@ -230,14 +233,9 @@ apt-get install -y sudo locate whois curl lynx openssl python perl libaio1 hdpar
                    python-software-properties pcregrep tcpdump gawk checkinstall cdbs devscripts dh-make \
                    libxml-parser-perl check python-pip libbz2-dev libpcre3-dev libxml2-dev unixodbc-bin sysv-rc-conf uuid-dev \
                    libicu-dev libncurses5-dev libffi-dev debconf-utils libpng12-dev libjpeg-dev libgif-dev libevent-dev chrpath \
-                   libfontconfig1-dev libxft-dev optipng g++ fakeroot ntp zip p7zip-full zlib1g-dev libyaml-dev libgdbm-dev \
+                   libfontconfig1-dev libxft-dev optipng g++ fakeroot zip p7zip-full zlib1g-dev libyaml-dev libgdbm-dev \
                    libreadline-dev libxslt-dev ruby-full gperf bison g++ libsqlite3-dev libfreetype6 libpng-dev \
                    xfonts-scalable poppler-utils libxrender-dev xfonts-base xfonts-75dpi fontconfig libxrender1 libldap2-dev libsasl2-dev
-###############
-#configure ntp#
-###############
-sed -i 's/debian.pool.ntp.org iburst/id.pool.ntp.org/g' /etc/ntp.conf
-service ntp restart
 
 ###################
 #install phantomjs#
@@ -297,7 +295,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_t
   export DEBIAN_FRONTEND=noninteractive
   echo "mariadb-server-10.1 mysql-server/root_password password $db_root_password" | sudo /usr/bin/debconf-set-selections
   echo "mariadb-server-10.1 mysql-server/root_password_again password $db_root_password" | sudo /usr/bin/debconf-set-selections
-  apt-get install -y mariadb-server-10.1 mariadb-client-10.1 libmariadbclient-dev mariadb-connect-engine-10.1 mariadb-oqgraph-engine-10.1 mariadb-test-10.1
+  apt-get install -y mariadb-server-10.1 mariadb-client-10.1 libmariadbclient-dev mariadb-connect-engine-10.1 mariadb-oqgraph-engine-10.1 mariadb-test-10.1 mariadb-cracklib-password-check-10.1
 
   # reconfigure my.cnf
   cd /tmp
@@ -471,7 +469,7 @@ if [ "$appserver_type" = '5' ]; then
   ln -s /usr/local/bin/wkhtmltopdf /usr/bin
   ln -s /usr/local/bin/wkhtmltoimage /usr/bin
 
-  echo "Clone the Odoo 8.0 latest sources"
+  echo "Clone the Odoo 9.0 latest sources"
   cd /opt/odoo
   sudo -u odoo -H git clone https://www.github.com/odoo/odoo --depth 1 --branch 9.0 --single-branch .
   touch /etc/odoo-server.conf
