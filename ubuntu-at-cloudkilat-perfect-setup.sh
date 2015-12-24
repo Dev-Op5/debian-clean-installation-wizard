@@ -100,6 +100,9 @@ echo "deb-src http://kambing.ui.ac.id/ubuntu/ trusty-backports main restricted u
 echo "deb-src http://kambing.ui.ac.id/ubuntu/ trusty-proposed main restricted universe multiverse" >> $repo
 
 apt-get update
+apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 40976EAF437D05B5
+apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 3B4FE6ACC0B21F32
+apt-get update
 apt-get install -y software-properties-common nano
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ]; then
@@ -131,9 +134,6 @@ wget --no-check-certificate --quiet -O - https://www.postgresql.org/media/keys/A
 wget --quiet -O - http://nginx.org/keys/nginx_signing.key | apt-key add -
 #mariadb.org
 apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xcbcb082a1bb943db
-#ubuntu repository
-apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 40976EAF437D05B5
-apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 3B4FE6ACC0B21F32
 
 ######################
 # performance tuning #
@@ -225,7 +225,6 @@ apt-get install -y nodejs
 # install grunt bower gulp #
 ############################
 
-mkdir -p /root/.node
 npm install -g npm@latest
 npm install -g grunt-cli bower gulp less less-plugin-clean-css yo karma
 
@@ -277,29 +276,13 @@ fi
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
 
   add-apt-repository -y ppa:ondrej/php-7.0
+  apt-get update
 
-  apt-get install -y nginx php7.0 php7.0-fpm php7.0-cgi php7.0-cli php7.0-common php7.0-curl php7.0-dbg php7.0-dev php7.0-gd \
+  apt-get install -y nginx php7.0 php7.0-fpm php7.0-cgi php7.0-cli php7.0-common php7.0-curl php7.0-gd \
                      php7.0-imap php7.0-intl php7.0-sqlite3 php7.0-pspell php7.0-recode php7.0-snmp \
-                     php7.0-json php7.0-modules-source php7.0-opcache
-
-  # install client libraries
-  if [ "$appserver_type" = '1' ]; then
-    # app_server_type is nginx/php5-fpm/mariadb
-    apt-get install -y libmariadbclient-dev
-  else
-    if [ "$app_server_type" = '2' ]; then
-      # app_server_type is dedicated nginx/php5-fpm
-      if [ "$client_libraries_option" = '1' ]; then
-        apt-get install -y libmariadbclient-dev php7.0-mysql
-      fi
-      if [ "$client_libraries_option" = '2' ]; then
-        apt-get install -y libpq-dev php7.0-pgsql
-      fi
-      if [ "$client_libraries_option" = '3' ]; then
-        apt-get install -y libpq-dev libmariadbclient-dev php7.0-mysql php7.0-pgsql
-      fi
-    fi
-  fi
+                     php7.0-json php7.0-modules-source php7.0-opcache php7.0-mcrypt php7.0-readline \
+                     php7.0-bz2 php7.0-dbg php7.0-dev php7.0-mysql php7.0-pgsql libphp7.0-embed \
+                     libmariadbclient-dev libpq-dev
 
   # configuring nginx
   mkdir -p /etc/nginx/sites-enabled
