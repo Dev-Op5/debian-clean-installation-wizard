@@ -29,7 +29,7 @@ fi
 
 echo ""
 echo "********************************************************"
-echo "   DEBIAN JESSIE PERFECT APPLICATION SERVER INSTALLER   "
+echo "   UBUNTU 14.04 @ CLOUDKILAT PERFECT SERVER INSTALLER   "
 echo "    -- proudly present by eRQee (q@mokapedia.com) --    "
 echo "********************************************************"
 echo ""
@@ -66,13 +66,6 @@ if [ "$appserver_type" != '2' ]; then
   read -p "Enter the default database root password: " db_root_password
 fi
 
-echo "Which Debian Repository do you prefer?"
-echo "1. kambing.ui.ac.id"
-echo "2. mirrors.linode.com"
-echo ""
-read -p "Your choice? (1/2) : " which_repo
-echo ""
-
 echo ""
 read -p "Git Identifier Username   : " git_user_name
 read -p "Git Identifier User Email : " git_user_email
@@ -94,67 +87,37 @@ mv $repo /etc/apt/sources.list.old && touch $repo
 
 repo=/etc/apt/sources.list
 
-if [ "$which_repo" = '2' ]; then
-  echo "deb http://mirrors.linode.com/debian/ jessie main non-free contrib" >> $repo
-  echo "deb-src http://mirrors.linode.com/debian/ jessie main non-free contrib" >> $repo
-  echo "deb http://mirrors.linode.com/debian/ jessie-updates main non-free contrib" >> $repo
-  echo "deb-src http://mirrors.linode.com/debian/ jessie-updates main non-free contrib" >> $repo
-  echo "deb http://mirrors.linode.com/debian-security/ jessie/updates main non-free contrib" >> $repo
-  echo "deb-src http://mirrors.linode.com/debian-security/ jessie/updates main non-free contrib" >> $repo
-fi
+echo "deb http://kambing.ui.ac.id/ubuntu/ trusty main restricted universe multiverse" >> $repo
+echo "deb http://kambing.ui.ac.id/ubuntu/ trusty-updates main restricted universe multiverse" >> $repo
+echo "deb http://kambing.ui.ac.id/ubuntu/ trusty-security main restricted universe multiverse" >> $repo
+echo "deb http://kambing.ui.ac.id/ubuntu/ trusty-backports main restricted universe multiverse" >> $repo
+echo "deb http://kambing.ui.ac.id/ubuntu/ trusty-proposed main restricted universe multiverse" >> $repo
 
-if [ "$which_repo" = '1' ]; then
-  echo "deb http://kambing.ui.ac.id/debian/ jessie main non-free contrib" >> $repo
-  echo "deb-src http://kambing.ui.ac.id/debian/ jessie main non-free contrib" >> $repo
-  echo "deb http://kambing.ui.ac.id/debian/ jessie-updates main non-free contrib" >> $repo
-  echo "deb-src http://kambing.ui.ac.id/debian/ jessie-updates main non-free contrib" >> $repo
-  echo "deb http://kambing.ui.ac.id/debian-security/ jessie/updates main non-free contrib" >> $repo
-  echo "deb-src http://kambing.ui.ac.id/debian-security/ jessie/updates main non-free contrib" >> $repo
-fi
+echo "deb-src http://kambing.ui.ac.id/ubuntu/ trusty main restricted universe multiverse" >> $repo
+echo "deb-src http://kambing.ui.ac.id/ubuntu/ trusty-updates main restricted universe multiverse" >> $repo
+echo "deb-src http://kambing.ui.ac.id/ubuntu/ trusty-security main restricted universe multiverse" >> $repo
+echo "deb-src http://kambing.ui.ac.id/ubuntu/ trusty-backports main restricted universe multiverse" >> $repo
+echo "deb-src http://kambing.ui.ac.id/ubuntu/ trusty-proposed main restricted universe multiverse" >> $repo
+
+apt-get update
+apt-get install -y software-properties-common nano
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ]; then
   echo "" >> $repo
-  echo "deb http://nginx.org/packages/mainline/debian/ jessie nginx" >> $repo
-  echo "deb-src http://nginx.org/packages/mainline/debian/ jessie nginx" >> $repo
+  echo "deb http://nginx.org/packages/mainline/ubuntu/ trusty nginx" >> $repo
+  echo "deb-src http://nginx.org/packages/mainline/ubuntu/ trusty nginx" >> $repo
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
-  if [ "$which_repo" = '2' ]; then
-    echo "" >> $repo
-    echo "deb http://sgp1.mirrors.digitalocean.com/mariadb/repo/10.1/debian jessie main" >> $repo
-    echo "deb-src http://sgp1.mirrors.digitalocean.com/mariadb/repo/10.1/debian jessie main" >> $repo
-  fi
-  if [ "$which_repo" = '1' ]; then
-    echo "" >> $repo
-    echo "deb http://mariadb.biz.net.id/repo/10.1/debian jessie main" >> $repo
-    echo "deb-src http://mariadb.biz.net.id/repo/10.1/debian jessie main" >> $repo
-  fi
-fi
-
-if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2'  ] || [ "$appserver_type" = '5' ]; then
-  if [ "$which_repo" = '2' ]; then
-    echo "" >> $repo
-    echo "deb http://mirrors.teraren.com/dotdeb jessie all" >> $repo
-    echo "deb-src http://mirrors.teraren.com/dotdeb jessie all" >> $repo
-  fi
-  if [ "$which_repo" = '1' ]; then
-    echo "" >> $repo
-    echo "deb http://kambing.ui.ac.id/dotdeb jessie all" >> $repo
-    echo "deb-src http://kambing.ui.ac.id/dotdeb jessie all" >> $repo
-  fi
+  echo "" >> $repo
+  echo "deb http://kartolo.sby.datautama.net.id/mariadb/repo/10.1/ubuntu trusty main" >> $repo
+  echo "deb-src http://kartolo.sby.datautama.net.id/mariadb/repo/10.1/ubuntu trusty main" >> $repo
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
-  if [ "$which_repo" = '1' ]; then
-    echo "" >> $repo
-    echo "deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main" >> $repo
-    echo "deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main" >> $repo
-  fi
-  if [ "$which_repo" = '1' ]; then
-    echo "" >> $repo
-    echo "deb http://kambing.ui.ac.id/postgresql/repos/apt/ jessie-pgdg main" >> $repo
-    echo "deb-src http://kambing.ui.ac.id/postgresql/repos/apt/ jessie-pgdg main" >> $repo
-  fi
+  echo "" >> $repo
+  echo "deb http://kambing.ui.ac.id/postgresql/repos/apt/ trusty-pgdg main" >> $repo
+  echo "deb-src http://kambing.ui.ac.id/postgresql/repos/apt/ trusty-pgdg main" >> $repo
 fi
 
 ##############
@@ -190,7 +153,6 @@ echo "net.ipv4.ip_local_port_range = 10240    65535" >> /etc/sysctl.conf
 ############################
 locale-gen en_US en_US.UTF-8 id_ID id_ID.UTF-8
 dpkg-reconfigure locales
-dpkg --add-architecture i386
 apt-get update -y && apt-get dist-upgrade -y
 apt-get install -y --fix-missing bash-completion consolekit libexpat1-dev gettext libz-dev \
                                  gnupg-curl unzip build-essential libssl-dev libcurl4-gnutls-dev
@@ -262,19 +224,10 @@ apt-get install -y nodejs
 ############################
 # install grunt bower gulp #
 ############################
-echo "" >> ~/.npmrc
-echo prefix = ~/.node >> ~/.npmrc
-echo "" >> ~/.bashrc
-echo 'export PATH=$HOME/.node/bin:$PATH' >> ~/.bashrc
-echo 'export NODE_PATH=/usr/local/lib/node_modules' >> ~/.bashrc
-echo 'export NODE_PATH=$NODE_PATH:/root/.node/lib/node_modules' >> ~/.bashrc
-source ~/.bashrc
-. ~/.bashrc
 
 mkdir -p /root/.node
 npm install -g npm@latest
-npm install -g grunt-cli bower gulp less less-plugin-clean-css
-npm install yo karma
+npm install -g grunt-cli bower gulp less less-plugin-clean-css yo karma
 
 ##################
 # install java-8 #
@@ -323,10 +276,12 @@ fi
 ##########################################
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
 
-  apt-get install -y nginx php5 php5-fpm php5-cgi php5-cli php5-common php5-curl php5-dbg php5-dev php5-enchant php5-gd \
-                     php5-gmp php5-imap php5-ldap php5-mcrypt php5-mysqlnd php5-odbc php5-pgsql \
-                     php5-pspell php5-readline php5-recode php5-sqlite php5-sybase php5-tidy php5-xmlrpc php5-xsl php-pear \
-                     php5-geoip php5-mongo php5-imagick php-fpdf php5-apcu
+  add-apt-repository -y ppa:ondrej/php-7.0
+
+  apt-get install -y nginx php7.0 php7.0-fpm php7.0-cgi php7.0-cli php7.0-common php7.0-curl php7.0-dbg php7.0-dev php7.0-gd \
+                     php7.0-imap php7.0-intl php7.0-sqlite3 php7.0-pspell php7.0-recode php7.0-snmp \
+                     php7.0-json php7.0-modules-source php7.0-opcache
+
   # install client libraries
   if [ "$appserver_type" = '1' ]; then
     # app_server_type is nginx/php5-fpm/mariadb
@@ -335,13 +290,13 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
     if [ "$app_server_type" = '2' ]; then
       # app_server_type is dedicated nginx/php5-fpm
       if [ "$client_libraries_option" = '1' ]; then
-        apt-get install -y libmariadbclient-dev
+        apt-get install -y libmariadbclient-dev php7.0-mysql
       fi
       if [ "$client_libraries_option" = '2' ]; then
-        apt-get install -y libpq-dev
+        apt-get install -y libpq-dev php7.0-pgsql
       fi
       if [ "$client_libraries_option" = '3' ]; then
-        apt-get install -y libpq-dev libmariadbclient-dev
+        apt-get install -y libpq-dev libmariadbclient-dev php7.0-mysql php7.0-pgsql
       fi
     fi
   fi
@@ -362,28 +317,28 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   cp security.conf /etc/nginx/security.conf
 
   # configuring php5-fpm
-  mkdir -p /var/lib/php5/sessions
-  mkdir -p /var/lib/php5/cookies
-  chmod -R 777 /var/lib/php5/sessions
-  chmod -R 777 /var/lib/php5/cookies
+  mkdir -p /var/lib/php7/sessions
+  mkdir -p /var/lib/php7/cookies
+  chmod -R 777 /var/lib/php7/sessions
+  chmod -R 777 /var/lib/php7/cookies
   cd /tmp/config
 
   wget http://code.mokapedia.net/server/default-server-config/raw/master/php.ini
   wget http://code.mokapedia.net/server/default-server-config/raw/master/www.conf
 
-  mv /etc/php5/fpm/php.ini /etc/php5/fpm/php.ini-original
-  mv /etc/php5/cli/php.ini /etc/php5/cli/php.ini-original
-  cp php.ini /etc/php5/fpm/php.ini
-  cp php.ini /etc/php5/cli/php.ini
-  mv /etc/php5/fpm/pool.d/www.conf /etc/php5/fpm/pool.d/www.conf-original
-  cp www.conf /etc/php5/fpm/pool.d/www.conf
+  mv /etc/php5/fpm/php.ini /etc/php7.0/fpm/php.ini-original
+  mv /etc/php5/cli/php.ini /etc/php7.0/cli/php.ini-original
+  cp php.ini /etc/php7.0/fpm/php.ini
+  cp php.ini /etc/php7.0/cli/php.ini
+  mv /etc/php7.0/fpm/pool.d/www.conf /etc/php7.0/fpm/pool.d/www.conf-original
+  cp www.conf /etc/php7.0/fpm/pool.d/www.conf
 
   cd /tmp/config
   wget http://code.mokapedia.net/server/default-server-config/raw/master/000default.conf
   cp 000default.conf /etc/nginx/sites-enabled/
 
   # restart the services
-  service nginx restart && service php5-fpm restart
+  service nginx restart && service php7-fpm restart
 
   # create the webroot workspaces
   mkdir -p /var/www
@@ -512,7 +467,7 @@ fi
 touch $install_summarize
 timestamp_flag=` date +%F\ %H:%M:%S`
 echo "*********************************************************" > $install_summarize
-echo "   DEBIAN JESSIE PERFECT APPLICATION SERVER INSTALLER    " >> $install_summarize
+echo "   UBUNTU 14.04 @ CLOUDKILAT PERFECT SERVER INSTALLER    " >> $install_summarize
 echo "    -- proudly present by eRQee (q@mokapedia.com) --     " >> $install_summarize
 echo "                       *   *   *                         " >> $install_summarize
 echo "                   INSTALL SUMMARIZE                     " >> $install_summarize
