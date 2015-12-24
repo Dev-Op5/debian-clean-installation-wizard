@@ -243,7 +243,7 @@ apt-get install -y mariadb-server-10.1 mariadb-client-10.1 libmariadbclient-dev 
 
  # reconfigure my.cnf
 cd /tmp
-wget http://code.mokapedia.net/automagic/default-server-config/raw/master/my.cnf
+wget http://code.mokapedia.net/server/default-server-config/raw/master/my.cnf
 mv /etc/mysql/my.cnf /etc/mysql/my.cnf.original
 cp /tmp/my.cnf /etc/mysql/my.cnf
 
@@ -252,7 +252,7 @@ service mysql restart
 
 # install mysql udf
 cd /tmp
-git clone http://code.mokapedia.net/automagic/lib_mysqludf_debian.git lib_mysqludf_debian
+git clone git@code.mokapedia.net:server/lib_mysqludf_debian.git
 cd lib_mysqludf_debian
 sudo cp bin/* /usr/lib/mysql/plugin
 mysql -uroot --password=$db_root_password < udf_initialize.sql
@@ -271,15 +271,15 @@ echo "Configuring nginx..."
   mkdir -p /etc/nginx/sites-enabled
   mkdir -p /tmp/config/
   cd /tmp/config
-  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/fastcgi_params
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/fastcgi_params
   mv /etc/nginx/fastcgi_params /etc/nginx/original.fastcgi_params
   cp fastcgi_params /etc/nginx/fastcgi_params
 
-  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/nginx.conf
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/nginx.conf
   mv /etc/nginx/nginx.conf /etc/nginx/nginx.original.conf
   cp nginx.conf /etc/nginx/nginx.conf
 
-  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/security.conf
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/security.conf
   cp security.conf /etc/nginx/security.conf
 
 echo "Configuring PHP5-FPM..."
@@ -289,8 +289,8 @@ echo "Configuring PHP5-FPM..."
   chmod -R 777 /var/lib/php5/cookies
   cd /tmp/config
 
-  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/php.ini
-  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/www.conf
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/php.ini
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/www.conf
 
   mv /etc/php5/fpm/php.ini /etc/php5/fpm/php.ini-original
   mv /etc/php5/cli/php.ini /etc/php5/cli/php.ini-original
@@ -302,7 +302,7 @@ echo "Configuring PHP5-FPM..."
 echo "Configuring the website workspaces..."
 
 cd /tmp/config
-wget http://code.mokapedia.net/automagic/default-server-config/raw/master/000default.conf
+wget http://code.mokapedia.net/server/default-server-config/raw/master/000default.conf
 cp 000default.conf /etc/nginx/sites-enabled/
 
 # restart the services
@@ -327,7 +327,7 @@ mv composer.phar /usr/local/bin/composer
 
 apt-get install -y libgeoip-dev
 cd /tmp
-git clone http://code.mokapedia.net/automagic/premium-geoip-database.git
+git clone git@code.mokapedia.net:server/premium-geoip-database.git
 mv /usr/share/GeoIP/ /usr/share/GeoIP.old
 mkdir -p /usr/share/GeoIP
 cp premium-geoip-database/database/*.dat /usr/share/GeoIP
