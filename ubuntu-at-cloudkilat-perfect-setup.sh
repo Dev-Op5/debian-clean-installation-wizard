@@ -286,11 +286,17 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
 
   # configuring nginx
   mkdir -p /etc/nginx/sites-enabled
-  mkdir -p /tmp/config/
-  cd /tmp/config
-  wget http://code.mokapedia.net/server/default-server-config/raw/master/fastcgi_params
-  mv /etc/nginx/fastcgi_params /etc/nginx/original.fastcgi_params
-  cp fastcgi_params /etc/nginx/fastcgi_params
+
+  echo "" >> /etc/nginx/fastcgi_params
+  echo "" >> /etc/nginx/fastcgi_params
+  echo "fastcgi_param   SCRIPT_FILENAME     $document_root$fastcgi_script_name;" >> /etc/nginx/fastcgi_params
+  echo "fastcgi_param   PATH_INFO           $fastcgi_path_info;" >> /etc/nginx/fastcgi_params
+  echo "fastcgi_param 	PATH_TRANSLATED		$document_root$fastcgi_path_info;" >> /etc/nginx/fastcgi_params
+  
+  ###
+  # WARNING : INCOMPLETE SCRIPTS
+  # This default-server-config must be rewrite in order to make sure the PHP7 Config is running well.
+  ###
 
   wget http://code.mokapedia.net/server/default-server-config/raw/master/nginx.conf
   mv /etc/nginx/nginx.conf /etc/nginx/nginx.original.conf
@@ -299,7 +305,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   wget http://code.mokapedia.net/server/default-server-config/raw/master/security.conf
   cp security.conf /etc/nginx/security.conf
 
-  # configuring php5-fpm
+  # configuring php7-fpm
   mkdir -p /var/lib/php7/sessions
   mkdir -p /var/lib/php7/cookies
   chmod -R 777 /var/lib/php7/sessions
@@ -309,19 +315,19 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   wget http://code.mokapedia.net/server/default-server-config/raw/master/php.ini
   wget http://code.mokapedia.net/server/default-server-config/raw/master/www.conf
 
-  mv /etc/php5/fpm/php.ini /etc/php7.0/fpm/php.ini-original
-  mv /etc/php5/cli/php.ini /etc/php7.0/cli/php.ini-original
-  cp php.ini /etc/php7.0/fpm/php.ini
-  cp php.ini /etc/php7.0/cli/php.ini
-  mv /etc/php7.0/fpm/pool.d/www.conf /etc/php7.0/fpm/pool.d/www.conf-original
-  cp www.conf /etc/php7.0/fpm/pool.d/www.conf
+  mv /etc/php/7.0/fpm/php.ini /etc/php/7.0/fpm/php.ini-original
+  mv /etc/php/7.0/cli/php.ini /etc/php/7.0/cli/php.ini-original
+  cp php.ini /etc/php/7.0/fpm/php.ini
+  cp php.ini /etc/php/7.0/cli/php.ini
+  mv /etc/php/7.0/fpm/pool.d/www.conf /etc/php/7.0/fpm/pool.d/www.conf-original
+  cp www.conf /etc/php/7.0/fpm/pool.d/www.conf
 
   cd /tmp/config
   wget http://code.mokapedia.net/server/default-server-config/raw/master/000default.conf
   cp 000default.conf /etc/nginx/sites-enabled/
 
   # restart the services
-  service nginx restart && service php7-fpm restart
+  service nginx restart && service php7.0-fpm restart
 
   # create the webroot workspaces
   mkdir -p /var/www
@@ -402,8 +408,8 @@ if [ "$appserver_type" = '5' ]; then
 
   echo "Installing wkhtmltopdf"
   cd /tmp
-  wget http://download.gna.org/wkhtmltopdf/0.12/0.12.2.1/wkhtmltox-0.12.2.1_linux-jessie-amd64.deb
-  dpkg -i wkhtmltox-0.12.2.1_linux-jessie-amd64.deb
+  wget http://download.gna.org/wkhtmltopdf/0.12/0.12.2.1/wkhtmltox-0.12.2.1_linux-trusty-amd64.deb
+  dpkg -i wkhtmltox-0.12.2.1_linux-trusty-amd64.deb
   ln -s /usr/local/bin/wkhtmltopdf /usr/bin
   ln -s /usr/local/bin/wkhtmltoimage /usr/bin
 
