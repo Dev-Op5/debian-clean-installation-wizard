@@ -431,6 +431,19 @@ fi
 
 cd /tmp
 
+####################################
+# GNU Execute                      #
+####################################
+
+echo "Installing GNU Execute"
+apt-get install -y ed
+cd /tmp
+wget http://code.mokapedia.net/server/execute/raw/master/execute
+chmod +x /tmp/execute
+sudo cp /tmp/execute /usr/bin
+
+cd /tmp
+
 #############################################
 # install (and configure) postgresql (!TODO)#
 #############################################
