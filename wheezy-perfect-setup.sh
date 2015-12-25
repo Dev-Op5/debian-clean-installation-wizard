@@ -34,39 +34,44 @@ echo "   DEBIAN WHEEZY PERFECT APPLICATION SERVER INSTALLER   "
 echo "    -- proudly present by eRQee (q@mokapedia.com) --    "
 echo "********************************************************"
 echo ""
-echo "Enter the IP/Hostname Information"
-echo "---------------------------------"
-read -p "The Computer Name     : " serverinfo_hostname
-read -p "Interface (eth0/eth1) : " serverinfo_eth
-read -p "IP Address            : " serverinfo_ip
-read -p "Subnet Mask           : " serverinfo_subnet
-read -p "Default Gateway       : " serverinfo_gateway
-read -p "DNS                   : " serverinfo_dns
+read -p "Do you want to setup the network configuration (Y/N) [Default = N] : " reconfigure_eth
 echo ""
+if [ "$reconfigure_eth" = 'Y' ] || [ "$reconfigure_eth" = 'y' ]; then
+  echo "Enter the IP/Hostname Information"
+  echo "---------------------------------"
+  read -p "The Computer Name     : " serverinfo_hostname
+  read -p "Interface (eth0/eth1) : " serverinfo_eth
+  read -p "IP Address            : " serverinfo_ip
+  read -p "Subnet Mask           : " serverinfo_subnet
+  read -p "Default Gateway       : " serverinfo_gateway
+  read -p "DNS                   : " serverinfo_dns
+  echo ""
 
-network_conf_file=/etc/network/interfaces
-echo "auto lo" > $network_conf_file
-echo "iface lo inet loopback" >> $network_conf_file
-echo "" >> $network_conf_file
-echo "# The primary network interface" >> $network_conf_file
-echo "auto $serverinfo_eth" >> $network_conf_file
-echo "allow-hotplug $serverinfo_eth" >> $network_conf_file
-echo "iface $serverinfo_eth inet static" >> $network_conf_file
-echo "      address         $serverinfo_ip" >> $network_conf_file
-echo "      netmask         $serverinfo_subnet" >> $network_conf_file
-echo "      gateway         $serverinfo_gateway" >> $network_conf_file
-echo "      dns-nameservers $serverinfo_dns" >> $network_conf_file
+  network_conf_file=/etc/network/interfaces
+  echo "auto lo" > $network_conf_file
+  echo "iface lo inet loopback" >> $network_conf_file
+  echo "" >> $network_conf_file
+  echo "# The primary network interface" >> $network_conf_file
+  echo "auto $serverinfo_eth" >> $network_conf_file
+  echo "allow-hotplug $serverinfo_eth" >> $network_conf_file
+  echo "iface $serverinfo_eth inet static" >> $network_conf_file
+  echo "      address         $serverinfo_ip" >> $network_conf_file
+  echo "      netmask         $serverinfo_subnet" >> $network_conf_file
+  echo "      gateway         $serverinfo_gateway" >> $network_conf_file
+  echo "      dns-nameservers $serverinfo_dns" >> $network_conf_file
 
-network_conf_file=/etc/resolv.conf
-echo "domain mokapedia.net" > $network_conf_file
-echo "search mokapedia.net" >> $network_conf_file
-echo "nameserver $serverinfo_dns" > $network_conf_file
+  network_conf_file=/etc/resolv.conf
+  echo "domain mokapedia.net" > $network_conf_file
+  echo "search mokapedia.net" >> $network_conf_file
+  echo "nameserver $serverinfo_dns" > $network_conf_file
 
-echo "$serverinfo_hostname" > /etc/hostname
+  echo "$serverinfo_hostname" > /etc/hostname
 
-network_conf_file=/etc/hosts
-echo "127.0.0.1 localhost localhost.localdomain" > $network_conf_file
-echo "127.0.1.1 $serverinfo_hostname" >> $network_conf_file
+  network_conf_file=/etc/hosts
+  echo "127.0.0.1 localhost localhost.localdomain" > $network_conf_file
+  echo "127.0.1.1 $serverinfo_hostname" >> $network_conf_file
+fi
+
 echo ""
 echo ""
 echo "Which Debian Repository do you prefer?"
@@ -81,7 +86,7 @@ echo "1. Perfect Server for Nginx, PHP5-FPM, and MariaDB"
 echo "2. Dedicated Nginx & PHP5-FPM Web Server only"
 echo "3. Dedicated MariaDB Database Server only"
 echo "4. Dedicated PostgreSQL Database Server only"
-echo "5. Odoo8 Perfect Server"
+echo "5. Odoo9 Perfect Server"
 read -p "Your Choice (1/2/3/4/5) : " appserver_type
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ]; then
   echo ""
@@ -114,13 +119,19 @@ if [ "$appserver_type" != '2' ]; then
   echo ""
   read -p "Enter the default database root password: " db_root_password
 fi
-  echo ""
-  read -p "Git Identifier Username   : " git_user_name
-  read -p "Git Identifier User Email : " git_user_email
 
 echo ""
-echo "-- starting the automated installer --"
+read -p "Git Identifier Username   : " git_user_name
+read -p "Git Identifier User Email : " git_user_email
+
 echo ""
+read -p "Proceed to Install? (Y/N) : " lets_go
+
+if [ "$lets_go" != 'Y' ]; then
+  if [ "$lets_go" != 'y' ]; then
+    exit 1
+  fi
+fi
 
 
 ##############################
@@ -447,10 +458,10 @@ if [ "$appserver_type" = '5' ]; then
 
   echo "--------------------------------"
   echo ""
-  echo "INSTALLING odoo8........."
+  echo "INSTALLING odoo v9........."
   echo ""
   echo "--------------------------------"
-  adduser --system --home=/opt/odoo --group odoo
+  adduser --system --quiet --shell=/bin/bash --home=/opt/odoo --gecos 'odoo' --group odoo
   postgresql_root_password=$db_root_password
   echo "PostgreSQL 9.4"
   apt-get install -y postgresql-9.4 postgresql-client-9.4 postgresql-contrib-9.4 libpq-dev
@@ -461,9 +472,9 @@ if [ "$appserver_type" = '5' ]; then
   service postgresql restart
 
   echo "Installing necessary python libraries"
-  apt-get install python-pybabel
-  apt-get build-dep python-psycopg2
-  pip install psycopg2 werkzeug simplejson 
+  apt-get install -y python-pybabel
+  apt-get build-dep -y python-psycopg2
+  pip install psycopg2 werkzeug simplejson
   apt-get install -y python-cups python-dateutil python-decorator python-docutils python-feedparser \
                      python-gdata python-geoip python-gevent python-imaging python-jinja2 python-ldap python-libxslt1 \
                      python-mako python-mock python-openid python-passlib python-psutil python-psycopg2 \
@@ -473,14 +484,14 @@ if [ "$appserver_type" = '5' ]; then
 
   echo "Installing wkhtmltopdf"
   cd /tmp
-  wget http://jaist.dl.sourceforge.net/project/wkhtmltopdf/0.12.2.1/wkhtmltox-0.12.2.1_linux-wheezy-amd64.deb
+  wget http://download.gna.org/wkhtmltopdf/0.12/0.12.2.1/wkhtmltox-0.12.2.1_linux-wheezy-amd64.deb
   dpkg -i wkhtmltox-0.12.2.1_linux-wheezy-amd64.deb
   ln -s /usr/local/bin/wkhtmltopdf /usr/bin
   ln -s /usr/local/bin/wkhtmltoimage /usr/bin
 
-  echo "Clone the Odoo 8.0 latest sources"
+  echo "Clone the Odoo 9.0 latest sources"
   cd /opt/odoo
-  sudo -u odoo -H git clone https://www.github.com/odoo/odoo --depth 1 --branch 8.0 --single-branch .
+  sudo -u odoo -H git clone https://www.github.com/odoo/odoo --depth 1 --branch 9.0 --single-branch .
   touch /etc/odoo-server.conf
   echo "[options]" > /etc/odoo-server.conf
   echo "; This is the password that allows database operations:" >> /etc/odoo-server.conf
@@ -495,6 +506,11 @@ if [ "$appserver_type" = '5' ]; then
   chown odoo: /etc/odoo-server.conf
   chmod 640 /etc/odoo-server.conf
 
+  cd /opt/odoo
+  easy_install --upgrade pip
+  pip install -r requirements.txt
+  pip install requests==2.6.0
+
   cd /tmp
   wget http://www.theopensourcerer.com/wp-content/uploads/2014/09/odoo-server
   cp /tmp/odoo-server /etc/init.d/odoo-server
@@ -506,7 +522,6 @@ if [ "$appserver_type" = '5' ]; then
   chmod -R 777 /var/log/odoo
 
   update-rc.d odoo-server defaults
-
   /etc/init.d/odoo-server start
 
 fi
@@ -569,7 +584,7 @@ echo "" >> $install_summarize
 echo "*----------------------*" >> $install_summarize
 echo "* This Server SSH Keys *" >> $install_summarize
 echo "*----------------------*" >> $install_summarize
-echo "please copy this into GitLab `deployer` (a.k.a. commit@codingaja.com) account" >> $install_summarize
+echo "please copy this into GitLab `CommitBot` (a.k.a. commit@mokapedia.com) account" >> $install_summarize
 echo "" >> $install_summarize
 cat /root/.ssh/id_rsa.pub >> $install_summarize 2>&1
 echo "" >> $install_summarize

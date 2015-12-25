@@ -71,8 +71,13 @@ read -p "Git Identifier Username   : " git_user_name
 read -p "Git Identifier User Email : " git_user_email
 
 echo ""
-echo "-- starting the automated installer --"
-echo ""
+read -p "Proceed to Install? (Y/N) : " lets_go
+
+if [ "$lets_go" != 'Y' ]; then
+  if [ "$lets_go" != 'y' ]; then
+    exit 1
+  fi
+fi
 
 
 ##############################

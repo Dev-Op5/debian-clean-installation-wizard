@@ -163,6 +163,19 @@ wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | apt-key add -
 #telegram PPA
 add-apt-repository -y ppa:atareao/telegram
 
+######################
+# performance tuning #
+######################
+
+echo "root soft nofile 65536" >> /etc/security/limits.conf
+echo "root hard nofile 65536" >> /etc/security/limits.conf
+echo "* soft nofile 65536" >> /etc/security/limits.conf
+echo "* hard nofile 65536" >> /etc/security/limits.conf
+
+echo "net.ipv4.tcp_tw_recycle = 1" >> /etc/sysctl.conf
+echo "net.ipv4.tcp_tw_reuse = 1" >> /etc/sysctl.conf
+echo "net.ipv4.ip_local_port_range = 10240    65535" >> /etc/sysctl.conf
+
 ############################
 #update the repository list#
 ############################
@@ -280,12 +293,12 @@ rm archive.zip
 # restart the services again
 service mysql restart
 
-echo "Install Nginx 1.7x & PHP5-FPM 5.6.x"
+echo "Install Nginx 1.9x & PHP5-FPM 5.6.x"
 
 apt-get install -y   nginx php5 php5-fpm php5-cgi php5-cli php5-common php5-curl php5-dbg php5-dev php5-enchant php5-gd \
                      php5-gmp php5-imap php5-ldap php5-mcrypt php5-mysqlnd php5-odbc php5-pgsql \
                      php5-pspell php5-readline php5-recode php5-sqlite php5-sybase php5-tidy php5-xmlrpc php5-xsl php-pear \
-                     php5-geoip php5-mongo php5-imagick php-fpdf php5-apcu libmariadbclient-dev
+                     php5-geoip php5-mongo php5-imagick php-fpdf php5-apcu libmariadbclient-dev libpq-dev
 
 echo "Configuring nginx..."
   mkdir -p /etc/nginx/sites-enabled
