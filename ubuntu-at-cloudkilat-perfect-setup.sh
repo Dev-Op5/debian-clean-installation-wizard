@@ -349,11 +349,17 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   #################################
 
   apt-get install -y libgeoip-dev
-  cd /tmp
-  git clone http://code.mokapedia.net/server/premium-geoip-database.git
   mv /usr/share/GeoIP/ /usr/share/GeoIP.old
   mkdir -p /usr/share/GeoIP
-  cp premium-geoip-database/database/*.dat /usr/share/GeoIP
+  cd /tmp
+  rm archive.zip
+  wget http://code.mokapedia.net/server/premium-geoip-database/repository/archive.zip
+  unzip archive.zip
+  cd premium-geoip-database*
+  cp database/*.dat /usr/share/GeoIP
+  cd ..
+  rm -R premium-geoip-database*
+  rm archive.zip
 
 fi
 
