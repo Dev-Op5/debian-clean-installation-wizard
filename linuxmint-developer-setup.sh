@@ -473,7 +473,7 @@ sudo cp /tmp/execute /usr/bin
 echo "Installing nice-to-have packages"
 apt-get install -y guake shutter libgoo-canvas-perl dconf-editor arandr gparted leafpad virtualbox-5.0 google-chrome-stable \
                    chromium-browser p11-kit-modules:i386 wine winetricks telegram geary cheese qbittorrent comic gpicview \
-                   pdftk dia remmina* figlet toilet 
+                   pdftk dia remmina* figlet toilet inkscape
 
 ####################################
 # Config the command-line shortcut #
