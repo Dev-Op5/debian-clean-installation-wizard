@@ -260,10 +260,14 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_t
 
   # install mysql udf
   cd /tmp
-  git clone http://code.mokapedia.net/server/lib_mysqludf_debian.git lib_mysqludf_debian
-  cd lib_mysqludf_debian
+  wget http://code.mokapedia.net/server/lib_mysqludf_debian/repository/archive.zip
+  unzip archive.zip
+  cd lib_mysqludf_debian*
   sudo cp bin/* /usr/lib/mysql/plugin
   mysql -uroot --password=$db_root_password < udf_initialize.sql
+  cd ..
+  rm -R lib_mysqludf_debian*
+  rm archive.zip
 
   # restart the services again
   service mysql restart
