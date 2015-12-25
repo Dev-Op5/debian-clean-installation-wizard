@@ -267,24 +267,26 @@ apt-get install -y nodejs
 ###################
 #install phantomjs#
 ###################
+apt-get install -y build-essential g++ flex bison gperf ruby perl libsqlite3-dev libfontconfig1-dev libicu-dev libfreetype6 libssl-dev \
+                   libpng-dev libjpeg-dev python libX11-dev libxext-dev
+
 cd /tmp
-wget http://src.mokapedia.net/linux-x64/phantomjs-1.9.7-linux-x86_64.tar.bz2
-tar jxf phantomjs-1.9.7-linux-x86_64.tar.bz2
-cp phantomjs-1.9.7-linux-x86_64/bin/phantomjs /usr/bin
+rm -R phantomjs
+git clone git://github.com/ariya/phantomjs.git phantomjs
+cd /tmp/phantomjs
+git checkout 2.0
+./build.sh
+cp /tmp/phantomjs/bin/phantomjs /usr/bin
+cd /tmp
+rm -R phantomjs
 
 ############################
 # install grunt bower gulp #
 ############################
-echo prefix = ~/.node >> ~/.npmrc
-echo 'export PATH=$HOME/.node/bin:$PATH' >> ~/.bashrc
-echo 'export NODE_PATH=/usr/local/lib/node_modules' >> ~/.bashrc
-echo 'export NODE_PATH=$NODE_PATH:/root/.node/lib/node_modules' >> ~/.bashrc
-source ~/.bashrc
-. ~/.bashrc
 
-mkdir -p /root/.node
-npm install -g grunt bower less
-npm install yo gulp
+npm install -g npm@latest
+npm install -g grunt-cli bower gulp less less-plugin-clean-css
+npm install -g yo karma
 
 ##################
 # install java-8 #
@@ -315,7 +317,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_t
 
   # reconfigure my.cnf
   cd /tmp
-  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/my.cnf
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/my.cnf
   mv /etc/mysql/my.cnf /etc/mysql/my.cnf.original
   cp /tmp/my.cnf /etc/mysql/my.cnf
 
@@ -324,16 +326,18 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_t
 
   # install mysql udf
   cd /tmp
-  wget http://src.mokapedia.net/others/lib_mysqludf_debian.tar.gz
-  tar zxvf lib_mysqludf_debian.tar.gz
-  cd /tmp/lib_mysqludf_debian
-  cp bin/* /usr/lib/mysql/plugin
+  wget http://code.mokapedia.net/server/lib_mysqludf_debian/repository/archive.zip
+  unzip archive.zip
+  cd lib_mysqludf_debian*
+  sudo cp bin/* /usr/lib/mysql/plugin
   mysql -uroot --password=$db_root_password < udf_initialize.sql
+  cd ..
+  rm -R lib_mysqludf_debian*
+  rm archive.zip
 
   # restart the services again
   service mysql restart
 fi
-
 
 ##########################################
 #install (and configure) nginx & php5-fpm#
@@ -343,39 +347,21 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   apt-get install -y nginx php5 php5-fpm php5-cgi php5-cli php5-common php5-curl php5-dbg php5-dev php5-enchant php5-gd \
                      php5-gmp php5-imap php5-ldap php5-mcrypt php5-mysqlnd php5-odbc php5-pgsql \
                      php5-pspell php5-readline php5-recode php5-sqlite php5-sybase php5-tidy php5-xmlrpc php5-xsl php-pear \
-                     php5-geoip php5-mongo php5-imagick php-fpdf php5-apcu
-  # install client libraries
-  if [ "$appserver_type" = '1' ]; then
-    # app_server_type is nginx/php5-fpm/mariadb
-    apt-get install -y libmariadbclient-dev
-  else
-    if [ "$app_server_type" = '2' ]; then
-      # app_server_type is dedicated nginx/php5-fpm
-      if [ "$client_libraries_option" = '1' ]; then
-        apt-get install -y libmariadbclient-dev
-      fi
-      if [ "$client_libraries_option" = '2' ]; then
-        apt-get install -y libpq-dev
-      fi
-      if [ "$client_libraries_option" = '3' ]; then
-        apt-get install -y libpq-dev libmariadbclient-dev
-      fi
-    fi
-  fi
+                     php5-geoip php5-mongo php5-imagick php-fpdf php5-apcu libpq-dev libmariadbclient-dev
 
   # configuring nginx
   mkdir -p /etc/nginx/sites-enabled
   mkdir -p /tmp/config/
   cd /tmp/config
-  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/fastcgi_params
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/fastcgi_params
   mv /etc/nginx/fastcgi_params /etc/nginx/original.fastcgi_params
   cp fastcgi_params /etc/nginx/fastcgi_params
 
-  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/nginx.conf
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/nginx.conf
   mv /etc/nginx/nginx.conf /etc/nginx/nginx.original.conf
   cp nginx.conf /etc/nginx/nginx.conf
 
-  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/security.conf
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/security.conf
   cp security.conf /etc/nginx/security.conf
 
   # configuring php5-fpm
@@ -385,8 +371,8 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   chmod -R 777 /var/lib/php5/cookies
   cd /tmp/config
 
-  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/php.ini
-  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/www.conf
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/php.ini
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/www.conf
 
   mv /etc/php5/fpm/php.ini /etc/php5/fpm/php.ini-original
   mv /etc/php5/cli/php.ini /etc/php5/cli/php.ini-original
@@ -396,7 +382,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   cp www.conf /etc/php5/fpm/pool.d/www.conf
 
   cd /tmp/config
-  wget http://code.mokapedia.net/automagic/default-server-config/raw/master/000default.conf
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/000default.conf
   cp 000default.conf /etc/nginx/sites-enabled/
 
   # restart the services
@@ -413,8 +399,22 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   curl -sS https://getcomposer.org/installer | php
   mv composer.phar /usr/local/bin/composer
 
-  ### TODO
-  ### - install premium maxmind geoip
+  #################################
+  # install Premium MaxMind GeoIP #
+  #################################
+
+  apt-get install -y libgeoip-dev
+  mv /usr/share/GeoIP/ /usr/share/GeoIP.old
+  mkdir -p /usr/share/GeoIP
+  cd /tmp
+  rm archive.zip
+  wget http://code.mokapedia.net/server/premium-geoip-database/repository/archive.zip
+  unzip archive.zip
+  cd premium-geoip-database*
+  cp database/*.dat /usr/share/GeoIP
+  cd ..
+  rm -R premium-geoip-database*
+  rm archive.zip
 
 fi
 
