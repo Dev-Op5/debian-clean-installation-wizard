@@ -262,19 +262,10 @@ apt-get install -y nodejs
 ############################
 # install grunt bower gulp #
 ############################
-echo "" >> ~/.npmrc
-echo prefix = ~/.node >> ~/.npmrc
-echo "" >> ~/.bashrc
-echo 'export PATH=$HOME/.node/bin:$PATH' >> ~/.bashrc
-echo 'export NODE_PATH=/usr/local/lib/node_modules' >> ~/.bashrc
-echo 'export NODE_PATH=$NODE_PATH:/root/.node/lib/node_modules' >> ~/.bashrc
-source ~/.bashrc
-. ~/.bashrc
 
-mkdir -p /root/.node
 npm install -g npm@latest
 npm install -g grunt-cli bower gulp less less-plugin-clean-css
-npm install yo karma
+npm install -g yo karma
 
 ##################
 # install java-8 #
@@ -387,11 +378,17 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   #################################
 
   apt-get install -y libgeoip-dev
-  cd /tmp
-  git clone http://code.mokapedia.net/server/premium-geoip-database.git
   mv /usr/share/GeoIP/ /usr/share/GeoIP.old
   mkdir -p /usr/share/GeoIP
-  cp premium-geoip-database/database/*.dat /usr/share/GeoIP
+  cd /tmp
+  rm archive.zip
+  wget http://code.mokapedia.net/server/premium-geoip-database/repository/archive.zip
+  unzip archive.zip
+  cd premium-geoip-database*
+  cp database/*.dat /usr/share/GeoIP
+  cd ..
+  rm -R premium-geoip-database*
+  rm archive.zip
 
 fi
 
