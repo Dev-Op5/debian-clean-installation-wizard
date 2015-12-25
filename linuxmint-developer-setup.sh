@@ -45,8 +45,8 @@ if [ $CHKArch != "x86_64" ]; then
   exit 1
 fi
 
-if [ $TVer = "17" ] || [ $TVer = "17.1" ]; then
-  echo "You are running LinuxMint 17 or 17.1. The process will be continued..."
+if [ $TVer = "17" ] || [ $TVer = "17.1" ] || [ $TVer = "17.2" ] || [ $TVer = "17.3" ]; then
+  echo "You are running LinuxMint 17.x The process will be continued..."
 else
   echo "This script is only for Linux Mint `printf "\e[32m17 or 17.1"``echo -e "\033[0m"` (`printf "\e[32m64-bit only"``echo -e "\033[0m"`)"
   exit 1
@@ -100,6 +100,14 @@ if [ $TVer = "17.1" ]; then
   lmversion="rebecca"
 fi
 
+if [ $TVer = "17.2" ]; then
+  lmversion="rafaela"
+fi
+
+if [ $TVer = "17.3" ]; then
+  lmversion="rosa"
+fi
+
 mv $repo /etc/apt/old.sources.list
 touch $repo
 
@@ -110,6 +118,7 @@ echo "deb http://$repo_src/linuxmint $lmversion main upstream import" >> $repo
 echo "deb-src http://$repo_src/linuxmint $lmversion main upstream import" >> $repo
 echo "deb http://extra.linuxmint.com $lmversion main" >> $repo
 echo "deb-src http://extra.linuxmint.com $lmversion main" >> $repo
+echo "" >> $repo
 echo "deb http://$repo_src/ubuntu trusty main restricted universe multiverse" >> $repo
 echo "deb-src http://$repo_src/ubuntu trusty main restricted universe multiverse" >> $repo
 echo "deb http://$repo_src/ubuntu trusty-updates main restricted universe multiverse" >> $repo
@@ -118,14 +127,23 @@ echo "deb http://$repo_src/ubuntu/ trusty-security main restricted universe mult
 echo "deb-src http://$repo_src/ubuntu/ trusty-security main restricted universe multiverse" >> $repo
 echo "deb http://archive.canonical.com/ubuntu/ trusty partner" >> $repo
 echo "deb-src http://archive.canonical.com/ubuntu/ trusty partner" >> $repo
-echo "deb http://nginx.org/packages/mainline/debian/ wheezy nginx" >> $repo
-echo "deb-src http://nginx.org/packages/mainline/debian/ wheezy nginx" >> $repo
-echo "deb http://mariadb.biz.net.id//repo/10.1/debian wheezy main" >> $repo
-echo "deb-src http://mariadb.biz.net.id//repo/10.1/debian wheezy main" >> $repo
+
+apt-get update
+apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 40976EAF437D05B5
+apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 3B4FE6ACC0B21F32
+apt-get update
+apt-get install -y nano
+
+echo "" >> $repo
+echo "deb http://nginx.org/packages/mainline/ubuntu/ trusty nginx" >> $repo
+echo "deb-src http://nginx.org/packages/mainline/ubuntu/ trusty nginx" >> $repo
+echo "deb http://mariadb.biz.net.id//repo/10.1/ubuntu trusty main" >> $repo
+echo "deb-src http://mariadb.biz.net.id//repo/10.1/ubuntu trusty main" >> $repo
 echo "deb http://$repo_src/dotdeb wheezy all" >> $repo
 echo "deb-src http://$repo_src/dotdeb wheezy all" >> $repo
 echo "deb http://$repo_src/dotdeb wheezy-php56 all" >> $repo
 echo "deb-src http://$repo_src/dotdeb wheezy-php56 all" >> $repo
+echo "" >> $repo
 echo "deb http://dl.google.com/linux/deb/ stable main" >> $repo
 echo "deb http://download.virtualbox.org/virtualbox/debian trusty contrib" >> $repo
 
@@ -142,17 +160,15 @@ apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 0xcbcb082a1bb943db
 wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
 #virtualbox.org
 wget -q https://www.virtualbox.org/download/oracle_vbox.asc -O- | apt-key add -
-
 #telegram PPA
 add-apt-repository -y ppa:atareao/telegram
-
-
 
 ############################
 #update the repository list#
 ############################
 echo "Updating & upgrading the repositories..."
 apt-get update -y
+locale-gen en_US en_US.UTF-8 id_ID id_ID.UTF-8
 dpkg-reconfigure locales
 apt-get autoremove gedit gedit-common
 aptitude full-upgrade -y
@@ -200,11 +216,11 @@ service ntp restart
 #install nodejs#
 ################
 echo "Install Node.JS"
-curl -sL https://deb.nodesource.com/setup_4.x | sudo bash -
+curl -sL https://deb.nodesource.com/setup_5.x | sudo bash -
 apt-get install -y nodejs
 
 npm install -g npm@latest
-npm install -g grunt-cli bower gulp less less-plugin-clean-css
+npm install -g grunt-cli bower gulp less less-plugin-clean-css yo karma
 
 ###################
 #install phantomjs#
@@ -252,10 +268,14 @@ service mysql restart
 
 # install mysql udf
 cd /tmp
-git clone git@code.mokapedia.net:server/lib_mysqludf_debian.git
-cd lib_mysqludf_debian
+wget http://code.mokapedia.net/server/lib_mysqludf_debian/repository/archive.zip
+unzip archive.zip
+cd lib_mysqludf_debian*
 sudo cp bin/* /usr/lib/mysql/plugin
 mysql -uroot --password=$db_root_password < udf_initialize.sql
+cd ..
+rm -R lib_mysqludf_debian*
+rm archive.zip
 
 # restart the services again
 service mysql restart
@@ -326,11 +346,17 @@ mv composer.phar /usr/local/bin/composer
 #################################
 
 apt-get install -y libgeoip-dev
-cd /tmp
-git clone git@code.mokapedia.net:server/premium-geoip-database.git
 mv /usr/share/GeoIP/ /usr/share/GeoIP.old
 mkdir -p /usr/share/GeoIP
-cp premium-geoip-database/database/*.dat /usr/share/GeoIP
+cd /tmp
+rm archive.zip
+wget http://code.mokapedia.net/server/premium-geoip-database/repository/archive.zip
+unzip archive.zip
+cd premium-geoip-database*
+cp database/*.dat /usr/share/GeoIP
+cd ..
+rm -R premium-geoip-database*
+rm archive.zip
 
 ###############################
 # install python dependencies #
@@ -341,10 +367,11 @@ apt-get install -y python-dateutil python-docutils python-feedparser python-gdat
                    python-pydot python-pyparsing python-pypdf python-reportlab python-simplejson python-tz python-unittest2 python-vatnumber \
                    python-vobject python-webdav python-werkzeug python-xlwt python-yaml python-zsi
 
+########################
+# install Fonts        #
+########################
 
-########################
-# install AdobeAIR     #
-########################
+echo "Installing Fonts ..."
 # font from the repo
 echo ttf-mscorefonts-installer msttcorefonts/accepted-mscorefonts-eula select true | debconf-set-selections
 apt-get install -y ttf-mscorefonts-installer ttf-bitstream-vera ttf-anonymous-pro fonts-cantarell fonts-comfortaa \
@@ -353,9 +380,12 @@ apt-get install -y ttf-mscorefonts-installer ttf-bitstream-vera ttf-anonymous-pr
 # font pilihan mokapedia
 mkdir -p /tmp/fnts
 cd /tmp/fnts
-wget http://src.mokapedia.net/linux-x64/ttf-mokapedia-favorites.tar.gz
-tar zxvf ttf-mokapedia-favorites.tar.gz
+wget http://code.mokapedia.net/cdn/font/repository/archive.zip
+unzip archive.zip
+cd font*
 mv ttf-mokapedia-favorites /usr/share/fonts/truetype
+cd /tmp
+rm -R /tmp/fnts
 
 fc-cache -fv
 
@@ -374,6 +404,7 @@ chmod +x AdobeAIRInstaller.bin
 rm AdobeAIRInstaller.bin
 rm /usr/lib/libgnome-keyring.so.0
 rm /usr/lib/libgnome-keyring.so.0.2.0
+ln -s "/opt/Adobe AIR/Versions/1.0/Adobe AIR Application Installer" /usr/sbin/airinstall
 
 #########################
 # install SublimeText 3 #
@@ -391,37 +422,60 @@ printf '\x39' | dd seek=$((0xcbe3)) conv=notrunc bs=1 of=/opt/sublime_text/subli
 # install local apps    #
 #########################
 
+echo "Installing Local Apps"
 mkdir -p /tmp/debs
 cd /tmp/debs
 wget http://src.mokapedia.net/linux-x64/master-pdf-editor-3.4.03_amd64.deb
 wget http://src.mokapedia.net/linux-x64/teamviewer_i386.deb
+wget http://src.mokapedia.net/linux-x64/mysql-workbench-community-6.3.4-1ubu1404-amd64.deb
+wget http://src.mokapedia.net/linux-x64/dragondisk_1.0.5-0ubuntu_amd64.deb
+wget http://src.mokapedia.net/linux-x64/dgtools_1.3.1-0ubuntu_amd64.deb
 
 dpkg -i *.deb 
 apt-get install -f -y
 dpkg -i *.deb 
+
+mkdir -p /tmp/air 
+cd /tmp/air 
+wget http://src.mokapedia.net/linux-x64/pomodairo-1.9.air
+airinstall -silent -eulaAccepted pomodairo-1.9.air
+http://src.mokapedia.net/linux-x64/Balsamiq%20Mockups/MockupsForDesktop.air
+airinstall -silent -eulaAccepted MockupsForDesktop.air
+
+####################################
+# GNU Execute                      #
+####################################
+
+echo "Installing GNU Execute"
+apt-get install -y ed
+cd /tmp
+wget http://code.mokapedia.net/server/execute/raw/master/execute
+chmod +x /tmp/execute
+sudo cp /tmp/execute /usr/bin
 
 #################################
 # install Nice-To-Have Packages #
 #################################
 
 echo "Installing nice-to-have packages"
-apt-get install -y guake shutter libgoo-canvas-perl dconf-editor arandr gparted leafpad virtualbox-4.3 google-chrome-stable \
+apt-get install -y guake shutter libgoo-canvas-perl dconf-editor arandr gparted leafpad virtualbox-5.0 google-chrome-stable \
                    chromium-browser p11-kit-modules:i386 wine winetricks telegram geary cheese qbittorrent comic gpicview \
-                   pdftk dia remmina* figlet toilet emma
-
-#linuxmint PPA
-add-apt-repository -y ppa:libreoffice/libreoffice-5-0
-apt-get update && apt-get dist-upgrade -y
+                   pdftk dia remmina* figlet toilet 
 
 ####################################
 # Config the command-line shortcut #
 ####################################
 
 echo "" >> /etc/bash.bashrc
+echo "" >> /etc/bash.bashrc
 echo "export WINEARCH=win32" >> /etc/bash.bashrc
+echo "" >> /etc/bash.bashrc
+echo "" >> /etc/bash.bashrc
 echo "alias sedot='wget --recursive --page-requisites --html-extension --convert-links --no-parent --random-wait -r -p -E -e robots=off'" >> /etc/bash.bashrc
 echo "alias commit='git add --all . && git commit -m'" >> /etc/bash.bashrc
 echo "alias push='git push -u origin master'" >> /etc/bash.bashrc
+echo "" >> /etc/bash.bashrc
+
 
 ###########################################################################
 # flag the server that she's already setup perfectly (to avoid reinstall) #
