@@ -308,10 +308,14 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_t
 
   # install mysql udf
   cd /tmp
-  git clone http://code.mokapedia.net/server/lib_mysqludf_debian.git lib_mysqludf_debian
-  cd lib_mysqludf_debian
+  wget http://code.mokapedia.net/server/lib_mysqludf_debian/repository/archive.zip
+  unzip archive.zip
+  cd lib_mysqludf_debian*
   sudo cp bin/* /usr/lib/mysql/plugin
   mysql -uroot --password=$db_root_password < udf_initialize.sql
+  cd ..
+  rm -R lib_mysqludf_debian*
+  rm archive.zip
 
   # restart the services again
   service mysql restart
@@ -326,25 +330,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   apt-get install -y nginx php5 php5-fpm php5-cgi php5-cli php5-common php5-curl php5-dbg php5-dev php5-enchant php5-gd \
                      php5-gmp php5-imap php5-ldap php5-mcrypt php5-mysqlnd php5-odbc php5-pgsql \
                      php5-pspell php5-readline php5-recode php5-sqlite php5-sybase php5-tidy php5-xmlrpc php5-xsl php-pear \
-                     php5-geoip php5-mongo php5-imagick php-fpdf php5-apcu
-  # install client libraries
-  if [ "$appserver_type" = '1' ]; then
-    # app_server_type is nginx/php5-fpm/mariadb
-    apt-get install -y libmariadbclient-dev
-  else
-    if [ "$app_server_type" = '2' ]; then
-      # app_server_type is dedicated nginx/php5-fpm
-      if [ "$client_libraries_option" = '1' ]; then
-        apt-get install -y libmariadbclient-dev
-      fi
-      if [ "$client_libraries_option" = '2' ]; then
-        apt-get install -y libpq-dev
-      fi
-      if [ "$client_libraries_option" = '3' ]; then
-        apt-get install -y libpq-dev libmariadbclient-dev
-      fi
-    fi
-  fi
+                     php5-geoip php5-mongo php5-imagick php-fpdf php5-apcu libmariadbclient-dev libpq-dev
 
   # configuring nginx
   mkdir -p /etc/nginx/sites-enabled
