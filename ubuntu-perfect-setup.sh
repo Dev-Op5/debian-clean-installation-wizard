@@ -535,7 +535,7 @@ echo "" >> $install_summarize
 echo "*----------------------*" >> $install_summarize
 echo "* This Server SSH Keys *" >> $install_summarize
 echo "*----------------------*" >> $install_summarize
-echo "please copy this into GitLab `deployer` (a.k.a. commit@codingaja.com) account" >> $install_summarize
+echo "please copy this into GitLab $git_user_name (a.k.a. $git_user_email) account" >> $install_summarize
 echo "" >> $install_summarize
 cat /root/.ssh/id_rsa.pub >> $install_summarize 2>&1
 echo "" >> $install_summarize

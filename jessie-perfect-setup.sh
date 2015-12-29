@@ -534,7 +534,7 @@ phantomjs_ver=$(phantomjs -v)
 grunt_ver=$( grunt --version )
 bower_ver=$( bower --version )
 gulp_ver=$( gulp --version | grep "CLI" )
-yeoman_ver=$( yeoman --version )
+yeoman_ver=$( yo --version )
 
 echo "[Web Server Information]"  >> $install_summarize
 echo "$nginx_ver" >> $install_summarize
@@ -565,7 +565,7 @@ echo "" >> $install_summarize
 echo "*----------------------*" >> $install_summarize
 echo "* This Server SSH Keys *" >> $install_summarize
 echo "*----------------------*" >> $install_summarize
-echo "please copy this into GitLab `deployer` (a.k.a. commit@codingaja.com) account" >> $install_summarize
+echo "please copy this into GitLab $git_user_name (a.k.a. $git_user_email) account" >> $install_summarize
 echo "" >> $install_summarize
 cat /root/.ssh/id_rsa.pub >> $install_summarize 2>&1
 echo "" >> $install_summarize
