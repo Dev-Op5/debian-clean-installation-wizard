@@ -211,14 +211,9 @@ apt-get install -y build-essential g++ flex bison gperf ruby perl libsqlite3-dev
                    libpng-dev libjpeg-dev python libX11-dev libxext-dev
 
 cd /tmp
-rm -R phantomjs
-git clone git://github.com/ariya/phantomjs.git phantomjs
-cd /tmp/phantomjs
-git checkout 2.0
-./build.sh
-cp /tmp/phantomjs/bin/phantomjs /usr/bin
-cd /tmp
-rm -R phantomjs
+wget http://src.mokapedia.net/linux-x64/phantomjs/ubuntu-14.04/phantomjs
+chmod +x phantomjs 
+mv phantomjs /usr/bin
 
 ################
 #install nodejs#
