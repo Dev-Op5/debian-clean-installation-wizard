@@ -291,12 +291,10 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   # configuring nginx
   mkdir -p /etc/nginx/sites-enabled
 
-  echo "" >> /etc/nginx/fastcgi_params
-  echo "" >> /etc/nginx/fastcgi_params
-  echo "fastcgi_param   SCRIPT_FILENAME     $document_root$fastcgi_script_name;" >> /etc/nginx/fastcgi_params
-  echo "fastcgi_param   PATH_INFO           $fastcgi_path_info;" >> /etc/nginx/fastcgi_params
-  echo "fastcgi_param 	PATH_TRANSLATED		$document_root$fastcgi_path_info;" >> /etc/nginx/fastcgi_params
-  
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/fastcgi_params
+  rm /etc/nginx/fastcgi_params
+  cp fastcgi_params /etc/nginx
+
   wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/nginx.conf
   mv /etc/nginx/nginx.conf /etc/nginx/nginx.original.conf
   cp nginx.conf /etc/nginx/nginx.conf
@@ -322,7 +320,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   cp www.conf /etc/php/7.0/fpm/pool.d/www.conf
 
   cd /tmp/config
-  wget http://code.mokapedia.net/server/default-server-config/raw/master/000default.conf
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/000default.conf
   cp 000default.conf /etc/nginx/sites-enabled/
 
   # create the webroot workspaces
@@ -481,48 +479,59 @@ echo "                   INSTALL SUMMARIZE                     " >> $install_sum
 echo "*********************************************************" >> $install_summarize
 echo "" >> $install_summarize
 echo "Done installing at $timestamp_flag" >> $install_summarize
-echo "Using repo http://$repo_src" >> $install_summarize
 echo "" >> $install_summarize
 
-nginx_ver=$(nginx -v)
-php_ver=$(php -v | grep "(cli)")
-mysql_ver=$(mysql --version)
-pgsql_ver=$(psql --version)
-git_ver=$(git --version)
-node_ver=$(node -v)
-npm_ver=$(npm -v)
-phantomjs_ver=$(phantomjs -v)
-grunt_ver=$( grunt --version )
-bower_ver=$( bower --version )
-gulp_ver=$( gulp --version | grep "CLI" )
-yeoman_ver=$( yeoman --version )
+if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
+  echo "[Web Server Information]"  >> $install_summarize
+  nginx_ver=$(nginx -v)
+  echo "$nginx_ver" >> $install_summarize
+  php_ver=$(php -v | grep "(cli)")
+  echo "$php_ver" >> $install_summarize
+  echo "" >> $install_summarize
+fi 
 
-echo "[Web Server Information]"  >> $install_summarize
-echo "$nginx_ver" >> $install_summarize
-echo "$php_ver" >> $install_summarize
-echo "" >> $install_summarize
-echo "[MariaDB Information]" >> $install_summarize
-echo "$mysql_ver" >> $install_summarize
-echo "MariaDB root Password : $mariadb_root_password" >> $install_summarize
-echo "" >> $install_summarize
-echo "[PostgreSQL Information]" >> $install_summarize
-echo "$pgsql_ver" >> $install_summarize
-echo "PostgreSQL postgres Password : $postgresql_root_password" >> $install_summarize
-echo "PostgreSQL odoo Password : $postgresql_odoo_password" >> $install_summarize
-echo "" >> $install_summarize
+if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
+  echo "[MariaDB Information]" >> $install_summarize
+  mysql_ver=$(mysql --version)
+  echo "$mysql_ver" >> $install_summarize
+  echo "MariaDB root Password : $mariadb_root_password" >> $install_summarize
+  echo "" >> $install_summarize
+fi 
+
+if [ "$appserver_type" = '4' ]  || [ "$appserver_type" = '5' ]; then
+  echo "[PostgreSQL Information]" >> $install_summarize
+  pgsql_ver=$(psql --version)
+  echo "$pgsql_ver" >> $install_summarize
+  echo "PostgreSQL postgres Password : $postgresql_root_password" >> $install_summarize
+  if [ "$appserver_type" = '5' ]; then
+    echo "PostgreSQL odoo Password : $postgresql_odoo_password" >> $install_summarize
+    echo "" >> $install_summarize
+  fi
+fi
+
 echo "[Git Information]"  >> $install_summarize
+git_ver=$(git --version)
 echo "$git_ver" >> $install_summarize
 git config --list >> $install_summarize 2>&1
 echo "" >> $install_summarize
+
 echo "[Web Dev Tools]"  >> $install_summarize
+node_ver=$(node -v)
 echo "NodeJS    : $node_ver" >> $install_summarize
+npm_ver=$(npm -v)
 echo "NPM       : $npm_ver" >> $install_summarize
+phantomjs_ver=$(phantomjs -v)
 echo "PhantomJS : $phantomjs_ver" >> $install_summarize
+grunt_ver=$( grunt --version )
 echo "Grunt     : $grunt_ver" >> $install_summarize
+bower_ver=$( bower --version )
 echo "Bower     : $bower_ver" >> $install_summarize
+gulp_ver=$( gulp --version | grep "CLI" )
 echo "Gulp      : $gulp_ver" >> $install_summarize
+yeoman_ver=$( yo --version )
 echo "Yeoman    : $yeoman_ver" >> $install_summarize
 echo "" >> $install_summarize
+
 echo "*----------------------*" >> $install_summarize
 echo "* This Server SSH Keys *" >> $install_summarize
 echo "*----------------------*" >> $install_summarize
