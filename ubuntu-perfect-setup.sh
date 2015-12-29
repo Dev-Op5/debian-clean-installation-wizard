@@ -302,27 +302,22 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   echo "fastcgi_param   PATH_INFO           $fastcgi_path_info;" >> /etc/nginx/fastcgi_params
   echo "fastcgi_param 	PATH_TRANSLATED		$document_root$fastcgi_path_info;" >> /etc/nginx/fastcgi_params
   
-  ###
-  # WARNING : INCOMPLETE SCRIPTS
-  # This default-server-config must be rewrite in order to make sure the PHP7 Config is running well.
-  ###
-
-  wget http://code.mokapedia.net/server/default-server-config/raw/master/nginx.conf
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/nginx.conf
   mv /etc/nginx/nginx.conf /etc/nginx/nginx.original.conf
   cp nginx.conf /etc/nginx/nginx.conf
 
-  wget http://code.mokapedia.net/server/default-server-config/raw/master/security.conf
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/security.conf
   cp security.conf /etc/nginx/security.conf
 
   # configuring php7-fpm
   mkdir -p /var/lib/php7/sessions
-  mkdir -p /var/lib/php7/cookies
   chmod -R 777 /var/lib/php7/sessions
-  chmod -R 777 /var/lib/php7/cookies
-  cd /tmp/config
+  mkdir -p /var/log/php7
+  chmod -R 777 /var/log/php7
 
-  wget http://code.mokapedia.net/server/default-server-config/raw/master/php.ini
-  wget http://code.mokapedia.net/server/default-server-config/raw/master/www.conf
+  cd /tmp/config
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/php.ini
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/www.conf
 
   mv /etc/php/7.0/fpm/php.ini /etc/php/7.0/fpm/php.ini-original
   mv /etc/php/7.0/cli/php.ini /etc/php/7.0/cli/php.ini-original
@@ -335,12 +330,12 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   wget http://code.mokapedia.net/server/default-server-config/raw/master/000default.conf
   cp 000default.conf /etc/nginx/sites-enabled/
 
-  # restart the services
-  service nginx restart && service php7.0-fpm restart
-
   # create the webroot workspaces
   mkdir -p /var/www
   chown -R www-data:www-data /var/www
+
+  # restart the services
+  service nginx restart && service php7.0-fpm restart
 
   ########################
   # install composer.phar#
