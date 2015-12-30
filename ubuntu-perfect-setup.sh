@@ -35,13 +35,21 @@ echo "********************************************************"
 echo ""
 echo ""
 echo "What kind of application server role do you want to apply?"
-echo "1. Perfect Server for Nginx, PHP5-FPM, and MariaDB"
-echo "2. Dedicated Nginx & PHP5-FPM Web Server only"
+echo "1. Perfect Server for Nginx, PHP-FPM, and MariaDB"
+echo "2. Dedicated Nginx & PHP-FPM Web Server only"
 echo "3. Dedicated MariaDB Database Server only"
 echo "4. Dedicated PostgreSQL Database Server only"
 echo "5. Odoo v9 Perfect Server"
 read -p "Your Choice (1/2/3/4/5) : " appserver_type
 
+if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
+  echo ""
+  echo "Which PHP version you prefer?"
+  echo "1. PHP 7.x (CLI + FPM)"
+  echo "2. Legacy PHP 5.x (CLI + FPM)"
+  echo ""
+  read -p "Your Choice (1/2) : " php_version
+fi
 if [ "$appserver_type" = '4' ]; then
   echo ""
   echo "Which PostgreSQL version you prefer?"
@@ -279,56 +287,116 @@ fi
 ##########################################
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
 
-  add-apt-repository -y ppa:ondrej/php-7.0
-  apt-get update
+  if [ $php_version = '1' ] ; then
 
-  apt-get install -y nginx php7.0 php7.0-fpm php7.0-cgi php7.0-cli php7.0-common php7.0-curl php7.0-gd \
-                     php7.0-imap php7.0-intl php7.0-sqlite3 php7.0-pspell php7.0-recode php7.0-snmp \
-                     php7.0-json php7.0-modules-source php7.0-opcache php7.0-mcrypt php7.0-readline \
-                     php7.0-bz2 php7.0-dbg php7.0-dev php7.0-mysql php7.0-pgsql libphp7.0-embed \
-                     libmariadbclient-dev libpq-dev
+    add-apt-repository -y ppa:ondrej/php-7.0
+    apt-get update
 
-  # configuring nginx
-  mkdir -p /etc/nginx/sites-enabled
+    apt-get install -y nginx php7.0 php7.0-fpm php7.0-cgi php7.0-cli php7.0-common php7.0-curl php7.0-gd \
+                       php7.0-imap php7.0-intl php7.0-sqlite3 php7.0-pspell php7.0-recode php7.0-snmp \
+                       php7.0-json php7.0-modules-source php7.0-opcache php7.0-mcrypt php7.0-readline \
+                       php7.0-bz2 php7.0-dbg php7.0-dev php7.0-mysql php7.0-pgsql libphp7.0-embed \
+                       libmariadbclient-dev libpq-dev
 
-  wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/fastcgi_params
-  rm /etc/nginx/fastcgi_params
-  cp fastcgi_params /etc/nginx
+    # configuring nginx
+    mkdir -p /etc/nginx/sites-enabled
 
-  wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/nginx.conf
-  mv /etc/nginx/nginx.conf /etc/nginx/nginx.original.conf
-  cp nginx.conf /etc/nginx/nginx.conf
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/fastcgi_params
+    rm /etc/nginx/fastcgi_params
+    cp fastcgi_params /etc/nginx
 
-  wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/security.conf
-  cp security.conf /etc/nginx/security.conf
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/nginx.conf
+    mv /etc/nginx/nginx.conf /etc/nginx/nginx.original.conf
+    cp nginx.conf /etc/nginx/nginx.conf
 
-  # configuring php7-fpm
-  mkdir -p /var/lib/php7/sessions
-  chmod -R 777 /var/lib/php7/sessions
-  mkdir -p /var/log/php7
-  chmod -R 777 /var/log/php7
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/security.conf
+    cp security.conf /etc/nginx/security.conf
 
-  cd /tmp/config
-  wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/php.ini
-  wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/www.conf
+    # configuring php7-fpm
+    mkdir -p /var/lib/php7/sessions
+    chmod -R 777 /var/lib/php7/sessions
+    mkdir -p /var/log/php7
+    chmod -R 777 /var/log/php7
 
-  mv /etc/php/7.0/fpm/php.ini /etc/php/7.0/fpm/php.ini-original
-  mv /etc/php/7.0/cli/php.ini /etc/php/7.0/cli/php.ini-original
-  cp php.ini /etc/php/7.0/fpm/php.ini
-  cp php.ini /etc/php/7.0/cli/php.ini
-  mv /etc/php/7.0/fpm/pool.d/www.conf /etc/php/7.0/fpm/pool.d/www.conf-original
-  cp www.conf /etc/php/7.0/fpm/pool.d/www.conf
+    cd /tmp/config
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/php.ini
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/www.conf
 
-  cd /tmp/config
-  wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/000default.conf
-  cp 000default.conf /etc/nginx/sites-enabled/
+    mv /etc/php/7.0/fpm/php.ini /etc/php/7.0/fpm/php.ini-original
+    mv /etc/php/7.0/cli/php.ini /etc/php/7.0/cli/php.ini-original
+    cp php.ini /etc/php/7.0/fpm/php.ini
+    cp php.ini /etc/php/7.0/cli/php.ini
+    mv /etc/php/7.0/fpm/pool.d/www.conf /etc/php/7.0/fpm/pool.d/www.conf-original
+    cp www.conf /etc/php/7.0/fpm/pool.d/www.conf
 
-  # create the webroot workspaces
-  mkdir -p /var/www
-  chown -R www-data:www-data /var/www
+    cd /tmp/config
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/000default.conf
+    cp 000default.conf /etc/nginx/sites-enabled/
 
-  # restart the services
-  service nginx restart && service php7.0-fpm restart
+    # create the webroot workspaces
+    mkdir -p /var/www
+    chown -R www-data:www-data /var/www
+
+    # restart the services
+    service nginx restart && service php7.0-fpm restart
+
+  fi
+
+  if [ $php_version = '2' ] ; then
+
+    add-apt-repository -y ppa:ondrej/php5-5.6
+    apt-get update
+
+    apt-get install -y nginx php5 php5-fpm php5-cli php5-cgi php5-common php5-curl php5-gd \
+                       php5-imap php5-intl php5-sqlite php5-pspell php5-recode php5-snmp php5-tidy \
+                       php5-json php5-mcrypt php5-readline php5-dbg php5-dev php5-mysql php5-pgsql \ 
+                       php5-xmlrpc libphp5-embed php5-oauth php5-ps php5-geoip php5-apcu php5-redis \ 
+                       php5-imagick php5-mysqlnd php5-memcache php5-memcached php5-odbc php5-gearman \
+                       php5-mongo php5-enchant php5-xsl php5-xcache libmariadbclient-dev libpq-dev
+
+    # configuring nginx
+    mkdir -p /etc/nginx/sites-enabled
+
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/fastcgi_params
+    rm /etc/nginx/fastcgi_params
+    cp fastcgi_params /etc/nginx
+
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/nginx.conf
+    mv /etc/nginx/nginx.conf /etc/nginx/nginx.original.conf
+    cp nginx.conf /etc/nginx/nginx.conf
+
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/security.conf
+    cp security.conf /etc/nginx/security.conf
+
+    # configuring php5-fpm
+    mkdir -p /var/lib/php5/sessions
+    chmod -R 777 /var/lib/php5/sessions
+    mkdir -p /var/log/php5
+    chmod -R 777 /var/log/php5
+
+    cd /tmp/config
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/php.ini
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/www.conf
+
+    mv /etc/php5/fpm/php.ini /etc/php5/fpm/php.ini-original
+    mv /etc/php5/cli/php.ini /etc/php5/cli/php.ini-original
+    cp php.ini /etc/php5/fpm/php.ini
+    cp php.ini /etc/php5/cli/php.ini
+    mv /etc/php5/fpm/pool.d/www.conf /etc/php5/fpm/pool.d/www.conf-original
+    cp www.conf /etc/php5/fpm/pool.d/www.conf
+
+    cd /tmp/config
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/000default.conf
+    cp 000default.conf /etc/nginx/sites-enabled/
+
+    # create the webroot workspaces
+    mkdir -p /var/www
+    chown -R www-data:www-data /var/www
+
+    # restart the services
+    service nginx restart && service php5-fpm restart
+
+  fi
 
   ########################
   # install composer.phar#
@@ -401,8 +469,9 @@ if [ "$appserver_type" = '5' ]; then
   echo "INSTALLING odoo v9........."
   echo ""
   echo "--------------------------------"
-  adduser --system --quiet --shell=/bin/bash --home=/opt/odoo --gecos 'odoo' --group odoo
+  postgresql_version='3'
   postgresql_root_password=$db_root_password
+  adduser --system --quiet --shell=/bin/bash --home=/opt/odoo --gecos 'odoo' --group odoo
   echo "PostgreSQL 9.4"
   apt-get install -y postgresql-9.4 postgresql-client-9.4 postgresql-contrib-9.4 libpq-dev
   echo "Create PostgreSQL User"
