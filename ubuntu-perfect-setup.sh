@@ -349,10 +349,10 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
 
     apt-get install -y nginx php5 php5-fpm php5-cli php5-cgi php5-common php5-curl php5-gd \
                        php5-imap php5-intl php5-sqlite php5-pspell php5-recode php5-snmp php5-tidy \
-                       php5-json php5-mcrypt php5-readline php5-dbg php5-dev php5-mysql php5-pgsql \ 
-                       libphp5-embed php5-oauth php5-ps php5-geoip php5-apcu php5-redis \ 
-                       php5-mysqlnd php5-memcache php5-memcached php5-odbc php5-gearman \
-                       php5-mongo php5-enchant php5-xsl php5-xcache libmariadbclient-dev libpq-dev
+                       php5-json php5-mcrypt php5-readline php5-dbg php5-dev php5-mysqlnd php5-pgsql \
+                       php5-xmlrpc libphp5-embed php5-oauth php5-ps php5-geoip php5-apcu php5-redis \
+                       php5-imagick php5-memcache php5-memcached php5-odbc php5-gearman \
+                       php5-mongo php5-enchant php5-xsl libmariadbclient-dev libpq-dev
 
     # configuring nginx
     mkdir -p /etc/nginx/sites-enabled
