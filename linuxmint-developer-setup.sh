@@ -240,14 +240,9 @@ npm install -g grunt-cli bower gulp less less-plugin-clean-css yo karma
 ###################
 echo "Install PhantomJS"
 cd /tmp
-rm -R phantomjs
-git clone git://github.com/ariya/phantomjs.git phantomjs
-cd /tmp/phantomjs
-git checkout 2.0
-./build.sh
-cp /tmp/phantomjs/bin/phantomjs /usr/bin
-cd /tmp
-rm -R phantomjs
+wget http://src.mokapedia.net/linux-x64/phantomjs/ubuntu-14.04/phantomjs
+mv phantomjs /usr/bin 
+
 
 ##################
 # install java-8 #
@@ -470,6 +465,7 @@ wget http://src.mokapedia.net/linux-x64/teamviewer_i386.deb
 wget http://src.mokapedia.net/linux-x64/mysql-workbench-community-6.3.4-1ubu1404-amd64.deb
 wget http://src.mokapedia.net/linux-x64/dragondisk_1.0.5-0ubuntu_amd64.deb
 wget http://src.mokapedia.net/linux-x64/dgtools_1.3.1-0ubuntu_amd64.deb
+wget http://src.mokapedia.net/linux-x64/sublime-text_build-3083_amd64.deb
 
 dpkg -i *.deb 
 apt-get install -f -y
@@ -481,6 +477,13 @@ wget http://src.mokapedia.net/linux-x64/pomodairo-1.9.air
 airinstall -silent -eulaAccepted pomodairo-1.9.air
 http://src.mokapedia.net/linux-x64/Balsamiq%20Mockups/MockupsForDesktop.air
 airinstall -silent -eulaAccepted MockupsForDesktop.air
+
+cd /tmp 
+wget http://src.mokapedia.net/linux-x64/PhpStorm-10.0.3.tar.gz 
+mv PhpStorm-10.0.3.tar.gz /opt
+cd /opt 
+tar zxvf PhpStorm-10.0.3.tar.gz
+rm PhpStorm-10.0.3.tar.gz
 
 ####################################
 # GNU Execute                      #
@@ -500,7 +503,7 @@ sudo cp /tmp/execute /usr/bin
 echo "Installing nice-to-have packages"
 apt-get install -y guake shutter libgoo-canvas-perl dconf-editor arandr gparted leafpad virtualbox-5.0 google-chrome-stable \
                    chromium-browser p11-kit-modules:i386 wine winetricks telegram geary cheese qbittorrent comic gpicview \
-                   pdftk dia remmina* figlet toilet inkscape
+                   pdftk dia remmina* figlet toilet inkscape 
 
 ####################################
 # Config the command-line shortcut #
