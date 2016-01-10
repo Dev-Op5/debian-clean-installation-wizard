@@ -475,7 +475,7 @@ mkdir -p /tmp/air
 cd /tmp/air 
 wget http://src.mokapedia.net/linux-x64/pomodairo-1.9.air
 airinstall -silent -eulaAccepted pomodairo-1.9.air
-http://src.mokapedia.net/linux-x64/Balsamiq%20Mockups/MockupsForDesktop.air
+wget http://src.mokapedia.net/linux-x64/Balsamiq%20Mockups/MockupsForDesktop.air
 airinstall -silent -eulaAccepted MockupsForDesktop.air
 
 cd /tmp 
