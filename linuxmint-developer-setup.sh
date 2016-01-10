@@ -332,18 +332,45 @@ echo "Configuring PHP5-FPM..."
   mv /etc/php5/fpm/pool.d/www.conf /etc/php5/fpm/pool.d/www.conf-original
   cp www.conf /etc/php5/fpm/pool.d/www.conf
 
+echo "Install PHP 7.0"
+  add-apt-repository -y ppa:ondrej/php-7.0
+  apt-get update
+
+  apt-get install -y php7.0 php7.0-fpm php7.0-cgi php7.0-cli php7.0-common php7.0-curl php7.0-gd \
+                     php7.0-imap php7.0-intl php7.0-sqlite3 php7.0-pspell php7.0-recode php7.0-snmp \
+                     php7.0-json php7.0-modules-source php7.0-opcache php7.0-mcrypt php7.0-readline \
+                     php7.0-bz2 php7.0-dbg php7.0-dev php7.0-mysql php7.0-pgsql libphp7.0-embed
+
+  # configuring php7-fpm
+  mkdir -p /var/lib/php7/sessions
+  chmod -R 777 /var/lib/php7/sessions
+  mkdir -p /var/log/php7
+  chmod -R 777 /var/log/php7
+
+  cd /tmp/config
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/php.ini
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/www.conf
+
+  mv /etc/php/7.0/fpm/php.ini /etc/php/7.0/fpm/php.ini-original
+  mv /etc/php/7.0/cli/php.ini /etc/php/7.0/cli/php.ini-original
+  cp php.ini /etc/php/7.0/fpm/php.ini
+  cp php.ini /etc/php/7.0/cli/php.ini
+  mv /etc/php/7.0/fpm/pool.d/www.conf /etc/php/7.0/fpm/pool.d/www.conf-original
+  cp www.conf /etc/php/7.0/fpm/pool.d/www.conf
+
 echo "Configuring the website workspaces..."
 
-cd /tmp/config
-wget http://code.mokapedia.net/server/default-server-config/raw/master/000default.conf
-cp 000default.conf /etc/nginx/sites-enabled/
+  cd /tmp/config
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/000default.conf
+  cp 000default.conf /etc/nginx/sites-enabled/
 
-# restart the services
-service nginx restart && service php5-fpm restart
+  # create the webroot workspaces
+  mkdir -p /var/www
+  chown -R www-data:www-data /var/www
 
-# create the webroot workspaces
-mkdir -p /var/www
-chown -R www-data:www-data /var/www
+  # restart the services
+  service nginx restart && service php5-fpm restart
+
 
 #########################
 # install composer.phar #
