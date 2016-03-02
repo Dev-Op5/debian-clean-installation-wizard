@@ -289,7 +289,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
 
   if [ $php_version = '1' ] ; then
 
-    add-apt-repository -y ppa:ondrej/php-7.0
+    add-apt-repository -y ppa:ondrej/php
     apt-get update
 
     apt-get install -y nginx php7.0 php7.0-fpm php7.0-cgi php7.0-cli php7.0-common php7.0-curl php7.0-gd \

@@ -330,7 +330,7 @@ echo "Configuring PHP5-FPM..."
   cp www.conf /etc/php5/fpm/pool.d/www.conf
 
 echo "Install PHP 7.0"
-  add-apt-repository -y ppa:ondrej/php-7.0
+  add-apt-repository -y ppa:ondrej/php
   apt-get update
 
   apt-get install -y php7.0 php7.0-fpm php7.0-cgi php7.0-cli php7.0-common php7.0-curl php7.0-gd \
