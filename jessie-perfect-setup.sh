@@ -42,6 +42,23 @@ echo "4. Dedicated PostgreSQL Database Server only"
 echo "5. Odoo v9 Perfect Server"
 read -p "Your Choice (1/2/3/4/5) : " appserver_type
 
+if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ]; then
+  echo ""
+  echo "Which PHP version you prefer?"
+  echo "1. PHP 7.x (CLI + FPM)"
+  echo "2. Legacy PHP 5.x (CLI + FPM)"
+  echo ""
+  read -p "Your Choice (1/2) : " php_version
+fi
+if [ "$appserver_type" = '5' ]; then
+  echo ""
+  echo "Which PHP version you prefer?"
+  echo "0. None! I don't need PHP"
+  echo "1. PHP 7.x (CLI + FPM)"
+  echo "2. Legacy PHP 5.x (CLI + FPM)"
+  echo ""
+  read -p "Your Choice (0/1/2) : " php_version
+fi
 if [ "$appserver_type" = '4' ]; then
   echo ""
   echo "Which PostgreSQL version you prefer?"
@@ -65,13 +82,6 @@ if [ "$appserver_type" != '2' ]; then
   echo ""
   read -p "Enter the default database root password: " db_root_password
 fi
-
-echo "Which Debian Repository do you prefer?"
-echo "1. kambing.ui.ac.id"
-echo "2. mirrors.linode.com"
-echo ""
-read -p "Your choice? (1/2) : " which_repo
-echo ""
 
 echo ""
 read -p "Git Identifier Username   : " git_user_name
@@ -99,23 +109,13 @@ mv $repo /etc/apt/sources.list.old && touch $repo
 
 repo=/etc/apt/sources.list
 
-if [ "$which_repo" = '2' ]; then
-  echo "deb http://mirrors.linode.com/debian/ jessie main non-free contrib" >> $repo
-  echo "deb-src http://mirrors.linode.com/debian/ jessie main non-free contrib" >> $repo
-  echo "deb http://mirrors.linode.com/debian/ jessie-updates main non-free contrib" >> $repo
-  echo "deb-src http://mirrors.linode.com/debian/ jessie-updates main non-free contrib" >> $repo
-  echo "deb http://mirrors.linode.com/debian-security/ jessie/updates main non-free contrib" >> $repo
-  echo "deb-src http://mirrors.linode.com/debian-security/ jessie/updates main non-free contrib" >> $repo
-fi
+echo "deb http://kambing.ui.ac.id/debian/ jessie main non-free contrib" >> $repo
+echo "deb-src http://kambing.ui.ac.id/debian/ jessie main non-free contrib" >> $repo
+echo "deb http://kambing.ui.ac.id/debian/ jessie-updates main non-free contrib" >> $repo
+echo "deb-src http://kambing.ui.ac.id/debian/ jessie-updates main non-free contrib" >> $repo
+echo "deb http://kambing.ui.ac.id/debian-security/ jessie/updates main non-free contrib" >> $repo
+echo "deb-src http://kambing.ui.ac.id/debian-security/ jessie/updates main non-free contrib" >> $repo
 
-if [ "$which_repo" = '1' ]; then
-  echo "deb http://kambing.ui.ac.id/debian/ jessie main non-free contrib" >> $repo
-  echo "deb-src http://kambing.ui.ac.id/debian/ jessie main non-free contrib" >> $repo
-  echo "deb http://kambing.ui.ac.id/debian/ jessie-updates main non-free contrib" >> $repo
-  echo "deb-src http://kambing.ui.ac.id/debian/ jessie-updates main non-free contrib" >> $repo
-  echo "deb http://kambing.ui.ac.id/debian-security/ jessie/updates main non-free contrib" >> $repo
-  echo "deb-src http://kambing.ui.ac.id/debian-security/ jessie/updates main non-free contrib" >> $repo
-fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ]; then
   echo "" >> $repo
@@ -124,42 +124,21 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ]; then
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
-  if [ "$which_repo" = '2' ]; then
-    echo "" >> $repo
-    echo "deb http://sgp1.mirrors.digitalocean.com/mariadb/repo/10.1/debian jessie main" >> $repo
-    echo "deb-src http://sgp1.mirrors.digitalocean.com/mariadb/repo/10.1/debian jessie main" >> $repo
-  fi
-  if [ "$which_repo" = '1' ]; then
-    echo "" >> $repo
-    echo "deb http://mariadb.biz.net.id/repo/10.1/debian jessie main" >> $repo
-    echo "deb-src http://mariadb.biz.net.id/repo/10.1/debian jessie main" >> $repo
-  fi
+  echo "" >> $repo
+  echo "deb http://mariadb.biz.net.id/repo/10.1/debian jessie main" >> $repo
+  echo "deb-src http://mariadb.biz.net.id/repo/10.1/debian jessie main" >> $repo
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2'  ] || [ "$appserver_type" = '5' ]; then
-  if [ "$which_repo" = '2' ]; then
-    echo "" >> $repo
-    echo "deb http://mirrors.teraren.com/dotdeb jessie all" >> $repo
-    echo "deb-src http://mirrors.teraren.com/dotdeb jessie all" >> $repo
-  fi
-  if [ "$which_repo" = '1' ]; then
-    echo "" >> $repo
-    echo "deb http://kambing.ui.ac.id/dotdeb jessie all" >> $repo
-    echo "deb-src http://kambing.ui.ac.id/dotdeb jessie all" >> $repo
-  fi
+  echo "" >> $repo
+  echo "deb http://kambing.ui.ac.id/dotdeb jessie all" >> $repo
+  echo "deb-src http://kambing.ui.ac.id/dotdeb jessie all" >> $repo
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
-  if [ "$which_repo" = '1' ]; then
-    echo "" >> $repo
-    echo "deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main" >> $repo
-    echo "deb http://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main" >> $repo
-  fi
-  if [ "$which_repo" = '1' ]; then
-    echo "" >> $repo
-    echo "deb http://kambing.ui.ac.id/postgresql/repos/apt/ jessie-pgdg main" >> $repo
-    echo "deb-src http://kambing.ui.ac.id/postgresql/repos/apt/ jessie-pgdg main" >> $repo
-  fi
+  echo "" >> $repo
+  echo "deb http://kambing.ui.ac.id/postgresql/repos/apt/ jessie-pgdg main" >> $repo
+  echo "deb-src http://kambing.ui.ac.id/postgresql/repos/apt/ jessie-pgdg main" >> $repo
 fi
 
 ##############
@@ -252,8 +231,8 @@ cd /tmp
 rm -R phantomjs
 git clone git://github.com/ariya/phantomjs.git phantomjs
 cd /tmp/phantomjs
-git checkout 2.0
-./build.sh
+git checkout 2.1
+python build.py
 cp /tmp/phantomjs/bin/phantomjs /usr/bin
 cd /tmp
 rm -R phantomjs
@@ -269,8 +248,7 @@ apt-get install -y nodejs
 ############################
 
 npm install -g npm@latest
-npm install -g grunt-cli bower gulp less less-plugin-clean-css
-npm install -g yo karma
+npm install -g grunt-cli bower gulp less less-plugin-clean-css generator-feathers
 
 ##################
 # install java-8 #
@@ -319,57 +297,115 @@ fi
 
 
 ##########################################
-#install (and configure) nginx & php5-fpm#
+#install (and configure) nginx & php-fpm#
 ##########################################
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
 
-  apt-get install -y nginx php5 php5-fpm php5-cgi php5-cli php5-common php5-curl php5-dbg php5-dev php5-enchant php5-gd \
-                     php5-gmp php5-imap php5-ldap php5-mcrypt php5-mysqlnd php5-odbc php5-pgsql \
-                     php5-pspell php5-readline php5-recode php5-sqlite php5-sybase php5-tidy php5-xmlrpc php5-xsl php-pear \
-                     php5-geoip php5-mongo php5-imagick php-fpdf php5-apcu libmariadbclient-dev libpq-dev
+  if [ $php_version = '1' ] ; then
+    apt-get install -y nginx php7.0 php7.0-cgi php7.0-cli php7.0-fpm php7.0-common php7.0-bz2 \
+                       php7.0-curl php7.0-dev php7.0-enchant php7.0-gd php7.0-geoip php7.0-gmp \
+                       php7.0-igbinary php7.0-imagick php7.0-imap php7.0-intl php7.0-json \
+                       php7.0-ldap php7.0-mcrypt php7.0-memcached php7.0-mongodb php7.0-msgpack \
+                       php7.0-mysql php7.0-odbc php7.0-opcache php7.0-pgsql php7.0-pspell \
+                       php7.0-readline php7.0-recode php7.0-redis php7.0-snmp php7.0-sqlite3 \
+                       php7.0-sybase php7.0-tidy php7.0-xmlrpc php7.0-xsl php7.0-dbg \
+                       libphp7.0-embed libmariadbclient-dev libpq-dev snmp-mibs-downloader
 
-  # configuring nginx
-  mkdir -p /etc/nginx/sites-enabled
-  mkdir -p /tmp/config/
-  cd /tmp/config
-  wget http://code.mokapedia.net/server/default-server-config/raw/master/fastcgi_params
-  mv /etc/nginx/fastcgi_params /etc/nginx/original.fastcgi_params
-  cp fastcgi_params /etc/nginx/fastcgi_params
+    # configuring nginx
+    mkdir -p /etc/nginx/sites-enabled
 
-  wget http://code.mokapedia.net/server/default-server-config/raw/master/nginx.conf
-  mv /etc/nginx/nginx.conf /etc/nginx/nginx.original.conf
-  cp nginx.conf /etc/nginx/nginx.conf
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/fastcgi_params
+    rm /etc/nginx/fastcgi_params
+    cp fastcgi_params /etc/nginx
 
-  wget http://code.mokapedia.net/server/default-server-config/raw/master/security.conf
-  cp security.conf /etc/nginx/security.conf
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/nginx.conf
+    mv /etc/nginx/nginx.conf /etc/nginx/nginx.original.conf
+    cp nginx.conf /etc/nginx/nginx.conf
 
-  # configuring php5-fpm
-  mkdir -p /var/lib/php5/sessions
-  mkdir -p /var/lib/php5/cookies
-  chmod -R 777 /var/lib/php5/sessions
-  chmod -R 777 /var/lib/php5/cookies
-  cd /tmp/config
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/security.conf
+    cp security.conf /etc/nginx/security.conf
 
-  wget http://code.mokapedia.net/server/default-server-config/raw/master/php.ini
-  wget http://code.mokapedia.net/server/default-server-config/raw/master/www.conf
+    # configuring php7-fpm
+    mkdir -p /var/lib/php7/sessions
+    chmod -R 777 /var/lib/php7/sessions
+    mkdir -p /var/log/php7
+    chmod -R 777 /var/log/php7
 
-  mv /etc/php5/fpm/php.ini /etc/php5/fpm/php.ini-original
-  mv /etc/php5/cli/php.ini /etc/php5/cli/php.ini-original
-  cp php.ini /etc/php5/fpm/php.ini
-  cp php.ini /etc/php5/cli/php.ini
-  mv /etc/php5/fpm/pool.d/www.conf /etc/php5/fpm/pool.d/www.conf-original
-  cp www.conf /etc/php5/fpm/pool.d/www.conf
+    cd /tmp/config
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/php.ini
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/www.conf
 
-  cd /tmp/config
-  wget http://code.mokapedia.net/server/default-server-config/raw/master/000default.conf
-  cp 000default.conf /etc/nginx/sites-enabled/
+    mv /etc/php/7.0/fpm/php.ini /etc/php/7.0/fpm/php.ini-original
+    mv /etc/php/7.0/cli/php.ini /etc/php/7.0/cli/php.ini-original
+    cp php.ini /etc/php/7.0/fpm/php.ini
+    cp php.ini /etc/php/7.0/cli/php.ini
+    mv /etc/php/7.0/fpm/pool.d/www.conf /etc/php/7.0/fpm/pool.d/www.conf-original
+    cp www.conf /etc/php/7.0/fpm/pool.d/www.conf
 
-  # restart the services
-  service nginx restart && service php5-fpm restart
+    cd /tmp/config
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/php7/000default.conf
+    cp 000default.conf /etc/nginx/sites-enabled/
+
+    # create the webroot workspaces
+    mkdir -p /var/www
+    chown -R www-data:www-data /var/www
+
+    # restart the services
+    service nginx restart && service php7.0-fpm restart
+  fi
+
+  if [ $php_version = '2' ] ; then
+
+    apt-get install -y nginx php5 php5-fpm php5-cgi php5-cli php5-common php5-curl php5-dbg php5-dev php5-enchant php5-gd \
+                       php5-gmp php5-imap php5-ldap php5-mcrypt php5-mysqlnd php5-odbc php5-pgsql \
+                       php5-pspell php5-readline php5-recode php5-sqlite php5-sybase php5-tidy php5-xmlrpc php5-xsl php-pear \
+                       php5-geoip php5-mongo php5-imagick php-fpdf php5-apcu libmariadbclient-dev libpq-dev
+
+    # configuring nginx
+    mkdir -p /etc/nginx/sites-enabled
+    mkdir -p /tmp/config/
+    cd /tmp/config
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/fastcgi_params
+    mv /etc/nginx/fastcgi_params /etc/nginx/original.fastcgi_params
+    cp fastcgi_params /etc/nginx/fastcgi_params
+
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/nginx.conf
+    mv /etc/nginx/nginx.conf /etc/nginx/nginx.original.conf
+    cp nginx.conf /etc/nginx/nginx.conf
+
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/security.conf
+    cp security.conf /etc/nginx/security.conf
+
+    # configuring php5-fpm
+    mkdir -p /var/lib/php5/sessions
+    mkdir -p /var/lib/php5/cookies
+    chmod -R 777 /var/lib/php5/sessions
+    chmod -R 777 /var/lib/php5/cookies
+    cd /tmp/config
+
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/php.ini
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/www.conf
+
+    mv /etc/php5/fpm/php.ini /etc/php5/fpm/php.ini-original
+    mv /etc/php5/cli/php.ini /etc/php5/cli/php.ini-original
+    cp php.ini /etc/php5/fpm/php.ini
+    cp php.ini /etc/php5/cli/php.ini
+    mv /etc/php5/fpm/pool.d/www.conf /etc/php5/fpm/pool.d/www.conf-original
+    cp www.conf /etc/php5/fpm/pool.d/www.conf
+
+    cd /tmp/config
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/000default.conf
+    cp 000default.conf /etc/nginx/sites-enabled/
 
   # create the webroot workspaces
-  mkdir -p /var/www
-  chown -R www-data:www-data /var/www
+    mkdir -p /var/www
+    chown -R www-data:www-data /var/www
+
+    # restart the services
+    service nginx restart && service php5-fpm restart
+
+  fi
+
 
   ########################
   # install composer.phar#
@@ -398,6 +434,25 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
 fi
 
 cd /tmp
+
+#################################
+# install MongoDB               #
+#################################
+
+apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927
+apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv BC711F9BA15703C6
+echo "deb http://repo.mongodb.org/apt/debian jessie/mongodb-org/3.3 main" >> $repo
+apt-get update
+apt-get install -y mongodb-org-unstable mongodb-org-unstable-mongos mongodb-org-unstable-server \
+                   mongodb-org-unstable-shell mongodb-org-unstable-tools
+service mongod start
+
+#################################
+# install Redis                 #
+#################################
+
+apt-get install -y redis-server redis-tools
+
 
 ####################################
 # GNU Execute                      #
@@ -442,8 +497,9 @@ if [ "$appserver_type" = '5' ]; then
   echo "INSTALLING odoo v9........."
   echo ""
   echo "--------------------------------"
-  adduser --system --quiet --shell=/bin/bash --home=/opt/odoo --gecos 'odoo' --group odoo
+  postgresql_version='3'
   postgresql_root_password=$db_root_password
+  adduser --system --quiet --shell=/bin/bash --home=/opt/odoo --gecos 'odoo' --group odoo
   echo "PostgreSQL 9.4"
   apt-get install -y postgresql-9.4 postgresql-client-9.4 postgresql-contrib-9.4 libpq-dev
   echo "Create PostgreSQL User"

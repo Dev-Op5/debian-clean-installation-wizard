@@ -42,13 +42,22 @@ echo "4. Dedicated PostgreSQL Database Server only"
 echo "5. Odoo v9 Perfect Server"
 read -p "Your Choice (1/2/3/4/5) : " appserver_type
 
-if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
+if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ]; then
   echo ""
   echo "Which PHP version you prefer?"
   echo "1. PHP 7.x (CLI + FPM)"
   echo "2. Legacy PHP 5.x (CLI + FPM)"
   echo ""
   read -p "Your Choice (1/2) : " php_version
+fi
+if [ "$appserver_type" = '5' ]; then
+  echo ""
+  echo "Which PHP version you prefer?"
+  echo "0. None! I don't need PHP"
+  echo "1. PHP 7.x (CLI + FPM)"
+  echo "2. Legacy PHP 5.x (CLI + FPM)"
+  echo ""
+  read -p "Your Choice (0/1/2) : " php_version
 fi
 if [ "$appserver_type" = '4' ]; then
   echo ""
@@ -234,7 +243,7 @@ apt-get install -y nodejs
 ############################
 
 npm install -g npm@latest
-npm install -g grunt-cli bower gulp less less-plugin-clean-css yo karma
+npm install -g grunt-cli bower gulp less less-plugin-clean-css yo karma generator-feathers
 
 ##################
 # install java-8 #
@@ -283,7 +292,7 @@ fi
 
 
 ##########################################
-#install (and configure) nginx & php5-fpm#
+#install (and configure) nginx & php-fpm#
 ##########################################
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
 
