@@ -245,6 +245,8 @@ apt-get install -y nodejs
 
 npm install -g npm@latest
 npm install -g grunt-cli bower gulp less less-plugin-clean-css generator-feathers
+npm install -g graceful-fs@latest
+npm install -g yo
 
 ##################
 # install java-8 #
