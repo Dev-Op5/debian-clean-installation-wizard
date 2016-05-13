@@ -451,6 +451,21 @@ service mongod start
 
 apt-get install -y redis-server redis-tools
 
+#################################
+# install RabbitMQ              #
+#################################
+echo 'deb http://www.rabbitmq.com/debian/ testing main' | sudo tee /etc/apt/sources.list.d/rabbitmq.list
+wget -O- https://www.rabbitmq.com/rabbitmq-signing-key-public.asc | sudo apt-key add -
+apt-get update
+apt-get install -y rabbitmq-server
+
+service rabbitmq-server start
+
+#################################
+# install Golang                #
+#################################
+
+apt-get install -y golang
 
 ####################################
 # GNU Execute                      #
