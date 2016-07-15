@@ -141,6 +141,10 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_t
   echo "deb-src http://kambing.ui.ac.id/postgresql/repos/apt/ jessie-pgdg main" >> $repo
 fi
 
+echo "" >> $repo
+echo "deb http://repo.mongodb.org/apt/debian jessie/mongodb-org/3.3 main: >> $repo
+echo "deb http://www.rabbitmq.com/debian/ testing main" >> $repo
+
 ##############
 #get GPG Keys#
 ##############
@@ -155,6 +159,10 @@ apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 0xcbcb082a1bb9
 #ubuntu repository
 apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 40976EAF437D05B5
 apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 3B4FE6ACC0B21F32
+#mongodb
+apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 BC711F9BA15703C6
+#rabbitmq
+wget -O- https://www.rabbitmq.com/rabbitmq-release-signing-key.asc | sudo apt-key add -
 
 ######################
 # performance tuning #
@@ -433,39 +441,15 @@ fi
 
 cd /tmp
 
-#################################
-# install MongoDB               #
-#################################
+########################################
+# install MongoDB, RabbitMQ, Redis, Go #
+########################################
 
-apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv EA312927
-apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv BC711F9BA15703C6
-echo "deb http://repo.mongodb.org/apt/debian jessie/mongodb-org/3.3 main" >> $repo
-apt-get update
 apt-get install -y mongodb-org-unstable mongodb-org-unstable-mongos mongodb-org-unstable-server \
-                   mongodb-org-unstable-shell mongodb-org-unstable-tools
+                   mongodb-org-unstable-shell mongodb-org-unstable-tools rabbitmq-server \
+                   golang redis-server redis-tools
 service mongod start
-
-#################################
-# install Redis                 #
-#################################
-
-apt-get install -y redis-server redis-tools
-
-#################################
-# install RabbitMQ              #
-#################################
-echo 'deb http://www.rabbitmq.com/debian/ testing main' | sudo tee /etc/apt/sources.list.d/rabbitmq.list
-wget -O- https://www.rabbitmq.com/rabbitmq-signing-key-public.asc | sudo apt-key add -
-apt-get update
-apt-get install -y rabbitmq-server
-
 service rabbitmq-server start
-
-#################################
-# install Golang                #
-#################################
-
-apt-get install -y golang
 
 ####################################
 # GNU Execute                      #
