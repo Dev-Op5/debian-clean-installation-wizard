@@ -236,7 +236,7 @@ rm -R phantomjs-2.1-debian-jessie-amd64
 ################
 #install nodejs#
 ################
-curl -sL https://deb.nodesource.com/setup_5.x | sudo bash -
+curl -sL https://deb.nodesource.com/setup_6.x | sudo bash -
 apt-get install -y nodejs
 
 ############################
