@@ -518,10 +518,13 @@ if [ "$appserver_type" = '5' ]; then
 
   echo "Installing wkhtmltopdf"
   cd /tmp
-  wget http://download.gna.org/wkhtmltopdf/0.12/0.12.2.1/wkhtmltox-0.12.2.1_linux-jessie-amd64.deb
-  dpkg -i wkhtmltox-0.12.2.1_linux-jessie-amd64.deb
-  ln -s /usr/local/bin/wkhtmltopdf /usr/bin
-  ln -s /usr/local/bin/wkhtmltoimage /usr/bin
+  wget http://download.gna.org/wkhtmltopdf/0.12/0.12.3/wkhtmltox-0.12.3_linux-generic-amd64.tar.xz
+  tar -xJf wkhtmltox-0.12.3_linux-generic-amd64.tar.xz
+  cd wkhtmltox
+  rsync -avP * /usr
+  cd /tmp
+  rm -R wkhtmltox
+  rm wkhtmltox-0.12.3_linux-generic-amd64.tar.xz
 
   echo "Clone the Odoo 9.0 latest sources"
   cd /opt/odoo
