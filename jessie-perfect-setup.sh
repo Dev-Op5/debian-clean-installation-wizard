@@ -549,7 +549,7 @@ if [ "$appserver_type" = '5' ]; then
   pip install requests==2.6.0
 
   cd /tmp
-  wget http://www.theopensourcerer.com/wp-content/uploads/2014/09/odoo-server
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/odoo-server
   cp /tmp/odoo-server /etc/init.d/odoo-server
   chmod 755 /etc/init.d/odoo-server
   chown root: /etc/init.d/odoo-server
