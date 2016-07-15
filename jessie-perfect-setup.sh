@@ -314,8 +314,8 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
                        php7.0-ldap php7.0-mcrypt php7.0-memcached php7.0-mongodb php7.0-msgpack \
                        php7.0-mysql php7.0-odbc php7.0-opcache php7.0-pgsql php7.0-pspell \
                        php7.0-readline php7.0-recode php7.0-redis php7.0-snmp php7.0-sqlite3 \
-                       php7.0-sybase php7.0-tidy php7.0-xmlrpc php7.0-xsl php7.0-dbg \
-                       libphp7.0-embed libmariadbclient-dev libpq-dev snmp-mibs-downloader
+                       php7.0-sybase php7.0-tidy php7.0-xmlrpc php7.0-xsl libphp7.0-embed \
+                       libmariadbclient-dev libpq-dev snmp-mibs-downloader
 
     # configuring nginx
     mkdir -p /etc/nginx/sites-enabled
