@@ -142,7 +142,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_t
 fi
 
 echo "" >> $repo
-echo "deb http://repo.mongodb.org/apt/debian jessie/mongodb-org/3.3 main: >> $repo
+echo "deb http://repo.mongodb.org/apt/debian jessie/mongodb-org/3.3 main" >> $repo
 echo "deb http://www.rabbitmq.com/debian/ testing main" >> $repo
 
 ##############
