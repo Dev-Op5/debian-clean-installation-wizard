@@ -272,32 +272,17 @@ service ntp restart
 ################
 #install nodejs#
 ################
-curl -sL https://deb.nodesource.com/setup | bash -
+curl -sL https://deb.nodesource.com/setup_6.x | sudo bash -
 apt-get install -y nodejs
-
-###################
-#install phantomjs#
-###################
-apt-get install -y build-essential g++ flex bison gperf ruby perl libsqlite3-dev libfontconfig1-dev libicu-dev libfreetype6 libssl-dev \
-                   libpng-dev libjpeg-dev python libX11-dev libxext-dev
-
-cd /tmp
-rm -R phantomjs
-git clone git://github.com/ariya/phantomjs.git phantomjs
-cd /tmp/phantomjs
-git checkout 2.0
-./build.sh
-cp /tmp/phantomjs/bin/phantomjs /usr/bin
-cd /tmp
-rm -R phantomjs
 
 ############################
 # install grunt bower gulp #
 ############################
 
 npm install -g npm@latest
-npm install -g grunt-cli bower gulp less less-plugin-clean-css
-npm install -g yo karma
+npm install -g grunt-cli bower gulp less less-plugin-clean-css generator-feathers
+npm install -g graceful-fs@latest
+npm install -g yo
 
 ##################
 # install java-8 #
@@ -525,7 +510,7 @@ if [ "$appserver_type" = '5' ]; then
   pip install requests==2.6.0
 
   cd /tmp
-  wget http://www.theopensourcerer.com/wp-content/uploads/2014/09/odoo-server
+  wget http://code.mokapedia.net/server/default-server-config/raw/master/odoo-server
   cp /tmp/odoo-server /etc/init.d/odoo-server
   chmod 755 /etc/init.d/odoo-server
   chown root: /etc/init.d/odoo-server
