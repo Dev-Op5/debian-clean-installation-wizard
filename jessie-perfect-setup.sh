@@ -162,7 +162,7 @@ apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 3B4FE6ACC0B21F
 #mongodb
 apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 BC711F9BA15703C6
 #rabbitmq
-wget -O- -q https://www.rabbitmq.com/rabbitmq-release-signing-key.asc | sudo apt-key add -
+wget -O- -q https://www.rabbitmq.com/rabbitmq-release-signing-key.asc | apt-key add -
 
 ######################
 # performance tuning #
