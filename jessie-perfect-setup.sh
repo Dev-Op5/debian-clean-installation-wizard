@@ -52,6 +52,12 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ]; then
 fi
 if [ "$appserver_type" = '5' ]; then
   echo ""
+  echo "Which Odoo Version you prefer?"
+  echo "1. Odoo 9"
+  echo "2. Odoo 10"
+  echo ""
+  read -p "Your Choice (1/2) : " odoo_version
+  echo ""
   echo "Which PHP version you prefer?"
   echo "0. None! I don't need PHP"
   echo "1. PHP 7.x (CLI + FPM)"
@@ -62,11 +68,10 @@ fi
 if [ "$appserver_type" = '4' ]; then
   echo ""
   echo "Which PostgreSQL version you prefer?"
-  echo "1. PostgreSQL 8.4"
-  echo "2. PostgreSQL 9.2"
-  echo "3. PostgreSQL 9.4"
+  echo "1. PostgreSQL 9.4"
+  echo "2. PostgreSQL 9.6"
   echo ""
-  read -p "Your Choice (1/2/3) : " postgresql_version
+  read -p "Your Choice (1/2) : " postgresql_version
 fi
 if [ "$appserver_type" = '2' ]; then
   echo ""
@@ -137,8 +142,8 @@ fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
   echo "" >> $repo
-  echo "deb http://kambing.ui.ac.id/postgresql/repos/apt/ jessie-pgdg main" >> $repo
-  echo "deb-src http://kambing.ui.ac.id/postgresql/repos/apt/ jessie-pgdg main" >> $repo
+  echo "deb http://kambing.ui.ac.id/postgresql/repos/apt/ jessie-pgdg main 9.6" >> $repo
+  echo "deb-src http://kambing.ui.ac.id/postgresql/repos/apt/ jessie-pgdg main 9.6" >> $repo
 fi
 
 echo "" >> $repo
@@ -184,8 +189,9 @@ locale-gen en_US en_US.UTF-8 id_ID id_ID.UTF-8
 dpkg-reconfigure locales
 dpkg --add-architecture i386
 apt-get update -y && apt-get dist-upgrade -y
-apt-get install -y --fix-missing bash-completion consolekit libexpat1-dev gettext libz-dev \
-                                 gnupg-curl unzip build-essential libssl-dev libcurl4-gnutls-dev
+apt-get install -y --fix-missing bash-completion consolekit libexpat1-dev gettext \
+                                 gnupg-curl unzip build-essential libssl-dev \
+                                 libcurl4-gnutls-dev locales-all libz-dev
 
 ########################
 #install the newest git#
@@ -471,13 +477,10 @@ if [ "$appserver_type" = '4' ]; then
   postgresql_root_password=$db_root_password
 
   if [ $postgresql_version = '1' ] ; then
-    apt-get install -y postgresql-8.4 postgresql-client-8.4 postgresql-contrib-8.4 libpq-dev
+    apt-get install -y postgresql-9.4 postgresql-client-9.4 postgresql-contrib-9.4 libpq-dev
   fi
   if [ $postgresql_version = '2' ] ; then
-    apt-get install -y postgresql-9.2 postgresql-client-9.2 postgresql-contrib-9.2 libpq-dev
-  fi
-  if [ $postgresql_version = '3' ] ; then
-    apt-get install -y postgresql-9.4 postgresql-client-9.4 postgresql-contrib-9.4 libpq-dev
+    apt-get install -y postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 libpq-dev
   fi
 fi
 
@@ -488,22 +491,6 @@ fi
 cd /tmp
 
 if [ "$appserver_type" = '5' ]; then
-
-  echo "--------------------------------"
-  echo ""
-  echo "INSTALLING odoo v9........."
-  echo ""
-  echo "--------------------------------"
-  postgresql_version='3'
-  postgresql_root_password=$db_root_password
-  adduser --system --quiet --shell=/bin/bash --home=/opt/odoo --gecos 'odoo' --group odoo
-  echo "PostgreSQL 9.4"
-  apt-get install -y postgresql-9.4 postgresql-client-9.4 postgresql-contrib-9.4 libpq-dev
-  echo "Create PostgreSQL User"
-  sudo -u postgres -H createuser --createdb --username postgres --no-createrole --no-superuser odoo
-  service postgresql start
-  sudo -u postgres -H psql -c"ALTER user odoo WITH PASSWORD '$db_root_password'"
-  service postgresql restart
 
   echo "Installing necessary python libraries"
   apt-get install -y python-pybabel
@@ -526,40 +513,144 @@ if [ "$appserver_type" = '5' ]; then
   rm -R wkhtmltox
   rm wkhtmltox-0.12.3_linux-generic-amd64.tar.xz
 
-  echo "Clone the Odoo 9.0 latest sources"
-  cd /opt/odoo
-  sudo -u odoo -H git clone https://www.github.com/odoo/odoo --depth 1 --branch 9.0 --single-branch .
-  touch /etc/odoo-server.conf
-  echo "[options]" > /etc/odoo-server.conf
-  echo "; This is the password that allows database operations:" >> /etc/odoo-server.conf
-  echo "; admin_passwd = admin" >> /etc/odoo-server.conf
-  echo "db_host = False" >> /etc/odoo-server.conf
-  echo "db_port = False" >> /etc/odoo-server.conf
-  echo "db_user = odoo" >> /etc/odoo-server.conf
-  echo "db_password = $db_root_password" >> /etc/odoo-server.conf
-  echo "addons_path = /opt/odoo/addons" >> /etc/odoo-server.conf
-  echo "logfile = /var/log/odoo/odoo-server.log" >> /etc/odoo-server.conf
+  if [ "$odoo_version" = '1' ]; then
+    echo "--------------------------------"
+    echo ""
+    echo "INSTALLING odoo v9........."
+    echo ""
+    echo "--------------------------------"
+    postgresql_version='1'
+    postgresql_root_password=$db_root_password
+    adduser --system --quiet --shell=/bin/bash --home=/opt/odoo --gecos 'odoo' --group odoo
+    echo "PostgreSQL 9.4"
+    apt-get install -y postgresql-9.4 postgresql-client-9.4 postgresql-contrib-9.4 libpq-dev
+    echo "Create PostgreSQL User"
+    sudo -u postgres -H createuser --createdb --username postgres --no-createrole --no-superuser odoo
+    service postgresql start
+    sudo -u postgres -H psql -c"ALTER user odoo WITH PASSWORD '$db_root_password'"
+    service postgresql restart
 
-  chown odoo: /etc/odoo-server.conf
-  chmod 640 /etc/odoo-server.conf
+    echo "Clone the Odoo 9.0 latest sources"
+    cd /opt/odoo
+    sudo -u odoo -H git clone https://www.github.com/odoo/odoo --depth 1 --branch 9.0 --single-branch .
+    touch /etc/odoo-server.conf
+    echo "[options]" > /etc/odoo-server.conf
+    echo "; This is the password that allows database operations:" >> /etc/odoo-server.conf
+    echo "; admin_passwd = admin" >> /etc/odoo-server.conf
+    echo "db_host = False" >> /etc/odoo-server.conf
+    echo "db_port = False" >> /etc/odoo-server.conf
+    echo "db_user = odoo" >> /etc/odoo-server.conf
+    echo "db_password = $db_root_password" >> /etc/odoo-server.conf
+    echo "addons_path = /opt/odoo/addons" >> /etc/odoo-server.conf
+    echo "logfile = /var/log/odoo/odoo-server.log" >> /etc/odoo-server.conf
 
-  cd /opt/odoo
-  easy_install --upgrade pip
-  pip install -r requirements.txt
-  pip install requests==2.6.0
+    chown odoo: /etc/odoo-server.conf
+    chmod 640 /etc/odoo-server.conf
 
-  cd /tmp
-  wget http://code.mokapedia.net/server/default-server-config/raw/master/odoo-server
-  cp /tmp/odoo-server /etc/init.d/odoo-server
-  chmod 755 /etc/init.d/odoo-server
-  chown root: /etc/init.d/odoo-server
+    cd /opt/odoo
+    easy_install --upgrade pip
+    pip install -r requirements.txt
+    pip install requests==2.6.0
 
-  mkdir -p /var/log/odoo
-  chown -R odoo:root /var/log/odoo
-  chmod -R 777 /var/log/odoo
+    cd /tmp
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/odoo-server
+    cp /tmp/odoo-server /etc/init.d/odoo-server
+    chmod 755 /etc/init.d/odoo-server
+    chown root: /etc/init.d/odoo-server
 
-  update-rc.d odoo-server defaults
-  /etc/init.d/odoo-server start
+    mkdir -p /var/log/odoo
+    chown -R odoo:root /var/log/odoo
+    chmod -R 777 /var/log/odoo
+
+    update-rc.d odoo-server defaults
+    /etc/init.d/odoo-server start
+
+  fi
+
+  if [ "$odoo_version" = '2' ]; then
+    echo "--------------------------------"
+    echo ""
+    echo "INSTALLING odoo v10........."
+    echo ""
+    echo "--------------------------------"
+    postgresql_version='2'
+    postgresql_root_password=$db_root_password
+
+    cd /tmp
+ 
+    postgresql_root_password=$db_root_password
+    adduser --system --quiet --shell=/bin/bash --home=/opt/odoo --gecos 'odoo' --group odoo
+
+    echo "PostgreSQL 9.6"
+    apt-get install -y postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 libpq-dev postgresql-common
+    echo "Create PostgreSQL User"
+    sudo -u postgres -H createuser --createdb --username postgres --no-createrole --no-superuser odoo
+    service postgresql start
+    sudo -u postgres -H psql -c"ALTER user odoo WITH PASSWORD '$db_root_password'"
+    service postgresql restart
+
+##
+## simplest method : apt repository (but only compatible with PostgreSQL 9.5)
+## drawbacks : the odoo folder structures was 'too integrated' with debian /usr structures.
+##
+#    wget -O - https://nightly.odoo.com/odoo.key | apt-key add -
+#    echo "" >> $repo
+#    echo "deb http://nightly.odoo.com/master/nightly/deb/ ./" >> $repo
+#    apt-get update && apt-get dist-upgrade
+#    apt-get install -y odoo
+
+##
+## best method : not yet available on github
+##
+#    echo "Clone the Odoo 10 latest sources"
+#    cd /opt/odoo
+#    sudo -u odoo -H git clone https://www.github.com/odoo/odoo --depth 1 --branch 9.0 --single-branch .
+
+##
+## temporary method : download latest nightly archive
+##
+
+    cd /tmp
+    wget http://nightly.odoo.com/master/nightly/src/odoo_10.0alpha1c.latest.tar.gz
+    tar zxvf odoo_10.0*.tar.gz
+    rm -R /opt/odoo
+    mv odoo_10.0* /opt/odoo
+    mkdir /opt/odoo/addons
+    chown -R odoo:odoo /opt/odoo
+    
+    touch /etc/odoo-server.conf
+    echo "[options]" > /etc/odoo-server.conf
+    echo "; This is the password that allows database operations:" >> /etc/odoo-server.conf
+    echo "; admin_passwd = admin" >> /etc/odoo-server.conf
+    echo "db_host = False" >> /etc/odoo-server.conf
+    echo "db_port = False" >> /etc/odoo-server.conf
+    echo "db_user = odoo" >> /etc/odoo-server.conf
+    echo "db_password = $db_root_password" >> /etc/odoo-server.conf
+    echo "addons_path = /opt/odoo/addons" >> /etc/odoo-server.conf
+    echo "logfile = /var/log/odoo/odoo-server.log" >> /etc/odoo-server.conf
+
+    chown odoo: /etc/odoo-server.conf
+    chmod 640 /etc/odoo-server.conf
+
+    cd /opt/odoo
+    easy_install --upgrade pip
+    pip install -r requirements.txt
+    pip install requests==2.6.0
+
+    cd /tmp
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/odoo-server
+    cp /tmp/odoo-server /etc/init.d/odoo-server
+    chmod 755 /etc/init.d/odoo-server
+    chown root: /etc/init.d/odoo-server
+
+    mkdir -p /var/log/odoo
+    chown -R odoo:root /var/log/odoo
+    chmod -R 777 /var/log/odoo
+
+    update-rc.d odoo-server defaults
+    /etc/init.d/odoo-server start
+
+  fi
 
 fi
 
