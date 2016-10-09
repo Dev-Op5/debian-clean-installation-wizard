@@ -27,13 +27,6 @@ if [ -f $install_summarize ]; then
   exit 0
 fi
 
-###
-#Disable ipv6 : prevent errors while fetching the repo
-###
-
-sysctl -w net.ipv6.conf.all.disable_ipv6=1
-sysctl -w net.ipv6.conf.default.disable_ipv6=1
-
 echo ""
 echo "********************************************************"
 echo "   DEBIAN JESSIE PERFECT APPLICATION SERVER INSTALLER   "
@@ -121,13 +114,12 @@ mv $repo /etc/apt/sources.list.old && touch $repo
 
 repo=/etc/apt/sources.list
 
-echo "deb http://kambing.ui.ac.id/debian/ jessie main non-free contrib" >> $repo
-echo "deb-src http://kambing.ui.ac.id/debian/ jessie main non-free contrib" >> $repo
-echo "deb http://kambing.ui.ac.id/debian/ jessie-updates main non-free contrib" >> $repo
-echo "deb-src http://kambing.ui.ac.id/debian/ jessie-updates main non-free contrib" >> $repo
-echo "deb http://kambing.ui.ac.id/debian-security/ jessie/updates main non-free contrib" >> $repo
-echo "deb-src http://kambing.ui.ac.id/debian-security/ jessie/updates main non-free contrib" >> $repo
-
+echo "deb http://mirrors.linode.com/debian/ jessie main non-free contrib" >> $repo
+echo "deb-src http://mirrors.linode.com/debian/ jessie main non-free contrib" >> $repo
+echo "deb http://mirrors.linode.com/debian/ jessie-updates main non-free contrib" >> $repo
+echo "deb-src http://mirrors.linode.com/debian/ jessie-updates main non-free contrib" >> $repo
+echo "deb http://mirrors.linode.com/debian-security/ jessie/updates main non-free contrib" >> $repo
+echo "deb-src http://mirrors.linode.com/debian-security/ jessie/updates main non-free contrib" >> $repo
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ]; then
   echo "" >> $repo
@@ -137,8 +129,8 @@ fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
   echo "" >> $repo
-  echo "deb http://mariadb.biz.net.id/repo/10.1/debian jessie main" >> $repo
-  echo "deb-src http://mariadb.biz.net.id/repo/10.1/debian jessie main" >> $repo
+  echo "deb http://sgp1.mirrors.digitalocean.com/repo/10.1/debian jessie main" >> $repo
+  echo "deb-src http://sgp1.mirrors.digitalocean.com/repo/10.1/debian jessie main" >> $repo
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2'  ] || [ "$appserver_type" = '5' ]; then
@@ -149,13 +141,21 @@ fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
   echo "" >> $repo
-  echo "deb http://kambing.ui.ac.id/postgresql/repos/apt/ jessie-pgdg main 9.6" >> $repo
-  echo "deb-src http://kambing.ui.ac.id/postgresql/repos/apt/ jessie-pgdg main 9.6" >> $repo
+  echo "deb https://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main 9.6" >> $repo
+  echo "deb-src https://apt.postgresql.org/pub/repos/apt/ jessie-pgdg main 9.6" >> $repo
 fi
 
 echo "" >> $repo
 echo "deb http://repo.mongodb.org/apt/debian jessie/mongodb-org/3.3 main" >> $repo
 echo "deb http://www.rabbitmq.com/debian/ testing main" >> $repo
+
+###########################################################
+#Disable ipv6 : prevent errors while fetching the repo
+###########################################################
+
+sysctl -w net.ipv6.conf.all.disable_ipv6=1
+sysctl -w net.ipv6.conf.default.disable_ipv6=1
+
 
 ##############
 #get GPG Keys#
