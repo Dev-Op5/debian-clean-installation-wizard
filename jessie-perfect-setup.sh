@@ -27,6 +27,13 @@ if [ -f $install_summarize ]; then
   exit 0
 fi
 
+###
+#Disable ipv6 : prevent errors while fetching the repo
+###
+
+sysctl -w net.ipv6.conf.all.disable_ipv6=1
+sysctl -w net.ipv6.conf.default.disable_ipv6=1
+
 echo ""
 echo "********************************************************"
 echo "   DEBIAN JESSIE PERFECT APPLICATION SERVER INSTALLER   "
@@ -39,7 +46,7 @@ echo "1. Perfect Server for Nginx, PHP-FPM, and MariaDB"
 echo "2. Dedicated Nginx & PHP-FPM Web Server only"
 echo "3. Dedicated MariaDB Database Server only"
 echo "4. Dedicated PostgreSQL Database Server only"
-echo "5. Odoo v9 Perfect Server"
+echo "5. Odoo Perfect Server"
 read -p "Your Choice (1/2/3/4/5) : " appserver_type
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ]; then
@@ -181,6 +188,8 @@ echo "* hard nofile 65536" >> /etc/security/limits.conf
 echo "net.ipv4.tcp_tw_recycle = 1" >> /etc/sysctl.conf
 echo "net.ipv4.tcp_tw_reuse = 1" >> /etc/sysctl.conf
 echo "net.ipv4.ip_local_port_range = 10240    65535" >> /etc/sysctl.conf
+echo "net.ipv6.conf.default.disable_ipv6=1" >> /etc/sysctl.conf
+echo "net.ipv6.conf.all.disable_ipv6=1" >> /etc/sysctl.conf
 
 ############################
 #update the repository list#
@@ -496,7 +505,7 @@ if [ "$appserver_type" = '5' ]; then
   apt-get install -y python-pybabel
   apt-get build-dep -y python-psycopg2
   pip install psycopg2 werkzeug simplejson
-  apt-get install -y python-cups python-dateutil python-decorator python-docutils python-feedparser \
+  apt-get install -y python-dev python-cups python-dateutil python-decorator python-docutils python-feedparser \
                      python-gdata python-geoip python-gevent python-imaging python-jinja2 python-ldap python-libxslt1 \
                      python-mako python-mock python-openid python-passlib python-psutil python-psycopg2 \
                      python-pychart python-pydot python-pyparsing python-pypdf python-reportlab python-requests \
@@ -589,32 +598,9 @@ if [ "$appserver_type" = '5' ]; then
     sudo -u postgres -H psql -c"ALTER user odoo WITH PASSWORD '$db_root_password'"
     service postgresql restart
 
-##
-## simplest method : apt repository (but only compatible with PostgreSQL 9.5)
-## drawbacks : the odoo folder structures was 'too integrated' with debian /usr structures.
-##
-#    wget -O - https://nightly.odoo.com/odoo.key | apt-key add -
-#    echo "" >> $repo
-#    echo "deb http://nightly.odoo.com/master/nightly/deb/ ./" >> $repo
-#    apt-get update && apt-get dist-upgrade
-#    apt-get install -y odoo
-
-##
-## best method : not yet available on github
-##
-#    echo "Clone the Odoo 10 latest sources"
-#    cd /opt/odoo
-#    sudo -u odoo -H git clone https://www.github.com/odoo/odoo --depth 1 --branch 9.0 --single-branch .
-
-##
-## temporary method : download latest nightly archive
-##
-
-    cd /tmp
-    wget http://nightly.odoo.com/master/nightly/src/odoo_10.0alpha1c.latest.tar.gz
-    tar zxvf odoo_10.0*.tar.gz
-    rm -R /opt/odoo
-    mv odoo_10.0* /opt/odoo
+    echo "Clone the Odoo 10 latest sources"
+    cd /opt/odoo
+    sudo -u odoo -H git clone https://www.github.com/odoo/odoo --depth 1 --branch 10.0 --single-branch .
     mkdir /opt/odoo/addons
     chown -R odoo:odoo /opt/odoo
     
@@ -638,8 +624,8 @@ if [ "$appserver_type" = '5' ]; then
     pip install requests==2.6.0
 
     cd /tmp
-    wget http://code.mokapedia.net/server/default-server-config/raw/master/odoo-server
-    cp /tmp/odoo-server /etc/init.d/odoo-server
+    wget http://code.mokapedia.net/server/default-server-config/raw/master/odoo10-server
+    cp /tmp/odoo10-server /etc/init.d/odoo-server
     chmod 755 /etc/init.d/odoo-server
     chown root: /etc/init.d/odoo-server
 
