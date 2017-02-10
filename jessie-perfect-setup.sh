@@ -121,6 +121,8 @@ echo "deb-src http://kambing.ui.ac.id/debian/ jessie-updates main non-free contr
 echo "deb http://kambing.ui.ac.id/debian-security/ jessie/updates main non-free contrib" >> $repo
 echo "deb-src http://kambing.ui.ac.id/debian-security/ jessie/updates main non-free contrib" >> $repo
 
+apt-get update && apt-get install apt-transport-http apt-transport-https
+
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ]; then
   echo "" >> $repo
   echo "deb http://nginx.org/packages/mainline/debian/ jessie nginx" >> $repo
@@ -173,7 +175,9 @@ apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 3B4FE6ACC0B21F
 #mongodb
 apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 BC711F9BA15703C6
 #rabbitmq
+apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 6B73A36E6026DFCA
 wget -O- -q https://www.rabbitmq.com/rabbitmq-release-signing-key.asc | apt-key add -
+wget -O- -q https://www.rabbitmq.com/rabbitmq-signing-key-public.asc | apt-key add -
 
 ######################
 # performance tuning #
