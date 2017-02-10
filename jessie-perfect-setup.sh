@@ -121,7 +121,7 @@ echo "deb-src http://kambing.ui.ac.id/debian/ jessie-updates main non-free contr
 echo "deb http://kambing.ui.ac.id/debian-security/ jessie/updates main non-free contrib" >> $repo
 echo "deb-src http://kambing.ui.ac.id/debian-security/ jessie/updates main non-free contrib" >> $repo
 
-apt-get update && apt-get install apt-transport-http apt-transport-https
+apt-get update && apt-get install apt-transport-https
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ]; then
   echo "" >> $repo
