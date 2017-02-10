@@ -121,7 +121,7 @@ echo "deb-src http://kambing.ui.ac.id/debian/ jessie-updates main non-free contr
 echo "deb http://kambing.ui.ac.id/debian-security/ jessie/updates main non-free contrib" >> $repo
 echo "deb-src http://kambing.ui.ac.id/debian-security/ jessie/updates main non-free contrib" >> $repo
 
-apt-get update && apt-get install apt-transport-https
+apt-get update && apt-get install -y --force-yes apt-transport-https
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ]; then
   echo "" >> $repo
@@ -201,7 +201,7 @@ locale-gen en_US en_US.UTF-8 id_ID id_ID.UTF-8
 dpkg-reconfigure locales
 dpkg --add-architecture i386
 apt-get update -y && apt-get dist-upgrade -y
-apt-get install -y --fix-missing bash-completion consolekit libexpat1-dev gettext \
+apt-get install -y --fix-missing --force-yes bash-completion consolekit libexpat1-dev gettext \
                                  gnupg-curl unzip build-essential libssl-dev \
                                  libcurl4-gnutls-dev locales-all libz-dev
 
@@ -239,18 +239,18 @@ echo "alias pull='git pull origin master'" >> /etc/bash.bashrc
 ############################
 #install essential packages#
 ############################
-apt-get install -y sudo locate whois curl lynx openssl python perl libaio1 hdparm rsync traceroute imagemagick libmcrypt-dev \
+apt-get install -y --force-yes sudo locate whois curl lynx openssl python perl libaio1 hdparm rsync traceroute imagemagick libmcrypt-dev \
                    python-software-properties pcregrep tcpdump gawk checkinstall cdbs devscripts dh-make \
                    libxml-parser-perl check python-pip libbz2-dev libpcre3-dev libxml2-dev unixodbc-bin sysv-rc-conf uuid-dev \
                    libicu-dev libncurses5-dev libffi-dev debconf-utils libpng12-dev libjpeg-dev libgif-dev libevent-dev chrpath \
                    libfontconfig1-dev libxft-dev optipng g++ fakeroot zip p7zip-full zlib1g-dev libyaml-dev libgdbm-dev \
                    libreadline-dev libxslt-dev ruby-full gperf bison g++ libsqlite3-dev libfreetype6 libpng-dev \
-                   xfonts-scalable poppler-utils libxrender-dev xfonts-base xfonts-75dpi fontconfig libxrender1 libldap2-dev libsasl2-dev
+                   xfonts-scalable poppler-utils libxrender-dev xfonts-base xfonts-75dpi fontconfig libxrender1 libldap2-dev libsasl2-dev 
 
 ###################
 #install phantomjs#
 ###################
-apt-get install -y build-essential g++ flex bison gperf ruby perl libsqlite3-dev libfontconfig1-dev libicu-dev libfreetype6 libssl-dev \
+apt-get install -y --force-yes build-essential g++ flex bison gperf ruby perl libsqlite3-dev libfontconfig1-dev libicu-dev libfreetype6 libssl-dev \
                    libpng-dev libjpeg-dev python libX11-dev libxext-dev
 
 cd /tmp
@@ -263,7 +263,7 @@ rm -R phantomjs-2.1-debian-jessie-amd64
 #install nodejs#
 ################
 curl -sL https://deb.nodesource.com/setup_6.x | sudo bash -
-apt-get install -y nodejs
+apt-get install -y --force-yes nodejs
 
 ############################
 # install grunt bower gulp #
@@ -326,7 +326,7 @@ fi
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
 
   if [ $php_version = '1' ] ; then
-    apt-get install -y nginx php7.0 php7.0-cgi php7.0-cli php7.0-fpm php7.0-common php7.0-bz2 \
+    apt-get install -y --force-yes nginx php7.0 php7.0-cgi php7.0-cli php7.0-fpm php7.0-common php7.0-bz2 \
                        php7.0-curl php7.0-dev php7.0-enchant php7.0-gd php7.0-geoip php7.0-gmp \
                        php7.0-igbinary php7.0-imagick php7.0-imap php7.0-intl php7.0-json \
                        php7.0-ldap php7.0-mcrypt php7.0-memcached php7.0-mongodb php7.0-msgpack \
@@ -380,7 +380,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
 
   if [ $php_version = '2' ] ; then
 
-    apt-get install -y nginx php5 php5-fpm php5-cgi php5-cli php5-common php5-curl php5-dbg php5-dev php5-enchant php5-gd \
+    apt-get install -y --force-yes nginx php5 php5-fpm php5-cgi php5-cli php5-common php5-curl php5-dbg php5-dev php5-enchant php5-gd \
                        php5-gmp php5-imap php5-ldap php5-mcrypt php5-mysqlnd php5-odbc php5-pgsql \
                        php5-pspell php5-readline php5-recode php5-sqlite php5-sybase php5-tidy php5-xmlrpc php5-xsl php-pear \
                        php5-geoip php5-mongo php5-imagick php-fpdf php5-apcu libmariadbclient-dev libpq-dev
@@ -441,7 +441,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   # install Premium MaxMind GeoIP #
   #################################
 
-  apt-get install -y libgeoip-dev
+  apt-get install -y --force-yes libgeoip-dev
   mv /usr/share/GeoIP/ /usr/share/GeoIP.old
   mkdir -p /usr/share/GeoIP
   cd /tmp
@@ -462,7 +462,7 @@ cd /tmp
 # install MongoDB, RabbitMQ, Redis, Go #
 ########################################
 
-apt-get install -y mongodb-org-unstable mongodb-org-unstable-mongos mongodb-org-unstable-server \
+apt-get install -y --force-yes mongodb-org-unstable mongodb-org-unstable-mongos mongodb-org-unstable-server \
                    mongodb-org-unstable-shell mongodb-org-unstable-tools rabbitmq-server \
                    golang redis-server redis-tools
 service mongod start
@@ -473,7 +473,7 @@ service rabbitmq-server start
 ####################################
 
 echo "Installing GNU Execute"
-apt-get install -y ed
+apt-get install -y --force-yes ed
 cd /tmp
 wget http://code.mokapedia.net/server/execute/raw/master/execute
 chmod +x /tmp/execute
@@ -488,10 +488,10 @@ if [ "$appserver_type" = '4' ]; then
   postgresql_root_password=$db_root_password
 
   if [ $postgresql_version = '1' ] ; then
-    apt-get install -y postgresql-9.4 postgresql-client-9.4 postgresql-contrib-9.4 libpq-dev
+    apt-get install -y --force-yes postgresql-9.4 postgresql-client-9.4 postgresql-contrib-9.4 libpq-dev
   fi
   if [ $postgresql_version = '2' ] ; then
-    apt-get install -y postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 libpq-dev
+    apt-get install -y --force-yes postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 libpq-dev
   fi
 fi
 
@@ -504,10 +504,10 @@ cd /tmp
 if [ "$appserver_type" = '5' ]; then
 
   echo "Installing necessary python libraries"
-  apt-get install -y python-pybabel
+  apt-get install -y --force-yes python-pybabel
   apt-get build-dep -y python-psycopg2
   pip install psycopg2 werkzeug simplejson
-  apt-get install -y python-dev python-cups python-dateutil python-decorator python-docutils python-feedparser \
+  apt-get install -y --force-yes python-dev python-cups python-dateutil python-decorator python-docutils python-feedparser \
                      python-gdata python-geoip python-gevent python-imaging python-jinja2 python-ldap python-libxslt1 \
                      python-mako python-mock python-openid python-passlib python-psutil python-psycopg2 \
                      python-pychart python-pydot python-pyparsing python-pypdf python-reportlab python-requests \
@@ -534,7 +534,7 @@ if [ "$appserver_type" = '5' ]; then
     postgresql_root_password=$db_root_password
     adduser --system --quiet --shell=/bin/bash --home=/opt/odoo --gecos 'odoo' --group odoo
     echo "PostgreSQL 9.4"
-    apt-get install -y postgresql-9.4 postgresql-client-9.4 postgresql-contrib-9.4 libpq-dev
+    apt-get install -y --force-yes postgresql-9.4 postgresql-client-9.4 postgresql-contrib-9.4 libpq-dev
     echo "Create PostgreSQL User"
     sudo -u postgres -H createuser --createdb --username postgres --no-createrole --no-superuser odoo
     service postgresql start
@@ -593,7 +593,7 @@ if [ "$appserver_type" = '5' ]; then
     adduser --system --quiet --shell=/bin/bash --home=/opt/odoo --gecos 'odoo' --group odoo
 
     echo "PostgreSQL 9.6"
-    apt-get install -y postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 libpq-dev postgresql-common
+    apt-get install -y --force-yes postgresql-9.6 postgresql-client-9.6 postgresql-contrib-9.6 libpq-dev postgresql-common
     echo "Create PostgreSQL User"
     sudo -u postgres -H createuser --createdb --username postgres --no-createrole --no-superuser odoo
     service postgresql start
