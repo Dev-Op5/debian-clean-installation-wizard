@@ -114,12 +114,12 @@ mv $repo /etc/apt/sources.list.old && touch $repo
 
 repo=/etc/apt/sources.list
 
-echo "deb http://mirrors.linode.com/debian/ jessie main non-free contrib" >> $repo
-echo "deb-src http://mirrors.linode.com/debian/ jessie main non-free contrib" >> $repo
-echo "deb http://mirrors.linode.com/debian/ jessie-updates main non-free contrib" >> $repo
-echo "deb-src http://mirrors.linode.com/debian/ jessie-updates main non-free contrib" >> $repo
-echo "deb http://mirrors.linode.com/debian-security/ jessie/updates main non-free contrib" >> $repo
-echo "deb-src http://mirrors.linode.com/debian-security/ jessie/updates main non-free contrib" >> $repo
+echo "deb http://kambing.ui.ac.id/debian/ jessie main non-free contrib" >> $repo
+echo "deb-src http://kambing.ui.ac.id/debian/ jessie main non-free contrib" >> $repo
+echo "deb http://kambing.ui.ac.id/debian/ jessie-updates main non-free contrib" >> $repo
+echo "deb-src http://kambing.ui.ac.id/debian/ jessie-updates main non-free contrib" >> $repo
+echo "deb http://kambing.ui.ac.id/debian-security/ jessie/updates main non-free contrib" >> $repo
+echo "deb-src http://kambing.ui.ac.id/debian-security/ jessie/updates main non-free contrib" >> $repo
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ]; then
   echo "" >> $repo
@@ -129,8 +129,8 @@ fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
   echo "" >> $repo
-  echo "deb http://sgp1.mirrors.digitalocean.com/repo/10.1/debian jessie main" >> $repo
-  echo "deb-src http://sgp1.mirrors.digitalocean.com/repo/10.1/debian jessie main" >> $repo
+  echo "deb http://mariadb.biz.net.id/repo/10.1/debian jessie main" >> $repo
+  echo "deb-src http://mariadb.biz.net.id/repo/10.1/debian jessie main" >> $repo
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2'  ] || [ "$appserver_type" = '5' ]; then
@@ -155,7 +155,6 @@ echo "deb http://www.rabbitmq.com/debian/ testing main" >> $repo
 
 sysctl -w net.ipv6.conf.all.disable_ipv6=1
 sysctl -w net.ipv6.conf.default.disable_ipv6=1
-
 
 ##############
 #get GPG Keys#
@@ -426,7 +425,6 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
     service nginx restart && service php5-fpm restart
 
   fi
-
 
   ########################
   # install composer.phar#
