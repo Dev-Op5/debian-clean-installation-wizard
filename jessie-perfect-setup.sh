@@ -602,7 +602,7 @@ if [ "$appserver_type" = '5' ]; then
 
     echo "Clone the Odoo 10 latest sources"
     cd /opt/odoo
-    sudo -u odoo -H git clone https://www.github.com/odoo/odoo --depth 1 --branch 10.0 --single-branch .
+    sudo -u odoo -H git clone https://github.com/OCA/OCB --depth 1 --branch 10.0 --single-branch .
     mkdir /opt/odoo/addons
     chown -R odoo:odoo /opt/odoo
     
