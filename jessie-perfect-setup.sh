@@ -106,22 +106,24 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_t
   wget --no-check-certificate --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 fi
 
-echo "" >> $repo
+if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
+  echo "" >> $repo
 
-#redis
-echo "deb http://kambing.ui.ac.id/dotdeb jessie all" >> /etc/apt/sources.list.d/redis-dotdeb.org.list
-echo "deb-src http://kambing.ui.ac.id/dotdeb jessie all" >> /etc/apt/sources.list.d/redis-dotdeb.org.list
-wget --quiet -O - http://www.dotdeb.org/dotdeb.gpg | apt-key add -
+  #redis
+  echo "deb http://kambing.ui.ac.id/dotdeb jessie all" >> /etc/apt/sources.list.d/redis-dotdeb.org.list
+  echo "deb-src http://kambing.ui.ac.id/dotdeb jessie all" >> /etc/apt/sources.list.d/redis-dotdeb.org.list
+  wget --quiet -O - http://www.dotdeb.org/dotdeb.gpg | apt-key add -
 
-#mongodb
-apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6
-echo "deb http://repo.mongodb.org/apt/debian "$(lsb_release -sc)"/mongodb-org/3.4 main" | sudo tee /etc/apt/sources.list.d/mongodb-3.4.list
+  #mongodb
+  apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 0C49F3730359A14518585931BC711F9BA15703C6
+  echo "deb http://repo.mongodb.org/apt/debian "$(lsb_release -sc)"/mongodb-org/3.4 main" | sudo tee /etc/apt/sources.list.d/mongodb-3.4.list
 
-#rabbitmq
-echo "deb http://www.rabbitmq.com/debian/ testing main" > /etc/apt/source.list.d/rabbitmq-server.list
-apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 6B73A36E6026DFCA
-wget -O- -q https://www.rabbitmq.com/rabbitmq-release-signing-key.asc | apt-key add -
-wget -O- -q https://www.rabbitmq.com/rabbitmq-signing-key-public.asc | apt-key add -
+  #rabbitmq
+  echo "deb http://www.rabbitmq.com/debian/ testing main" > /etc/apt/source.list.d/rabbitmq-server.list
+  apt-key adv --recv-keys --keyserver hkp://keyserver.ubuntu.com:80 6B73A36E6026DFCA
+  wget -O- -q https://www.rabbitmq.com/rabbitmq-release-signing-key.asc | apt-key add -
+  wget -O- -q https://www.rabbitmq.com/rabbitmq-signing-key-public.asc | apt-key add -
+fi
 
 ###########################################################
 #Disable ipv6 : prevent errors while fetching the repo
@@ -187,22 +189,26 @@ apt install -y whois lynx openssl python perl libaio1 hdparm rsync imagemagick l
                libsasl2-dev build-essential g++ flex bison gperf ruby perl libsqlite3-dev libfontconfig1-dev libicu-dev \
                libfreetype6 libssl-dev libpng-dev libjpeg-dev python libX11-dev libxext-dev
 
-################
-#install nodejs#
-################
-curl -sL https://deb.nodesource.com/setup_7.x | sudo -E bash -
-apt install -y nodejs
-npm install -g npm@latest grunt-cli bower gulp less less-plugin-clean-css generator-feathers graceful-fs@^4.0.0 yo minimatch@3.0.2
+if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
 
-##################
-# install java-8 #
-##################
+  ################
+  #install nodejs#
+  ################
+  curl -sL https://deb.nodesource.com/setup_7.x | sudo -E bash -
+  apt install -y nodejs
+  npm install -g npm@latest grunt-cli bower gulp less less-plugin-clean-css generator-feathers graceful-fs@^4.0.0 yo minimatch@3.0.2
 
-echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | sudo /usr/bin/debconf-set-selections
-echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee /etc/apt/sources.list.d/webupd8team-java.list
-echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list
-apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
-apt update -y && apt install -y oracle-java8-installer && apt install -y oracle-java8-set-default
+  ##################
+  # install java-8 #
+  ##################
+
+  echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | sudo /usr/bin/debconf-set-selections
+  echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee /etc/apt/sources.list.d/webupd8team-java.list
+  echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list
+  apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
+  apt update -y && apt install -y oracle-java8-installer && apt install -y oracle-java8-set-default
+
+fi
 
 #################################
 #install (and configure) mariadb#
@@ -2559,13 +2565,15 @@ fi
 
 cd /tmp
 
-########################################
-# install MongoDB, RabbitMQ, Redis, Go #
-########################################
+if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
+  ########################################
+  # install MongoDB, RabbitMQ, Redis, Go #
+  ########################################
 
-apt install -y --force-yes mongodb-org rabbitmq-server redis-server redis-tools
-systemctl enable mongod.service
-service rabbitmq-server start
+  apt install -y --force-yes mongodb-org rabbitmq-server redis-server redis-tools
+  systemctl enable mongod.service
+  service rabbitmq-server start
+fi
 
 #############################################
 # install (and configure) postgresql (!TODO)#
