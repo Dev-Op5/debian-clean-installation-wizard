@@ -152,7 +152,7 @@ echo "net.ipv6.conf.all.disable_ipv6=1" >> /etc/sysctl.conf
 systemctl stop rpcbind.service
 systemctl disable rpcbind.service
 
-apt autoremove -y exim4*
+apt-get autoremove -y exim4*
 
 ############################
 #update the repository list#
@@ -383,6 +383,14 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_t
 
   # restart the services
   service mysql restart
+  
+  #mysqltuner
+  mkdir -p /scripts/mysqltuner
+  wget http://mysqltuner.pl/ -O mysqltuner.pl
+  wget https://raw.githubusercontent.com/major/MySQLTuner-perl/master/basic_passwords.txt -O basic_passwords.txt
+  wget https://raw.githubusercontent.com/major/MySQLTuner-perl/master/vulnerabilities.csv -O vulnerabilities.csv
+  chmod +x chmmysqltuner.pl
+  echo "alias mysqltuner='/scripts/mysqltuner/mysqltuner.pl --cvefile=/scripts/mysqltuner/vulnerabilities.csv --passwordfile=/scripts/mysqltuner/basic_passwords.txt'" >> /etc/bash.bashrc
 
 fi
 
