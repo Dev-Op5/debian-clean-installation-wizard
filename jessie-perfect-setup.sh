@@ -152,9 +152,9 @@ echo "net.ipv6.conf.all.disable_ipv6=1" >> /etc/sysctl.conf
 ############################
 
 dpkg --add-architecture i386
-apt-get install -y --fix-missing --force-yes bash-completion consolekit libexpat1-dev gettext \
-                                 gnupg-curl unzip build-essential libssl-dev \
-                                 libcurl4-gnutls-dev locales-all libz-dev
+apt install -y bash-completion consolekit libexpat1-dev gettext \
+               gnupg-curl unzip build-essential libssl-dev \
+               libcurl4-gnutls-dev locales-all libz-dev
 
 locale-gen en_US en_US.UTF-8 id_ID id_ID.UTF-8
 
@@ -192,10 +192,7 @@ apt install -y whois lynx openssl python perl libaio1 hdparm rsync imagemagick l
 ################
 curl -sL https://deb.nodesource.com/setup_7.x | sudo -E bash -
 apt install -y nodejs
-npm install -g npm@latest
-npm install -g grunt-cli bower gulp less less-plugin-clean-css generator-feathers
-npm install -g graceful-fs@latest
-npm install -g yo
+npm install -g npm@latest grunt-cli bower gulp less less-plugin-clean-css generator-feathers graceful-fs@^4.0.0 yo minimatch@3.0.2
 
 ##################
 # install java-8 #
@@ -205,8 +202,7 @@ echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | 
 echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee /etc/apt/sources.list.d/webupd8team-java.list
 echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu trusty main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list
 apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys EEA14886
-apt-get update -y && apt-get install -y oracle-java8-installer
-apt-get install -y oracle-java8-set-default
+apt update -y && apt install -y oracle-java8-installer && apt install -y oracle-java8-set-default
 
 #################################
 #install (and configure) mariadb#
@@ -390,8 +386,16 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
                  php7.1-interbase php7.1-intl php7.1-json php7.1-ldap php7.1-mbstring php7.1-mcrypt \
                  php7.1-mysql php7.1-odbc php7.1-opcache php7.1-pgsql php7.1-pspell php7.1-readline \
                  php7.1-recode php7.1-snmp php7.1-soap php7.1-sqlite3 php7.1-sybase php7.1-tidy \
-                 php7.1-xml php7.1-xmlrpc php7.1-xsl php7.1-zip libmariadbclient-dev libpq-dev \
-                 php-mongodb php-geoip libgeoip-dev snmp-mibs-downloader nginx
+                 php7.1-xml php7.1-xmlrpc php7.1-xsl php7.1-zip php-mongodb php-geoip libgeoip-dev \
+                 snmp-mibs-downloader nginx
+
+  if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '5' ]; then
+    apt install -y libmariadbclient-dev
+  fi
+  
+  if [ "$appserver_type" = '5' ]; then
+    apt install -y libpq-dev
+  fi
 
   # configuring nginx
   mkdir -p /etc/nginx/sites-enabled
@@ -2549,7 +2553,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   ########################
 
   curl -sS https://getcomposer.org/installer | php
-  mv composer.phar /usr/local/bin/composer
+  mv composer.phar /usr/bin/composer
 
 fi
 
@@ -2559,7 +2563,7 @@ cd /tmp
 # install MongoDB, RabbitMQ, Redis, Go #
 ########################################
 
-apt-get install -y --force-yes mongodb-org rabbitmq-server redis-server redis-tools
+apt install -y --force-yes mongodb-org rabbitmq-server redis-server redis-tools
 systemctl enable mongod.service
 service rabbitmq-server start
 
