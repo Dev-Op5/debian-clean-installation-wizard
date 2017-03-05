@@ -149,6 +149,11 @@ echo "net.ipv4.ip_local_port_range = 10240    65535" >> /etc/sysctl.conf
 echo "net.ipv6.conf.default.disable_ipv6=1" >> /etc/sysctl.conf
 echo "net.ipv6.conf.all.disable_ipv6=1" >> /etc/sysctl.conf
 
+systemctl stop rpcbind.service
+systemctl disable rpcbind.service
+
+apt autoremove -y exim4*
+
 ############################
 #update the repository list#
 ############################
@@ -371,7 +376,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_t
   echo "# ssl-key                 = /etc/mysql/server-key.pem" >> my.cnf
   echo "" >> my.cnf
   echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : Extended Config" >> my.cnf
-  echo "!includedir /etc/mysql/conf.d/" >> my.cnf
+  echo '!includedir /etc/mysql/conf.d/' >> my.cnf
 
   mv /etc/mysql/my.cnf /etc/mysql/my.cnf.original
   cp /tmp/my.cnf /etc/mysql/my.cnf
