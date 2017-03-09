@@ -432,9 +432,9 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   echo "fastcgi_param  DOCUMENT_ROOT      \$document_root;" >> /tmp/fastcgi_params
   echo "fastcgi_param  SERVER_PROTOCOL    \$server_protocol;" >> /tmp/fastcgi_params
   echo "fastcgi_param  REQUEST_SCHEME     \$scheme;" >> /tmp/fastcgi_params
-  echo "fastcgi_param  SCRIPT_FILENAME    \$document_root$fastcgi_script_name;" >> /tmp/fastcgi_params
+  echo "fastcgi_param  SCRIPT_FILENAME    \$document_root\$fastcgi_script_name;" >> /tmp/fastcgi_params
   echo "fastcgi_param  PATH_INFO          \$fastcgi_path_info;" >> /tmp/fastcgi_params
-  echo "fastcgi_param  PATH_TRANSLATED    \$document_root$fastcgi_path_info;" >> /tmp/fastcgi_params
+  echo "fastcgi_param  PATH_TRANSLATED    \$document_root\$fastcgi_path_info;" >> /tmp/fastcgi_params
   echo "fastcgi_param  HTTPS              \$https if_not_empty;" >> /tmp/fastcgi_params
   echo "" >> /tmp/fastcgi_params
   echo "fastcgi_param  GATEWAY_INTERFACE  CGI/1.1;" >> /tmp/fastcgi_params
