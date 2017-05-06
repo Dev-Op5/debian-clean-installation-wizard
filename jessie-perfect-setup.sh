@@ -387,12 +387,13 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_t
   
   #mysqltuner
   mkdir -p /scripts/mysqltuner
+  cd /scripts/mysqltuner
   wget http://mysqltuner.pl/ -O mysqltuner.pl
   wget https://raw.githubusercontent.com/major/MySQLTuner-perl/master/basic_passwords.txt -O basic_passwords.txt
   wget https://raw.githubusercontent.com/major/MySQLTuner-perl/master/vulnerabilities.csv -O vulnerabilities.csv
   chmod +x /scripts/mysqltuner/mysqltuner.pl
   echo "alias mysqltuner='/scripts/mysqltuner/mysqltuner.pl --cvefile=/scripts/mysqltuner/vulnerabilities.csv --passwordfile=/scripts/mysqltuner/basic_passwords.txt'" >> /etc/bash.bashrc
-
+  cd /tmp
 fi
 
 
