@@ -2607,10 +2607,10 @@ cd /tmp
 if [ "$appserver_type" = '5' ]; then
 
   echo "Installing necessary python libraries"
-  apt-get install -y --force-yes python-pybabel
+  apt-get install -y python-pybabel
   apt-get build-dep -y python-psycopg2
   pip install psycopg2 werkzeug simplejson
-  apt-get install -y --force-yes python-dev python-cups python-dateutil python-decorator python-docutils python-feedparser \
+  apt-get install -y python-dev python-cups python-dateutil python-decorator python-docutils python-feedparser \
                      python-gdata python-geoip python-gevent python-imaging python-jinja2 python-ldap python-libxslt1 \
                      python-mako python-mock python-openid python-passlib python-psutil python-psycopg2 \
                      python-pychart python-pydot python-pyparsing python-pypdf python-reportlab python-requests \
@@ -2619,13 +2619,13 @@ if [ "$appserver_type" = '5' ]; then
 
   echo "Installing wkhtmltopdf"
   cd /tmp
-  wget http://download.gna.org/wkhtmltopdf/0.12/0.12.3/wkhtmltox-0.12.3_linux-generic-amd64.tar.xz
-  tar -xJf wkhtmltox-0.12.3_linux-generic-amd64.tar.xz
+  wget http://download.gna.org/wkhtmltopdf/0.12/0.12.4/wkhtmltox-0.12.4_linux-generic-amd64.tar.xz
+  tar -xJf wkhtmltox-0.12.4_linux-generic-amd64.tar.xz
   cd wkhtmltox
   rsync -avP * /usr
   cd /tmp
   rm -R wkhtmltox
-  rm wkhtmltox-0.12.3_linux-generic-amd64.tar.xz
+  rm wkhtmltox-0.12.4_linux-generic-amd64.tar.xz
   
   echo "--------------------------------"
   echo ""
