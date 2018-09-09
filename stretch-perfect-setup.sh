@@ -29,8 +29,8 @@ fi
 
 echo ""
 echo "**************************************************************"
-echo "   DEBIAN STRETCH 9.1+ PERFECT APPLICATION SERVER INSTALLER   "
-echo "       -- proudly present by eRQee (q@codingaja.com) --       "
+echo "   DEBIAN STRETCH 9.x PERFECT APPLICATION SERVER INSTALLER    "
+echo "   -- proudly present by eRQee (rizky@prihanto.web.id)  --    "
 echo "**************************************************************"
 echo ""
 echo ""
@@ -95,14 +95,14 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2'  ] || [ "$appserver_
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
-  echo "deb http://kartolo.sby.datautama.net.id/mariadb/repo/10.2/debian $(lsb_release -sc) main" > /etc/apt/sources.list.d/mariadb-10.2.list
-  echo "deb-src http://kartolo.sby.datautama.net.id/mariadb/repo/10.2/debian $(lsb_release -sc) main" >> /etc/apt/sources.list.d/mariadb-10.2.list
+  echo "deb [arch=amd64] http://kartolo.sby.datautama.net.id/mariadb/repo/10.3/debian $(lsb_release -sc) main" > /etc/apt/sources.list.d/mariadb-10.3.list
+  echo "deb-src [arch=amd64] http://kartolo.sby.datautama.net.id/mariadb/repo/10.3/debian $(lsb_release -sc) main" >> /etc/apt/sources.list.d/mariadb-10.3.list
   apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 0xF1656F24C74CD1D8
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
-  echo "deb https://apt.postgresql.org/pub/repos/apt/ $(lsb_release -sc)-pgdg main 9.6" > /etc/apt/sources.list.d/postgresql-9.6.list
-  echo "deb-src https://apt.postgresql.org/pub/repos/apt/ $(lsb_release -sc)-pgdg main 9.6" >> /etc/apt/sources.list.d/postgresql-9.6.list
+  echo "deb https://apt.postgresql.org/pub/repos/apt/ $(lsb_release -sc)-pgdg main" > /etc/apt/sources.list.d/postgresql.list
+  echo "deb-src https://apt.postgresql.org/pub/repos/apt/ $(lsb_release -sc)-pgdg main" >> /etc/apt/sources.list.d/postgresql.list
   wget --no-check-certificate --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 fi
 
@@ -129,11 +129,6 @@ echo "net.ipv4.tcp_tw_reuse = 1" >> /etc/sysctl.conf
 echo "net.ipv4.ip_local_port_range = 10240    65535" >> /etc/sysctl.conf
 echo "net.ipv6.conf.default.disable_ipv6=1" >> /etc/sysctl.conf
 echo "net.ipv6.conf.all.disable_ipv6=1" >> /etc/sysctl.conf
-
-systemctl stop rpcbind.service
-systemctl disable rpcbind.service
-
-apt remove -y exim4*
 
 ############################
 #update the repository list#
@@ -177,20 +172,24 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   ################
   #install nodejs#
   ################
-  curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
-  apt install -y nodejs
-  npm install -g npm@latest grunt-cli bower gulp webpack less less-plugin-clean-css generator-feathers graceful-fs@^4.0.0 yo minimatch@3.0.2 
+  curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
+  curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+  echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+  apt update && apt install -y nodejs yarn gcc g++ make
+  npm install -g npm@latest 
+  npm install -g grunt-cli parcel webpack less less-plugin-clean-css generator-feathers 
+  npm install -g graceful-fs@^4.0.0 yo minimatch@^3.0.2 
 
   ##################
-  # install java-8 #
+  # install java-10 #
   ##################
 
-  echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | sudo /usr/bin/debconf-set-selections
-  echo "deb http://ppa.launchpad.net/webupd8team/java/ubuntu yakkety main" | tee /etc/apt/sources.list.d/webupd8team-java.list
-  echo "deb-src http://ppa.launchpad.net/webupd8team/java/ubuntu yakkety main" | tee -a /etc/apt/sources.list.d/webupd8team-java.list
-  apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C2518248EEA14886
-  apt update -y && apt install -y oracle-java8-installer && apt install -y oracle-java8-set-default
-  echo "JAVA_HOME=\"/usr/lib/jvm/java-8-openjdk-amd64\"" >> /etc/environment
+  echo "oracle-java10-installer shared/accepted-oracle-license-v1-1 select true" | sudo /usr/bin/debconf-set-selections
+  echo "deb http://ppa.launchpad.net/linuxuprising/java/ubuntu bionic main" | tee /etc/apt/sources.list.d/linuxuprising-java.list
+  echo "deb-src http://ppa.launchpad.net/linuxuprising/java/ubuntu bionic main" | tee /etc/apt/sources.list.d/linuxuprising-java.list
+apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 73C3DB2A
+  apt update -y && apt install -y oracle-java10-installer && apt install -y oracle-java10-set-default
+  echo "JAVA_HOME=\"/usr/lib/jvm/java-10-oracle\"" >> /etc/environment
   source /etc/environment
 
 fi
@@ -201,9 +200,10 @@ fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
   export DEBIAN_FRONTEND=noninteractive
-  echo "mariadb-server-10.2 mysql-server/root_password password $db_root_password" | sudo /usr/bin/debconf-set-selections
-  echo "mariadb-server-10.2 mysql-server/root_password_again password $db_root_password" | sudo /usr/bin/debconf-set-selections
-  apt install -y mariadb-server-10.2 mariadb-server-core-10.2 mariadb-client-10.2 mariadb-client-core-10.2 \
+  echo "mariadb-server-10.3 mysql-server/root_password password $db_root_password" | sudo /usr/bin/debconf-set-selections
+  echo "mariadb-server-10.3 mysql-server/root_password_again password $db_root_password" | sudo /usr/bin/debconf-set-selections
+  apt update
+  apt install -y mariadb-server-10.3 mariadb-server-core-10.3 mariadb-client-10.3 mariadb-client-core-10.3 \
                  mariadb-plugin-connect mariadb-plugin-cracklib-password-check mariadb-plugin-gssapi-server \
                  mariadb-plugin-gssapi-client mariadb-plugin-oqgraph mariadb-plugin-mroonga mariadb-plugin-spider 
 
@@ -211,7 +211,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_t
   cd /tmp
   echo "" > my.cnf
   echo "# MariaDB database server configuration file." >> my.cnf
-  echo "# Configured template by eRQee (q@codingaja.com)" >> my.cnf
+  echo "# Configured template by eRQee (rizky@prihanto.web.id)" >> my.cnf
   echo "# -------------------------------------------------------------------------------" >> my.cnf
   echo "" >> my.cnf
   echo "[client]" >> my.cnf
@@ -381,12 +381,12 @@ fi
 ##########################################
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
  
-  apt install -y php7.1 php7.1-bcmath php7.1-bz2 php7.1-cgi php7.1-cli php7.1-common php7.1-curl \
-                 php7.1-dba php7.1-dev php7.1-enchant php7.1-fpm php7.1-gd php7.1-gmp php7.1-imap \
-                 php7.1-interbase php7.1-intl php7.1-json php7.1-ldap php7.1-mbstring php7.1-mcrypt \
-                 php7.1-mysql php7.1-odbc php7.1-opcache php7.1-pgsql php7.1-pspell php7.1-readline \
-                 php7.1-recode php7.1-snmp php7.1-soap php7.1-sqlite3 php7.1-sybase php7.1-tidy \
-                 php7.1-xml php7.1-xmlrpc php7.1-xsl php7.1-zip php-mongodb php-geoip libgeoip-dev \
+  apt install -y php7.3 php7.3-bcmath php7.3-bz2 php7.3-cgi php7.3-cli php7.3-common php7.3-curl \
+                 php7.3-dba php7.3-dev php7.3-enchant php7.3-fpm php7.3-gd php7.3-gmp php7.3-imap \
+                 php7.3-interbase php7.3-intl php7.3-json php7.3-ldap php7.3-mbstring \
+                 php7.3-mysql php7.3-odbc php7.3-opcache php7.3-pgsql php7.3-pspell php7.3-readline \
+                 php7.3-recode php7.3-snmp php7.3-soap php7.3-sqlite3 php7.3-sybase php7.3-tidy \
+                 php7.3-xml php7.3-xmlrpc php7.3-xsl php7.3-zip php-mongodb php-geoip libgeoip-dev \
                  snmp-mibs-downloader nginx
 
   if [ "$appserver_type" = '5' ]; then
@@ -488,7 +488,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   echo "    fastcgi_buffers       8 16k;  # up to 1k + 128 * 1k" >> /tmp/nginx.conf
   echo "    fastcgi_max_temp_file_size 0;" >> /tmp/nginx.conf
   echo "" >> /tmp/nginx.conf
-  echo "    #upstream apache    { server 127.0.0.1:82; }" >> /tmp/nginx.conf
+  echo "    #upstream apache    { server 127.0.0.1:77; }" >> /tmp/nginx.conf
   echo "    #upstream odoo      { server 127.0.0.1:8069; }" >> /tmp/nginx.conf
   echo "" >> /tmp/nginx.conf
   echo "    include /etc/nginx/sites-enabled/*;" >> /tmp/nginx.conf
@@ -511,9 +511,9 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
 
   cp security.conf /etc/nginx/security.conf
 
-  # configuring php7-fpm
-  mkdir -p /var/lib/php/7.1/sessions
-  chmod -R 777 /var/lib/php/7.1/sessions
+  # configuring php7.3-fpm
+  mkdir -p /var/lib/php/7.3/sessions
+  chmod -R 777 /var/lib/php/7.3/sessions
   
   cd /tmp
   echo '' > /tmp/php.ini
@@ -1871,7 +1871,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   echo '; where MODE is the octal representation of the mode. Note that this' >> /tmp/php.ini
   echo '; does not overwrite the process"s umask.' >> /tmp/php.ini
   echo '; http://php.net/session.save-path' >> /tmp/php.ini
-  echo 'session.save_path = "/var/lib/php/7.1/sessions"' >> /tmp/php.ini
+  echo 'session.save_path = "/var/lib/php/7.3/sessions"' >> /tmp/php.ini
   echo '' >> /tmp/php.ini
   echo '; Whether to use strict session mode.' >> /tmp/php.ini
   echo '; Strict session mode does not accept uninitialized session ID and regenerate' >> /tmp/php.ini
@@ -2463,7 +2463,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   echo ';prefix = /path/to/pools/$pool' >> /tmp/www.conf
   echo 'user = www-data' >> /tmp/www.conf
   echo 'group = www-data' >> /tmp/www.conf
-  echo 'listen = /var/run/php7.1-fpm.sock' >> /tmp/www.conf
+  echo 'listen = /var/run/php7.3-fpm.sock' >> /tmp/www.conf
   echo ';listen.backlog = 511' >> /tmp/www.conf
   echo 'listen.owner = www-data' >> /tmp/www.conf
   echo 'listen.group = www-data' >> /tmp/www.conf
@@ -2527,7 +2527,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   echo '  location ~ [^/]\.php(/|$) {' >> /tmp/000default.conf
   echo '    if (!-f $document_root$fastcgi_script_name) { return 404; }' >> /tmp/000default.conf
   echo '    fastcgi_split_path_info     ^(.+?\.php)(/.*)$;' >> /tmp/000default.conf
-  echo '    fastcgi_pass                unix:/var/run/php7.1-fpm.sock;' >> /tmp/000default.conf
+  echo '    fastcgi_pass                unix:/var/run/php7.3-fpm.sock;' >> /tmp/000default.conf
   echo '    fastcgi_index               index.php;' >> /tmp/000default.conf
   echo '    include                     /etc/nginx/fastcgi_params;' >> /tmp/000default.conf
   echo '  }' >> /tmp/000default.conf
@@ -2542,7 +2542,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   chown -R www-data:www-data /var/www
 
   # restart the services
-  service nginx restart && service php7.1-fpm restart
+  service nginx restart && service php7.3-fpm restart
   
   ########################
   # install composer.phar#
@@ -2564,7 +2564,7 @@ if [ "$appserver_type" = '4' ]; then
 fi
 
 #############################################
-# install (and configure) odoo9             #
+# install (and configure) odoo10            #
 #############################################
 
 cd /tmp
@@ -2721,8 +2721,8 @@ fi
 touch $install_summarize
 timestamp_flag=` date +%F\ %H:%M:%S`
 echo "*************************************************************" > $install_summarize
-echo "   DEBIAN STRETCH 9.1 PERFECT APPLICATION SERVER INSTALLER   " >> $install_summarize
-echo "       -- proudly present by eRQee (q@codingaja.com) --      " >> $install_summarize
+echo "   DEBIAN STRETCH 9.x PERFECT APPLICATION SERVER INSTALLER   " >> $install_summarize
+echo "   -- proudly present by eRQee (rizky@prihanto.web.id)  --   " >> $install_summarize
 echo "                         *   *   *                           " >> $install_summarize
 echo "                     INSTALL SUMMARIZE                       " >> $install_summarize
 echo "************************************************************" >> $install_summarize
@@ -2738,10 +2738,6 @@ pgsql_ver=$(psql --version)
 git_ver=$(git --version)
 node_ver=$(node -v)
 npm_ver=$(npm -v)
-grunt_ver=$( grunt --version )
-bower_ver=$( bower --version )
-gulp_ver=$( gulp --version | grep "CLI" )
-yeoman_ver=$( yo --version )
 
 echo "[Web Server Information]"  >> $install_summarize
 echo "$nginx_ver" >> $install_summarize
@@ -2763,10 +2759,6 @@ echo "" >> $install_summarize
 echo "[Web Dev Tools]"  >> $install_summarize
 echo "NodeJS    : $node_ver" >> $install_summarize
 echo "NPM       : $npm_ver" >> $install_summarize
-echo "Grunt     : $grunt_ver" >> $install_summarize
-echo "Bower     : $bower_ver" >> $install_summarize
-echo "Gulp      : $gulp_ver" >> $install_summarize
-echo "Yeoman    : $yeoman_ver" >> $install_summarize
 echo "" >> $install_summarize
 echo "*----------------------*" >> $install_summarize
 echo "* This Server SSH Keys *" >> $install_summarize
