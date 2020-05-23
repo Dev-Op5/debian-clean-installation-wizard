@@ -150,8 +150,9 @@ apt install -y autoconf automake bison build-essential ca-certificates cdbs \
                libx11-dev libxext-dev libxft-dev libxml-parser-perl libxml2-dev \
                libxrender-dev libxrender1 libxslt1-dev libyaml-dev locales-all \
                locate lynx net-tools openssh-server optipng p7zip-full pcregrep \
-               pdftk poppler-utils ruby-full tcl traceroute unrar unzip uuid-dev \
-               whois xfonts-75dpi xfonts-base xfonts-scalable zip zlib1g-dev zulu-14
+               pdftk pkg-config poppler-utils ruby-full tcl traceroute unrar \
+               unzip uuid-dev whois xfonts-75dpi xfonts-base xfonts-scalable \
+               zip zlib1g-dev zulu-14
 
 locale-gen en_US en_US.UTF-8 id_ID id_ID.UTF-8
 
@@ -999,12 +1000,6 @@ fi
 #########################################################################
 touch $install_summarize
 timestamp_flag=` date +%F\ %H:%M:%S`
-public_ip=$( curl https://ifconfig.me/ip  )
-mail_subject="Server $public_ip installed with Ubuntu 20.04 LTS!"
-echo "Well done!" > /tmp/mail-body.txt 
-echo "You've finished the Ubuntu 20.04 LTS installation on server $public_ip at $timestamp_flag." >> /tmp/mail-body.txt 
-echo "" >> /tmp/mail-body.txt
-echo "Please review and keep the attached install summarize report below." >> /tmp/mail-body.txt 
 echo "*************************************************************" > $install_summarize
 echo "    UBUNTU 20.04 LTS PERFECT APPLICATION SERVER INSTALLER    " >> $install_summarize
 echo "       -- present by eRQee (rizky@prihanto.web.id)  --       " >> $install_summarize
@@ -1079,11 +1074,21 @@ echo "***********************************************************" >> $install_s
 echo "                           ENJOY                           " >> $install_summarize
 echo "***********************************************************" >> $install_summarize
 cat $install_summarize
+
+######################################
+# Send the installation log to email #
+######################################
+public_ip=$( curl https://ifconfig.me/ip  )
 timestamp_flag=` date +%F-%H-%M-%S`
-mail_attachment=/root/install-log-$timestamp_flag.txt 
-rm $mail_attachment
-cp $install_summarize $mail_attachment
-mutt -a $mail_attachment -s $mail_subject -- $git_user_email < /tmp/mail-body.txt
-rm $mail_attachment
-rm /tmp/mail-body.txt
+mail_subject="Server $public_ip installed with Ubuntu 20.04 LTS!"
+echo "Well done!" > /tmp/mail-body.txt 
+echo "You've finished the Ubuntu 20.04 LTS Perfect Server installation on $public_ip at $timestamp_flag." >> /tmp/mail-body.txt 
+echo "" >> /tmp/mail-body.txt
+echo "Please review the attached install summarize report below, and keep for future references." >> /tmp/mail-body.txt 
+echo "" >> /tmp/mail-body.txt
+echo "--" >> /tmp/mail-body.txt
+echo "ServerQ Auto DevOps" >> /tmp/mail-body.txt
+cp $install_summarize /tmp/install-log-$timestamp_flag.txt 
+mutt -a "/tmp/install-log-$timestamp_flag.txt" -s "$mail_subject" -- "$git_user_email" < /tmp/mail-body.txt
+rm $install_summarize
 exit 0
