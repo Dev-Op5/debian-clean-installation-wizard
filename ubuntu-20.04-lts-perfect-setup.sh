@@ -67,6 +67,10 @@ fi
 ##############################
 #rebuild the software sources#
 ##############################
+
+# force use 8.8.8.8 nameserver
+sed -i '/nameserver/c\nameserver 8.8.8.8' /etc/resolv.conf
+
 # choose preferred repository list
 if [ -f /etc/apt/sources.list.old ]; then
   rm /etc/apt/sources.list.old
@@ -94,8 +98,8 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2'  ] || [ "$appserver_
   echo "deb-src http://nginx.org/packages/mainline/ubuntu $(lsb_release -sc) nginx" >> /etc/apt/sources.list.d/nginx-mainline.list
   curl -fsSL https://nginx.org/keys/nginx_signing.key | apt-key add -
   #php
-  echo "deb http://ppa.launchpad.net/ondrej/php/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/php-deb.sury.org.list
-  echo "deb-src http://ppa.launchpad.net/ondrej/php/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/php-deb.sury.org.list
+  echo "deb http://ppa.launchpad.net/ondrej/php/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/php-ondrej.list
+  echo "deb-src http://ppa.launchpad.net/ondrej/php/ubuntu $(lsb_release -sc) main" >> /etc/apt/sources.list.d/php-ondrej.list
   apt-key adv --keyserver keyserver.ubuntu.com --recv-keys 4F4EA0AAE5267A6C  
 fi
 
@@ -193,7 +197,7 @@ echo 'set realname="ServerQ Notification"' >> /root/.mailrc
 echo 'set from="no-reply@serverq.org"' >> /root/.mailrc
 echo 'set envelope_from=yes' >> /root/.mailrc
 
-systmctl restart msmtpd.service
+systemctl restart msmtpd.service
 
 apt install -y mutt
 cp /root/.mailrc /root/.muttrc
@@ -213,6 +217,11 @@ echo "alias sedot='wget --recursive --page-requisites --html-extension --convert
 echo "alias commit='git add --all . && git commit -m'" >> /etc/bash.bashrc
 echo "alias push='git push -u origin master'" >> /etc/bash.bashrc
 echo "alias pull='git pull origin master'" >> /etc/bash.bashrc
+echo "alias cp='rsync -ravz --progress'" >> /etc/bash.bashrc
+echo "alias mkdir='mkdir -pv'" >> /etc/bash.bashrc
+echo "alias nocomment='grep -Ev '''^(#|$)''''" >> /etc/bash.bashrc
+echo "alias wget='wget -c" >> /etc/bash.bashrc
+
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
 
@@ -223,7 +232,6 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
   echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
   apt update && apt install -y nodejs yarn
-  npm install -g npm@latest
 
   ################
   #install redis #
@@ -802,6 +810,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
 
   # normalize the /etc/hosts values
   echo '127.0.0.1       localhost' > /etc/hosts
+  echo "127.0.0.1       $(hostname)   $(hostname).apache" >> /etc/hosts
   echo '' >> /etc/hosts
   echo '# VirtualHost addresses.' >> /etc/hosts
   echo '# Normally you do not need to register all of your project addresses here.' >> /etc/hosts
@@ -836,9 +845,7 @@ if [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
   apt install -y postgresql-12 postgresql-client-12 postgresql-contrib-12 postgresql-server-dev-12 libpq-dev
 
   if [ "$appserver_type" = '4' ]; then
-    mkdir -p /home/enterprise
     adduser --system --quiet --shell=/bin/bash --home=/home/enterprise --gecos 'enterprise' --group enterprise
-    chown -R enterprise:enterprise /home/enterprise
     echo "Create PostgreSQL EnterpriseDB User (enterprise)"
     sudo -u postgres -H createuser --createdb --username postgres --no-createrole --no-superuser enterprise
     service postgresql start
@@ -857,22 +864,17 @@ cd /tmp
 if [ "$appserver_type" = '5' ]; then
 
   echo "Installing necessary python libraries"
-  apt install -y python3-pip python3-setuptools python3-dev
+  apt install -y python3-pip python3-setuptools python3-dev python3-openid python3-yaml
   pip3 install babel psycopg2 werkzeug simplejson pillow lxml cups \
-               dateutil decorator docutils feedparser geoip gevent \
-               jinja2 ldap mako mock openid passlib psutil pydot \
+               dateutils decorator docutils feedparser geoip gevent \
+               jinja2 ldap mako mock passlib psutil pydot \
                pyparsing reportlab requests tz unicodecsv unittest2 \
-               vatnumber vobject yaml
+               vatnumber vobject
       
   echo "Installing wkhtmltopdf"
   cd /tmp
-  wget http://download.gna.org/wkhtmltopdf/0.12/0.12.4/wkhtmltox-0.12.4_linux-generic-amd64.tar.xz
-  tar -xJf wkhtmltox-0.12.4_linux-generic-amd64.tar.xz
-  cd wkhtmltox
-  rsync -avP * /usr
-  cd /tmp
-  rm -R wkhtmltox
-  rm wkhtmltox-0.12.4_linux-generic-amd64.tar.xz
+  wget https://github.com/wkhtmltopdf/wkhtmltopdf/releases/download/0.12.5/wkhtmltox_0.12.5-1.focal_amd64.deb
+  dpkg -i wkhtmltox_0.12.5-1.focal_amd64.deb
   
   echo "--------------------------------"
   echo ""
@@ -893,7 +895,7 @@ if [ "$appserver_type" = '5' ]; then
   echo "Clone the Odoo 13 latest sources"
   cd /opt/odoo
   sudo -u odoo -H git clone https://github.com/odoo/odoo --depth 1 --branch 13.0 --single-branch .
-  mkdir /opt/odoo/addons
+  mkdir -p /opt/odoo/addons
   chown -R odoo:odoo /opt/odoo
   chown -R odoo:odoo /var/log/odoo/
   
@@ -914,7 +916,6 @@ if [ "$appserver_type" = '5' ]; then
   cd /opt/odoo
   npm install -g less less-plugin-clean-css rtlcss generator-feathers graceful-fs@^4.0.0 yo minimatch@^3.0.2 -y
   pip3 install -r requirements.txt
-  pip3 install requests==2.6.0
 
   cd /tmp
   echo '#!/bin/sh' > /tmp/odoo-server
