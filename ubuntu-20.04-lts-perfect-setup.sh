@@ -39,7 +39,7 @@ echo "1. Perfect Server for Nginx, Apache, PHP-FPM, and MariaDB"
 echo "2. Dedicated Webserver (Nginx, Apache & PHP-FPM) only"
 echo "3. Dedicated Database Server (MariaDB) only"
 echo "4. Dedicated Database Server (PostgreSQL) only"
-echo "5. Odoo Perfect Server (Nginx + Odoo + PostgrSQL)"
+echo "5. On-Premise/Self-Hosted Odoo Perfect Server (Nginx + Odoo 13 + PostgrSQL 12)"
 read -p "Your Choice (1/2/3/4/5) : " appserver_type
 
 if [ "$appserver_type" != '2' ]; then
@@ -48,8 +48,17 @@ if [ "$appserver_type" != '2' ]; then
 fi
 
 echo ""
+echo "Enter ZOHO Email Account Credentials below"
+echo "~ this will be used for *will-not-be-marked-as-spam* mail notification services among your apps ~"
+echo "~ leave empty to disable the MAIL features ~"
+echo ""
+read -p "Mail Account : " zoho_mail_account
+if [ ! -z "$zoho_mail_account" ]; then
+  read -p "Password : " zoho_mail_password
+fi
+echo ""
 echo "Enter your DevOps name/email below."
-echo "The information will be used as this server's Git identity."
+echo "~ the information will be used as this server's Git identity ~"
 echo ""
 read -p "DevOps Name : " git_user_name
 read -p "DevOps Email : " git_user_email
@@ -165,58 +174,62 @@ locale-gen en_US en_US.UTF-8 id_ID id_ID.UTF-8
 #############################
 
 update-ca-certificates
-apt install -y msmtp-mta mailutils 
+if [ ! -z "$zoho_mail_account" ]; then
+  apt install -y msmtp-mta mailutils 
 
-echo "defaults" > /etc/msmtprc
-echo "  auth on" >> /etc/msmtprc
-echo "  tls on" >> /etc/msmtprc
-echo "  tls_trust_file /etc/ssl/certs/ca-certificates.crt" >> /etc/msmtprc
-echo "  logfile /var/log/msmtp" >> /etc/msmtprc
-echo "" >> /etc/msmtprc
-echo "account default" >> /etc/msmtprc
-echo "" >> /etc/msmtprc
-echo "  host smtp.zoho.com" >> /etc/msmtprc
-echo "  port 465" >> /etc/msmtprc
-echo "" >> /etc/msmtprc
-echo "  auth on" >> /etc/msmtprc
-echo "  user commit@serverq.org" >> /etc/msmtprc
-echo "  password Broadcastlah123..." >> /etc/msmtprc
-echo "  from no-reply@serverq.org" >> /etc/msmtprc
-echo "" >> /etc/msmtprc
-echo "  tls on" >> /etc/msmtprc
-echo "  tls_starttls off" >> /etc/msmtprc
-echo "  tls_certcheck off" >> /etc/msmtprc
+  echo "defaults" > /etc/msmtprc
+  echo "  auth on" >> /etc/msmtprc
+  echo "  tls on" >> /etc/msmtprc
+  echo "  tls_trust_file /etc/ssl/certs/ca-certificates.crt" >> /etc/msmtprc
+  echo "  logfile /var/log/msmtp" >> /etc/msmtprc
+  echo "" >> /etc/msmtprc
+  echo "account default" >> /etc/msmtprc
+  echo "" >> /etc/msmtprc
+  echo "  host smtp.zoho.com" >> /etc/msmtprc
+  echo "  port 465" >> /etc/msmtprc
+  echo "" >> /etc/msmtprc
+  echo "  auth on" >> /etc/msmtprc
+  echo "  user $zoho_mail_account" >> /etc/msmtprc
+  echo "  password $zoho_mail_password" >> /etc/msmtprc
+  echo "  from $zoho_mail_account" >> /etc/msmtprc
+  echo "" >> /etc/msmtprc
+  echo "  tls on" >> /etc/msmtprc
+  echo "  tls_starttls off" >> /etc/msmtprc
+  echo "  tls_certcheck off" >> /etc/msmtprc
 
-chmod 0640 /etc/msmtprc
-touch /var/log/msmtp
-chmod 666 /var/log/msmtp
+  chmod 0640 /etc/msmtprc
+  touch /var/log/msmtp
+  chmod 666 /var/log/msmtp
 
-echo 'set sendmail="/usr/bin/msmtp"' > /root/.mailrc
-echo 'set use_from=yes' >> /root/.mailrc
-echo 'set realname="ServerQ Notification"' >> /root/.mailrc
-echo 'set from="no-reply@serverq.org"' >> /root/.mailrc
-echo 'set envelope_from=yes' >> /root/.mailrc
+  echo 'set sendmail="/usr/bin/msmtp"' > /root/.mailrc
+  echo 'set use_from=yes' >> /root/.mailrc
+  echo 'set realname="Mail Notification"' >> /root/.mailrc
+  echo "set from=\"$zoho_mail_account\"" >> /root/.mailrc
+  echo 'set envelope_from=yes' >> /root/.mailrc
 
-systemctl restart msmtpd.service
+  systemctl restart msmtpd.service
 
-apt install -y mutt
-cp /root/.mailrc /root/.muttrc
+  apt install -y mutt
+  cp /root/.mailrc /root/.muttrc
+fi
 
 ###############
 #configure git#
 ###############
-ssh-keygen -t rsa -C "$git_user_email" -N "" -f ~/.ssh/id_rsa
-git config --global user.name "$git_user_name"
-git config --global user.email "$git_user_email"
-git config --global core.editor nano
-git config --global color.ui true
+if [ ! -z "$git_user_email" ]; then
+  ssh-keygen -t rsa -C "$git_user_email" -N "" -f ~/.ssh/id_rsa
+  git config --global user.name "$git_user_name"
+  git config --global user.email "$git_user_email"
+  git config --global core.editor nano
+  git config --global color.ui true
 
-echo "" >> /etc/bash.bashrc
+  echo "" >> /etc/bash.bashrc
+  echo "alias commit='git add --all . && git commit -m'" >> /etc/bash.bashrc
+  echo "alias push='git push -u origin master'" >> /etc/bash.bashrc
+  echo "alias pull='git pull origin master'" >> /etc/bash.bashrc
+fi
 echo "" >> /etc/bash.bashrc
 echo "alias sedot='wget --recursive --page-requisites --html-extension --convert-links --no-parent --random-wait -r -p -E -e robots=off'" >> /etc/bash.bashrc
-echo "alias commit='git add --all . && git commit -m'" >> /etc/bash.bashrc
-echo "alias push='git push -u origin master'" >> /etc/bash.bashrc
-echo "alias pull='git pull origin master'" >> /etc/bash.bashrc
 echo "alias cp='rsync -ravz --progress'" >> /etc/bash.bashrc
 echo "alias mkdir='mkdir -pv'" >> /etc/bash.bashrc
 echo "alias nocomment='grep -Ev '''^(#|$)''''" >> /etc/bash.bashrc
@@ -662,16 +675,16 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   echo '}' >> /tmp/000default-ssl.conf
   echo '' >> /tmp/000default-ssl.conf
   echo 'server {' >> /tmp/000default-ssl.conf
-  echo '  listen                 443 ssl http2' >> /tmp/000default-ssl.conf
-  echo '  listen                 [::]:443 ssl http2' >> /tmp/000default-ssl.conf
+  echo '  listen                 443 ssl http2;' >> /tmp/000default-ssl.conf
+  echo '  listen                 [::]:443 ssl http2;' >> /tmp/000default-ssl.conf
   echo '  server_name            nginx.vbox;' >> /tmp/000default-ssl.conf
   echo '' >> /tmp/000default-ssl.conf
   echo '  access_log	         /dev/null gzip;' >> /tmp/000default-ssl.conf
-  echo '  error_log	             /dev/null notice;' >> /tmp/000default-ssl.conf
+  echo '  error_log	         /dev/null notice;' >> /tmp/000default-ssl.conf
   echo '' >> /tmp/000default-ssl.conf
   echo '  ssl_certificate        /etc/letsencrypt/live/nginx.vbox/fullchain.pem;' >> /tmp/000default-ssl.conf
   echo '  ssl_certificate_key    /etc/letsencrypt/live/nginx.vbox/privkey.pem;' >> /tmp/000default-ssl.conf
-  echo '  include                /etc/nginx/snippets/ssl-params.conf' >> /tmp/000default-ssl.conf
+  echo '  include                /etc/nginx/snippets/ssl-params.conf;' >> /tmp/000default-ssl.conf
   echo '' >> /tmp/000default-ssl.conf
   echo '  root                   /var/www/nginx.vbox/;' >> /tmp/000default-ssl.conf
   echo '  index                  index.php index.html;' >> /tmp/000default-ssl.conf
@@ -702,7 +715,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   echo '  client_max_body_size   20M;' >> /tmp/000default-ssl.conf
   echo '}' >> /tmp/000default-ssl.conf
 
-  mv /tmp/000default.conf /etc/nginx/sites-available/000default-ssl.conf
+  mv /tmp/000default-ssl.conf /etc/nginx/sites-available/000default-ssl.conf
 
   echo 'server {' > /tmp/000default-ssl-reverse-proxy.conf
   echo '  charset                utf8;' >> /tmp/000default-ssl-reverse-proxy.conf
@@ -713,16 +726,16 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   echo '}' >> /tmp/000default-ssl-reverse-proxy.conf
   echo '' >> /tmp/000default-ssl-reverse-proxy.conf
   echo 'server {' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '  listen                 443 ssl http2' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '  listen                 [::]:443 ssl http2' >> /tmp/000default-ssl-reverse-proxy.conf
+  echo '  listen                 443 ssl http2;' >> /tmp/000default-ssl-reverse-proxy.conf
+  echo '  listen                 [::]:443 ssl http2;' >> /tmp/000default-ssl-reverse-proxy.conf
   echo '  server_name            nginx.vbox;' >> /tmp/000default-ssl-reverse-proxy.conf
   echo '' >> /tmp/000default-ssl-reverse-proxy.conf
   echo '  access_log	         /dev/null gzip;' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '  error_log	             /dev/null notice;' >> /tmp/000default-ssl-reverse-proxy.conf
+  echo '  error_log	         /dev/null notice;' >> /tmp/000default-ssl-reverse-proxy.conf
   echo '' >> /tmp/000default-ssl-reverse-proxy.conf
   echo '  ssl_certificate        /etc/letsencrypt/live/nginx.vbox/fullchain.pem;' >> /tmp/000default-ssl-reverse-proxy.conf
   echo '  ssl_certificate_key    /etc/letsencrypt/live/nginx.vbox/privkey.pem;' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '  include                /etc/nginx/snippets/ssl-params.conf' >> /tmp/000default-ssl-reverse-proxy.conf
+  echo '  include                /etc/nginx/snippets/ssl-params.conf;' >> /tmp/000default-ssl-reverse-proxy.conf
   echo '' >> /tmp/000default-ssl-reverse-proxy.conf
   echo '  root                   /var/www/nginx.vbox/;' >> /tmp/000default-ssl-reverse-proxy.conf
   echo '  location / {' >> /tmp/000default-ssl-reverse-proxy.conf
@@ -761,7 +774,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   cp /tmp/php.ini-serverq.recommended /etc/php/7.4/cli/php.ini
 
   cp /etc/php/7.4/fpm/pool.d/www.conf /tmp/www.conf-serverq.recommended
-  sed -i '/listen = /run/php/php7.4-fpm.sock/c\listen = /var/run/php7.4-fpm.sock' /tmp/www.conf-serverq.recommended
+  sed -i '/listen = \/run\/php\/php7.4-fpm.sock/c\listen = \/var\/run\/php7.4-fpm.sock' /tmp/www.conf-serverq.recommended
   sed -i '/;listen.mode = 0660/c\listen.mode = 0660' /tmp/www.conf-serverq.recommended
   sed -i '/pm.max_children/c\pm.max_children = 10' /tmp/www.conf-serverq.recommended
   sed -i '/pm.min_spare_servers/c\pm.min_spare_servers = 2' /tmp/www.conf-serverq.recommended
@@ -1043,10 +1056,12 @@ if [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
   fi
 fi
 echo "" >> $install_summarize
-git_ver=$(git --version)
-echo "[Git Information]"  >> $install_summarize
-echo "$git_ver" >> $install_summarize
-git config --list >> $install_summarize 2>&1
+if [ ! -z "$git_user_email" ]; then
+  git_ver=$(git --version)
+  echo "[Git Information]"  >> $install_summarize
+  echo "$git_ver" >> $install_summarize
+  git config --list >> $install_summarize 2>&1
+fi
 echo "" >> $install_summarize
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ]  || [ "$appserver_type" = '5' ]; then
   node_ver=$(node -v)
@@ -1066,7 +1081,7 @@ echo "" >> $install_summarize
 echo "*----------------------*" >> $install_summarize
 echo "* This Server SSH Keys *" >> $install_summarize
 echo "*----------------------*" >> $install_summarize
-echo "please copy this into Code.SQ $git_user_name (a.k.a. $git_user_email) account" >> $install_summarize
+echo "please copy this into yout Git Repository account \"$git_user_name\" (a.k.a. $git_user_email)" >> $install_summarize
 echo "" >> $install_summarize
 cat /root/.ssh/id_rsa.pub >> $install_summarize 2>&1
 echo "" >> $install_summarize
@@ -1079,17 +1094,20 @@ cat $install_summarize
 ######################################
 # Send the installation log to email #
 ######################################
-public_ip=$( curl https://ifconfig.me/ip  )
-timestamp_flag=` date +%F-%H-%M-%S`
-mail_subject="Server $public_ip installed with Ubuntu 20.04 LTS!"
-echo "Well done!" > /tmp/mail-body.txt 
-echo "You've finished the Ubuntu 20.04 LTS Perfect Server installation on $public_ip at $timestamp_flag." >> /tmp/mail-body.txt 
-echo "" >> /tmp/mail-body.txt
-echo "Please review the attached install summarize report below, and keep for future references." >> /tmp/mail-body.txt 
-echo "" >> /tmp/mail-body.txt
-echo "--" >> /tmp/mail-body.txt
-echo "ServerQ Auto DevOps" >> /tmp/mail-body.txt
-cp $install_summarize /tmp/install-log-$timestamp_flag.txt 
-mutt -a "/tmp/install-log-$timestamp_flag.txt" -s "$mail_subject" -- "$git_user_email" < /tmp/mail-body.txt
+
+if [ ! -z "$zoho_mail_account" ]; then
+  public_ip=$( curl https://ifconfig.me/ip  )
+  timestamp_flag=` date +%F-%H-%M-%S`
+  mail_subject="Server $public_ip installed with Ubuntu 20.04 LTS!"
+  echo "Well done!" > /tmp/mail-body.txt 
+  echo "You've finished the Ubuntu 20.04 LTS Perfect Server installation on $public_ip at $timestamp_flag." >> /tmp/mail-body.txt 
+  echo "" >> /tmp/mail-body.txt
+  echo "Please review the attached install summarize report below, and keep for future references." >> /tmp/mail-body.txt 
+  echo "" >> /tmp/mail-body.txt
+  echo "--" >> /tmp/mail-body.txt
+  echo "Your Private Auto DevOps" >> /tmp/mail-body.txt
+  cp $install_summarize /tmp/install-log-$timestamp_flag.txt 
+  mutt -a "/tmp/install-log-$timestamp_flag.txt" -s "$mail_subject" -- "$git_user_email" < /tmp/mail-body.txt
+fi
 rm $install_summarize
 exit 0
