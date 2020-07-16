@@ -103,8 +103,8 @@ apt update && apt upgrade -y && apt install -y apt-transport-https debian-keyrin
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2'  ] || [ "$appserver_type" = '5' ]; then
   #nginx
-  echo "deb http://nginx.org/packages/mainline/ubuntu $(lsb_release -sc) nginx" > /etc/apt/sources.list.d/nginx-mainline.list
-  echo "deb-src http://nginx.org/packages/mainline/ubuntu $(lsb_release -sc) nginx" >> /etc/apt/sources.list.d/nginx-mainline.list
+  echo "deb [arch=amd64] http://nginx.org/packages/mainline/ubuntu $(lsb_release -sc) nginx" > /etc/apt/sources.list.d/nginx-mainline.list
+  echo "deb-src [arch=amd64] http://nginx.org/packages/mainline/ubuntu $(lsb_release -sc) nginx" >> /etc/apt/sources.list.d/nginx-mainline.list
   curl -fsSL https://nginx.org/keys/nginx_signing.key | apt-key add -
   #php
   echo "deb http://ppa.launchpad.net/ondrej/php/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/php-ondrej.list
@@ -113,14 +113,14 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2'  ] || [ "$appserver_
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
-  echo "deb [arch=amd64] http://mirror.biznetgio.com/mariadb/repo/10.5/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/mariadb-10.4.list
-  echo "deb-src [arch=amd64] http://mirror.biznetgio.com/mariadb/repo/10.5/ubuntu $(lsb_release -sc) main" >> /etc/apt/sources.list.d/mariadb-10.4.list
+  echo "deb [arch=amd64] http://mirror.biznetgio.com/mariadb/repo/10.5/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/mariadb-10.x.list
+  echo "deb-src [arch=amd64] http://mirror.biznetgio.com/mariadb/repo/10.5/ubuntu $(lsb_release -sc) main" >> /etc/apt/sources.list.d/mariadb-10.x.list
   apt-key adv --keyserver keyserver.ubuntu.com --recv-keys F1656F24C74CD1D8
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
-  echo "deb https://apt.postgresql.org/pub/repos/apt/ $(lsb_release -sc)-pgdg main" > /etc/apt/sources.list.d/postgresql.list
-  echo "deb-src https://apt.postgresql.org/pub/repos/apt/ $(lsb_release -sc)-pgdg main" >> /etc/apt/sources.list.d/postgresql.list
+  echo "deb [arch=amd64] https://apt.postgresql.org/pub/repos/apt/ $(lsb_release -sc)-pgdg main" > /etc/apt/sources.list.d/postgresql.list
+  echo "deb-src [arch=amd64] https://apt.postgresql.org/pub/repos/apt/ $(lsb_release -sc)-pgdg main" >> /etc/apt/sources.list.d/postgresql.list
   wget --no-check-certificate --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | apt-key add -
 fi
 
@@ -191,7 +191,7 @@ if [ ! -z "$zoho_mail_account" ]; then
   echo "  auth on" >> /etc/msmtprc
   echo "  user $zoho_mail_account" >> /etc/msmtprc
   echo "  password $zoho_mail_password" >> /etc/msmtprc
-  echo "  from $zoho_mail_account" >> /etc/msmtprc
+  echo "  from $zoho_mail_from" >> /etc/msmtprc
   echo "" >> /etc/msmtprc
   echo "  tls on" >> /etc/msmtprc
   echo "  tls_starttls off" >> /etc/msmtprc
@@ -204,7 +204,7 @@ if [ ! -z "$zoho_mail_account" ]; then
   echo 'set sendmail="/usr/bin/msmtp"' > /root/.mailrc
   echo 'set use_from=yes' >> /root/.mailrc
   echo 'set realname="Mail Notification"' >> /root/.mailrc
-  echo "set from=\"$zoho_mail_account\"" >> /root/.mailrc
+  echo "set from=\"$zoho_mail_from\"" >> /root/.mailrc
   echo 'set envelope_from=yes' >> /root/.mailrc
 
   systemctl restart msmtpd.service
@@ -269,160 +269,300 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_t
                  mariadb-plugin-connect mariadb-plugin-spider
 
   # reconfigure my.cnf
-  cd /tmp
-  echo "" > my.cnf
-  echo "# MariaDB database server configuration file." >> my.cnf
-  echo "# Configured template by eRQee (rizky@prihanto.web.id)" >> my.cnf
-  echo "# -------------------------------------------------------------------------------" >> my.cnf
-  echo "" >> my.cnf
-  echo "[client]" >> my.cnf
-  echo "port                      = 3306" >> my.cnf
-  echo "socket                    = /var/run/mysqld/mysqld.sock" >> my.cnf
-  echo "default-character-set     = utf8mb4" >> my.cnf
-  echo "" >> my.cnf
-  echo "[mysqld_safe]" >> my.cnf
-  echo "socket                    = /var/run/mysqld/mysqld.sock" >> my.cnf
-  echo "log_error                 = /var/log/mysql/mariadb.err" >> my.cnf
-  echo "nice                      = 0" >> my.cnf
-  echo "" >> my.cnf
-  echo "[mysqldump]" >> my.cnf
-  echo "quick" >> my.cnf
-  echo "quote-names" >> my.cnf
-  echo "max_allowed_packet        = 1024M" >> my.cnf
-  echo "" >> my.cnf
-  echo "[mysql]" >> my.cnf
-  echo "socket                    = /var/run/mysqld/mysqld.sock" >> my.cnf
-  echo "no-auto-rehash  " >> my.cnf
-  echo "local-infile" >> my.cnf
-  echo "" >> my.cnf
-  echo "[isamchk]" >> my.cnf
-  echo "key_buffer                = 16M" >> my.cnf
-  echo "" >> my.cnf
-  echo "[mysqld]" >> my.cnf
-  echo "# ------------------------------------------------------------------------------- : SERVER PROFILE" >> my.cnf
-  echo "server_id                 = 1" >> my.cnf
-  echo "bind-address              = 127.0.0.1" >> my.cnf
-  echo "port                      = 3306" >> my.cnf
-  echo "socket                    = /var/run/mysqld/mysqld.sock" >> my.cnf
-  echo "pid-file                  = /var/run/mysqld/mysqld.pid" >> my.cnf
-  echo "user                      = mysql" >> my.cnf
-  echo "sql_mode                  = NO_ENGINE_SUBSTITUTION,TRADITIONAL" >> my.cnf
-  echo "" >> my.cnf
-  echo "# ------------------------------------------------------------------------------- : PATH" >> my.cnf
-  echo "basedir                   = /usr" >> my.cnf
-  echo "datadir                   = /var/lib/mysql" >> my.cnf
-  echo "tmpdir                    = /tmp" >> my.cnf
-  echo "#general_log_file         = /var/log/mysql/mysql.log" >> my.cnf
-  echo "log_bin                   = /var/log/mysql/mariadb-bin" >> my.cnf
-  echo "log_bin_index             = /var/log/mysql/mariadb-bin.index" >> my.cnf
-  echo "slow_query_log_file       = /var/log/mysql/mariadb-slow.log" >> my.cnf
-  echo "#relay_log                = /var/log/mysql/relay-bin" >> my.cnf
-  echo "#relay_log_index          = /var/log/mysql/relay-bin.index" >> my.cnf
-  echo "#relay_log_info_file      = /var/log/mysql/relay-bin.info" >> my.cnf
-  echo "" >> my.cnf
-  echo "# ------------------------------------------------------------------------------- : LOCALE SETTING" >> my.cnf
-  echo "lc_messages_dir           = /usr/share/mysql" >> my.cnf
-  echo "lc_messages               = en_US" >> my.cnf
-  echo "init_connect              = 'SET collation_connection=utf8mb4_unicode_ci; SET NAMES utf8mb4;'" >> my.cnf
-  echo "character_set_server      = utf8mb4" >> my.cnf
-  echo "collation_server          = utf8mb4_unicode_ci" >> my.cnf
-  echo "character-set-server      = utf8mb4" >> my.cnf
-  echo "collation-server          = utf8mb4_unicode_ci" >> my.cnf
-  echo "skip-character-set-client-handshake" >> my.cnf
-  echo "" >> my.cnf
-  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : GENERIC FEATURES" >> my.cnf
-  echo "big_tables                = 1" >> my.cnf
-  echo "event_scheduler           = 1" >> my.cnf
-  echo "lower_case_table_names    = 1" >> my.cnf
-  echo "performance_schema        = 0" >> my.cnf
-  echo "group_concat_max_len      = 184467440737095475" >> my.cnf
-  echo "skip-external-locking     = 1" >> my.cnf
-  echo "" >> my.cnf
-  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : CONNECTION SETTING" >> my.cnf
-  echo "max_connections           = 100" >> my.cnf
-  echo "max_connect_errors        = 9999" >> my.cnf
-  echo "connect_timeout           = 60" >> my.cnf
-  echo "wait_timeout              = 600" >> my.cnf
-  echo "interactive_timeout       = 600" >> my.cnf
-  echo "max_allowed_packet        = 128M" >> my.cnf
-  echo "" >> my.cnf
-  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : CACHE SETTING" >> my.cnf
-  echo "thread_cache_size         = 128" >> my.cnf
-  echo "sort_buffer_size          = 4M" >> my.cnf
-  echo "bulk_insert_buffer_size   = 64M" >> my.cnf
-  echo "tmp_table_size            = 256M" >> my.cnf
-  echo "max_heap_table_size       = 256M" >> my.cnf
-  echo "query_cache_limit         = 128K    ## default: 128K" >> my.cnf
-  echo "query_cache_size          = 64      ## default: 64M" >> my.cnf
-  echo "query_cache_type          = DEMAND  ## for more write intensive setups, set to DEMAND or OFF" >> my.cnf
-  echo "" >> my.cnf
-  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : Logging" >> my.cnf
-  echo "general_log               = 0" >> my.cnf
-  echo "log_warnings              = 2" >> my.cnf
-  echo "slow_query_log            = 0" >> my.cnf
-  echo "long_query_time           = 10" >> my.cnf
-  echo "#log_slow_rate_limit      = 1000" >> my.cnf
-  echo "log_slow_verbosity        = query_plan" >> my.cnf
-  echo "#log-queries-not-using-indexes" >> my.cnf
-  echo "#log_slow_admin_statements" >> my.cnf
-  echo "log_bin_trust_function_creators = 1" >> my.cnf
-  echo "#sync_binlog              = 1" >> my.cnf
-  echo "expire_logs_days          = 10" >> my.cnf
-  echo "max_binlog_size           = 100M" >> my.cnf
-  echo "#log_slave_updates" >> my.cnf
-  echo "#read_only" >> my.cnf
-  echo "" >> my.cnf
-  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : InnoDB" >> my.cnf
-  echo "default_storage_engine    = InnoDB" >> my.cnf
-  echo "#innodb_log_file_size     = 50M     ## you can't just change log file size, requires special procedure" >> my.cnf
-  echo "innodb_buffer_pool_size   = 384M" >> my.cnf
-  echo "innodb_log_buffer_size    = 8M" >> my.cnf
-  echo "innodb_file_per_table     = 1" >> my.cnf
-  echo "innodb_open_files         = 400" >> my.cnf
-  echo "innodb_io_capacity        = 400" >> my.cnf
-  echo "innodb_flush_method       = O_DIRECT" >> my.cnf
-  echo "innodb_autoinc_lock_mode  = 2" >> my.cnf
-  echo "innodb_doublewrite        = 1" >> my.cnf
-  echo "innodb_flush_log_at_trx_commit  = 0" >> my.cnf
-  echo "#innodb_autoinc_lock_mode = 2" >> my.cnf
-  echo "" >> my.cnf
-  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : MyISAM" >> my.cnf
-  echo "myisam_recover_options    = BACKUP" >> my.cnf
-  echo "key_buffer_size           = 128M" >> my.cnf
-  echo "open-files-limit          = 4000" >> my.cnf
-  echo "table_open_cache          = 400" >> my.cnf
-  echo "myisam_sort_buffer_size   = 512M" >> my.cnf
-  echo "concurrent_insert         = 2" >> my.cnf
-  echo "read_buffer_size          = 2M" >> my.cnf
-  echo "read_rnd_buffer_size      = 1M" >> my.cnf
-  echo "" >> my.cnf
-  echo "#auto_increment_increment = 2" >> my.cnf
-  echo "#auto_increment_offset    = 1" >> my.cnf
-  echo "" >> my.cnf
-  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : Security Features" >> my.cnf
-  echo "# chroot                  = /var/lib/mysql/" >> my.cnf
-  echo "# ssl-ca                  = /etc/mysql/cacert.pem" >> my.cnf
-  echo "# ssl-cert                = /etc/mysql/server-cert.pem" >> my.cnf
-  echo "# ssl-key                 = /etc/mysql/server-key.pem" >> my.cnf
-  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : Galera Replication" >> my.cnf
-  echo "" >> my.cnf
-  echo "[galera]" >> my.cnf
-  echo "#report_host              = master1" >> my.cnf
-  echo "#sync_binlog              = 1   ## not fab for performance, but safer" >> my.cnf
-  echo "max_binlog_size           = 100M" >> my.cnf
-  echo "expire_logs_days          = 10" >> my.cnf
-  echo "binlog-format             = ROW" >> my.cnf
-  echo "#wsrep_on                 = ON" >> my.cnf
-  echo "#wsrep_provider           =" >> my.cnf
-  echo "#wsrep_cluster_address    =" >> my.cnf
-  echo "#wsrep_slave_threads      = 1" >> my.cnf
-  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : Extended Config" >> my.cnf
-  echo '!include /etc/mysql/mariadb.cnf' >> my.cnf
-  echo '!includedir /etc/mysql/conf.d/' >> my.cnf
+  mkdir -p /tmp/mariadb.config
+  cd /tmp/mariadb.config
 
-  mv /etc/mysql/my.cnf /etc/mysql/my.cnf.original
-  cp /tmp/my.cnf /etc/mysql/my.cnf
+  MARIADB_SYSTEMD_CONFIG_DIR=/etc/mysql/mariadb.conf.d
+  zip -r /etc/mysql/0riginal.config.zip $MARIADB_SYSTEMD_CONFIG_DIR
+  cp -r $MARIADB_SYSTEMD_CONFIG_DIR /etc/mysql/0riginal.mariadb.conf.d 
+  
+  rm $MARIADB_SYSTEMD_CONFIG_DIR/50-client.cnf 
+  MARIADB_OPTS_FILE=50-client.cnf
+  echo "" > $MARIADB_OPTS_FILE
+  echo "# MariaDB database server configuration file." >> $MARIADB_OPTS_FILE
+  echo "# Configured template by eRQee (rizky@prihanto.web.id)" >> $MARIADB_OPTS_FILE
+  echo "# -------------------------------------------------------------------------------" >> $MARIADB_OPTS_FILE
+  echo "#" >> $MARIADB_OPTS_FILE
+  echo "# This group is read by the client library" >> $MARIADB_OPTS_FILE
+  echo "# Use it for options that affect all clients, but not the server" >> $MARIADB_OPTS_FILE
+  echo "#" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "[client]" >> $MARIADB_OPTS_FILE
+  echo "port                      = 3306" >> $MARIADB_OPTS_FILE
+  echo "socket                    = /var/run/mysqld/mysqld.sock" >> $MARIADB_OPTS_FILE
+  echo "default-character-set     = utf8mb4" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "# Default is Latin1, if you need UTF-8 set this (also in server section)" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "# Example of client certificate usage" >> $MARIADB_OPTS_FILE
+  echo "# ssl-ca                  = /etc/mysql/cacert.pem" >> $MARIADB_OPTS_FILE
+  echo "# ssl-cert                = /etc/mysql/server-cert.pem" >> $MARIADB_OPTS_FILE
+  echo "# ssl-key                 = /etc/mysql/server-key.pem" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "# Allow only TLS encrypted connections" >> $MARIADB_OPTS_FILE
+  echo "# ssl-verify-server-cert  = on" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "# This group is *never* read by mysql client library, though this" >> $MARIADB_OPTS_FILE
+  echo "# /etc/mysql/mariadb.cnf.d/client.cnf file is not read by Oracle MySQL" >> $MARIADB_OPTS_FILE
+  echo "# client anyway." >> $MARIADB_OPTS_FILE
+  echo "# If you use the same .cnf file for MySQL and MariaDB," >> $MARIADB_OPTS_FILE
+  echo "# use it for MariaDB-only client options" >> $MARIADB_OPTS_FILE
+  echo "[client-mariadb]" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  cp /tmp/mariadb.config/$MARIADB_OPTS_FILE $MARIADB_SYSTEMD_CONFIG_DIR/$MARIADB_OPTS_FILE
 
+  rm $MARIADB_SYSTEMD_CONFIG_DIR/50-mysql-client.cnf
+  MARIADB_OPTS_FILE=50-mysql-clients.cnf
+  echo "" > $MARIADB_OPTS_FILE
+  echo "# MariaDB database server configuration file." >> $MARIADB_OPTS_FILE
+  echo "# Configured template by eRQee (rizky@prihanto.web.id)" >> $MARIADB_OPTS_FILE
+  echo "# -------------------------------------------------------------------------------" >> $MARIADB_OPTS_FILE
+  echo "#" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "# These groups are read by MariaDB command-line tools" >> $MARIADB_OPTS_FILE
+  echo "# Use it for options that affect only one utility" >> $MARIADB_OPTS_FILE
+  echo "#" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "[mysql]" >> $MARIADB_OPTS_FILE
+  echo "socket                    = /var/run/mysqld/mysqld.sock" >> $MARIADB_OPTS_FILE
+  echo "no-auto-rehash  " >> $MARIADB_OPTS_FILE
+  echo "local-infile" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "[mysql_upgrade]" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "[mysqladmin]" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "[mysqlbinlog]" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "[mysqlcheck]" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "[mysqldump]" >> $MARIADB_OPTS_FILE
+  echo "quick" >> $MARIADB_OPTS_FILE
+  echo "quote-names" >> $MARIADB_OPTS_FILE
+  echo "max_allowed_packet        = 1024M" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "[mysqlimport]" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "[mysqlshow]" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "[mysqlslap]" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  cp /tmp/mariadb.config/$MARIADB_OPTS_FILE $MARIADB_SYSTEMD_CONFIG_DIR/$MARIADB_OPTS_FILE
+
+  rm $MARIADB_SYSTEMD_CONFIG_DIR/50-mysqld_safe.cnf 
+  MARIADB_OPTS_FILE=50-mysqld_safe.cnf
+  echo "" > $MARIADB_OPTS_FILE
+  echo "# MariaDB database server configuration file." >> $MARIADB_OPTS_FILE
+  echo "# Configured template by eRQee (rizky@prihanto.web.id)" >> $MARIADB_OPTS_FILE
+  echo "# -------------------------------------------------------------------------------" >> $MARIADB_OPTS_FILE
+  echo "#" >> $MARIADB_OPTS_FILE
+  echo "# NOTE: THIS FILE IS READ ONLY BY THE TRADITIONAL SYSV INIT SCRIPT, NOT SYSTEMD." >> $MARIADB_OPTS_FILE
+  echo "# MARIADB SYSTEMD DOES _NOT_ UTILIZE MYSQLD_SAFE NOR READ THIS FILE." >> $MARIADB_OPTS_FILE
+  echo "#" >> $MARIADB_OPTS_FILE
+  echo "# For similar behavior, systemd users should create the following file:" >> $MARIADB_OPTS_FILE
+  echo "# /etc/systemd/system/mariadb.service.d/migrated-from-my.cnf-settings.conf" >> $MARIADB_OPTS_FILE
+  echo "#" >> $MARIADB_OPTS_FILE
+  echo "# To achieve the same result as the default 50-mysqld_safe.cnf, please create" >> $MARIADB_OPTS_FILE
+  echo "# /etc/systemd/system/mariadb.service.d/migrated-from-my.cnf-settings.conf" >> $MARIADB_OPTS_FILE
+  echo "# with the following contents:" >> $MARIADB_OPTS_FILE
+  echo "#" >> $MARIADB_OPTS_FILE
+  echo "# [Service]" >> $MARIADB_OPTS_FILE
+  echo "# User=mysql" >> $MARIADB_OPTS_FILE
+  echo "# StandardOutput=syslog" >> $MARIADB_OPTS_FILE
+  echo "# StandardError=syslog" >> $MARIADB_OPTS_FILE
+  echo "# SyslogFacility=daemon" >> $MARIADB_OPTS_FILE
+  echo "# SyslogLevel=err" >> $MARIADB_OPTS_FILE
+  echo "# SyslogIdentifier=mysqld" >> $MARIADB_OPTS_FILE
+  echo "#" >> $MARIADB_OPTS_FILE
+  echo "# For more information, please read https://mariadb.com/kb/en/mariadb/systemd/" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "[mysqld_safe]" >> $MARIADB_OPTS_FILE
+  echo "# This will be passed to all mysql clients" >> $MARIADB_OPTS_FILE
+  echo "# It has been reported that passwords should be enclosed with ticks/quotes" >> $MARIADB_OPTS_FILE
+  echo "# especially if they contain "#" chars..." >> $MARIADB_OPTS_FILE
+  echo "#" >> $MARIADB_OPTS_FILE
+  echo "socket                    = /var/run/mysqld/mysqld.sock" >> $MARIADB_OPTS_FILE
+  echo "log_error                 = /var/log/mysql/mariadb.err" >> $MARIADB_OPTS_FILE
+  echo "nice                      = 0" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  cp /tmp/mariadb.config/$MARIADB_OPTS_FILE $MARIADB_SYSTEMD_CONFIG_DIR/$MARIADB_OPTS_FILE
+    
+  rm $MARIADB_SYSTEMD_CONFIG_DIR/50-server.cnf 
+  MARIADB_OPTS_FILE=50-server.cnf
+  echo "" > $MARIADB_OPTS_FILE
+  echo "# MariaDB database server configuration file." >> $MARIADB_OPTS_FILE
+  echo "# Configured template by eRQee (rizky@prihanto.web.id)" >> $MARIADB_OPTS_FILE
+  echo "# -------------------------------------------------------------------------------" >> $MARIADB_OPTS_FILE
+  echo "#" >> $MARIADB_OPTS_FILE 
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "#" >> $MARIADB_OPTS_FILE
+  echo "# These groups are read by MariaDB server." >> $MARIADB_OPTS_FILE
+  echo "# Use it for options that only the server (but not clients) should see" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "# this is read by the standalone daemon and embedded servers" >> $MARIADB_OPTS_FILE
+  echo "[server]" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "[mysqld]" >> $MARIADB_OPTS_FILE
+  echo "# ------------------------------------------------------------------------------- : SERVER PROFILE" >> $MARIADB_OPTS_FILE
+  echo "server_id                 = 1" >> $MARIADB_OPTS_FILE
+  if [ "$appserver_type" = '3' ]; then
+    echo "bind-address              = 0.0.0.0" >> $MARIADB_OPTS_FILE
+  fi
+  if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '5' ]; then
+    echo "bind-address              = 127.0.0.1" >> $MARIADB_OPTS_FILE
+  fi
+  echo "port                      = 3306" >> $MARIADB_OPTS_FILE
+  echo "socket                    = /var/run/mysqld/mysqld.sock" >> $MARIADB_OPTS_FILE
+  echo "pid-file                  = /var/run/mysqld/mysqld.pid" >> $MARIADB_OPTS_FILE
+  echo "user                      = mysql" >> $MARIADB_OPTS_FILE
+  echo "sql_mode                  = NO_ENGINE_SUBSTITUTION,TRADITIONAL" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "# ------------------------------------------------------------------------------- : PATH" >> $MARIADB_OPTS_FILE
+  echo "basedir                   = /usr" >> $MARIADB_OPTS_FILE
+  echo "datadir                   = /var/lib/mysql" >> $MARIADB_OPTS_FILE
+  echo "tmpdir                    = /tmp" >> $MARIADB_OPTS_FILE
+  echo "#general_log_file         = /var/log/mysql/mysql.log" >> $MARIADB_OPTS_FILE
+  echo "log_bin                   = /var/log/mysql/mariadb-bin" >> $MARIADB_OPTS_FILE
+  echo "log_bin_index             = /var/log/mysql/mariadb-bin.index" >> $MARIADB_OPTS_FILE
+  echo "slow_query_log_file       = /var/log/mysql/mariadb-slow.log" >> $MARIADB_OPTS_FILE
+  echo "#relay_log                = /var/log/mysql/relay-bin" >> $MARIADB_OPTS_FILE
+  echo "#relay_log_index          = /var/log/mysql/relay-bin.index" >> $MARIADB_OPTS_FILE
+  echo "#relay_log_info_file      = /var/log/mysql/relay-bin.info" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "# ------------------------------------------------------------------------------- : LOCALE SETTING" >> $MARIADB_OPTS_FILE
+  echo "lc_messages_dir           = /usr/share/mysql" >> $MARIADB_OPTS_FILE
+  echo "lc_messages               = en_US" >> $MARIADB_OPTS_FILE
+  echo "init_connect              = 'SET collation_connection=utf8mb4_unicode_ci; SET NAMES utf8mb4;'" >> $MARIADB_OPTS_FILE
+  echo "character_set_server      = utf8mb4" >> $MARIADB_OPTS_FILE
+  echo "collation_server          = utf8mb4_unicode_ci" >> $MARIADB_OPTS_FILE
+  echo "character-set-server      = utf8mb4" >> $MARIADB_OPTS_FILE
+  echo "collation-server          = utf8mb4_unicode_ci" >> $MARIADB_OPTS_FILE
+  echo "skip-character-set-client-handshake" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : GENERIC FEATURES" >> $MARIADB_OPTS_FILE
+  echo "big_tables                = 1" >> $MARIADB_OPTS_FILE
+  echo "event_scheduler           = 1" >> $MARIADB_OPTS_FILE
+  echo "lower_case_table_names    = 1" >> $MARIADB_OPTS_FILE
+  echo "performance_schema        = 0" >> $MARIADB_OPTS_FILE
+  echo "group_concat_max_len      = 184467440737095475" >> $MARIADB_OPTS_FILE
+  echo "skip-external-locking     = 1" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : CONNECTION SETTING" >> $MARIADB_OPTS_FILE
+  echo "max_connections           = 100" >> $MARIADB_OPTS_FILE
+  echo "max_connect_errors        = 9999" >> $MARIADB_OPTS_FILE
+  echo "connect_timeout           = 60" >> $MARIADB_OPTS_FILE
+  echo "wait_timeout              = 600" >> $MARIADB_OPTS_FILE
+  echo "interactive_timeout       = 600" >> $MARIADB_OPTS_FILE
+  echo "max_allowed_packet        = 128M" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : CACHE SETTING" >> $MARIADB_OPTS_FILE
+  echo "thread_stack              = 192K" >> $MARIADB_OPTS_FILE
+  echo "thread_cache_size         = 8" >> $MARIADB_OPTS_FILE
+  echo "sort_buffer_size          = 4M" >> $MARIADB_OPTS_FILE
+  echo "bulk_insert_buffer_size   = 64M" >> $MARIADB_OPTS_FILE
+  echo "tmp_table_size            = 256M" >> $MARIADB_OPTS_FILE
+  echo "max_heap_table_size       = 256M" >> $MARIADB_OPTS_FILE
+  echo "table_cache               = 64" >> $MARIADB_OPTS_FILE
+  echo "query_cache_limit         = 128K    ## default: 128K" >> $MARIADB_OPTS_FILE
+  echo "query_cache_size          = 64      ## default: 64M" >> $MARIADB_OPTS_FILE
+  echo "query_cache_type          = DEMAND  ## for more write intensive setups, set to DEMAND or OFF" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : Logging" >> $MARIADB_OPTS_FILE
+  echo "general_log               = 0" >> $MARIADB_OPTS_FILE
+  echo "log_warnings              = 2" >> $MARIADB_OPTS_FILE
+  echo "slow_query_log            = 0" >> $MARIADB_OPTS_FILE
+  echo "long_query_time           = 10" >> $MARIADB_OPTS_FILE
+  echo "#log_slow_rate_limit      = 1000" >> $MARIADB_OPTS_FILE
+  echo "log_slow_verbosity        = query_plan" >> $MARIADB_OPTS_FILE
+  echo "#log-queries-not-using-indexes" >> $MARIADB_OPTS_FILE
+  echo "#log_slow_admin_statements" >> $MARIADB_OPTS_FILE
+  echo "log_bin_trust_function_creators = 1" >> $MARIADB_OPTS_FILE
+  echo "#sync_binlog              = 1" >> $MARIADB_OPTS_FILE
+  echo "expire_logs_days          = 10" >> $MARIADB_OPTS_FILE
+  echo "max_binlog_size           = 100M" >> $MARIADB_OPTS_FILE
+  echo "#log_slave_updates" >> $MARIADB_OPTS_FILE
+  echo "#read_only" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : InnoDB" >> $MARIADB_OPTS_FILE
+  echo "default_storage_engine    = InnoDB" >> $MARIADB_OPTS_FILE
+  echo "#innodb_log_file_size     = 50M     ## you can't just change log file size, requires special procedure" >> $MARIADB_OPTS_FILE
+  echo "innodb_buffer_pool_size   = 384M" >> $MARIADB_OPTS_FILE
+  echo "innodb_log_buffer_size    = 8M" >> $MARIADB_OPTS_FILE
+  echo "innodb_file_per_table     = 1" >> $MARIADB_OPTS_FILE
+  echo "innodb_open_files         = 400" >> $MARIADB_OPTS_FILE
+  echo "innodb_io_capacity        = 400" >> $MARIADB_OPTS_FILE
+  echo "innodb_flush_method       = O_DIRECT" >> $MARIADB_OPTS_FILE
+  echo "innodb_doublewrite        = 1" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : MyISAM" >> $MARIADB_OPTS_FILE
+  echo "myisam_recover_options    = BACKUP" >> $MARIADB_OPTS_FILE
+  echo "key_buffer_size           = 128M" >> $MARIADB_OPTS_FILE
+  echo "open-files-limit          = 4000" >> $MARIADB_OPTS_FILE
+  echo "table_open_cache          = 400" >> $MARIADB_OPTS_FILE
+  echo "myisam_sort_buffer_size   = 512M" >> $MARIADB_OPTS_FILE
+  echo "concurrent_insert         = 2" >> $MARIADB_OPTS_FILE
+  echo "read_buffer_size          = 2M" >> $MARIADB_OPTS_FILE
+  echo "read_rnd_buffer_size      = 1M" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "#auto_increment_increment = 2" >> $MARIADB_OPTS_FILE
+  echo "#auto_increment_offset    = 1" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : Security Features" >> $MARIADB_OPTS_FILE
+  echo "# [Docs] https://mariadb.com/kb/en/securing-connections-for-client-and-server/" >> $MARIADB_OPTS_FILE
+  echo "# ssl-ca                  = /etc/mysql/cacert.pem" >> $MARIADB_OPTS_FILE
+  echo "# ssl-cert                = /etc/mysql/server-cert.pem" >> $MARIADB_OPTS_FILE
+  echo "# ssl-key                 = /etc/mysql/server-key.pem" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "# this is only for embedded server" >> $MARIADB_OPTS_FILE
+  echo "[embedded]" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "# This group is only read by MariaDB servers, not by MySQL." >> $MARIADB_OPTS_FILE
+  echo "# If you use the same .cnf file for MySQL and MariaDB," >> $MARIADB_OPTS_FILE
+  echo "# you can put MariaDB-only options here" >> $MARIADB_OPTS_FILE
+  echo "[mariadb]" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "# This group is only read by MariaDB-10.5 servers." >> $MARIADB_OPTS_FILE
+  echo "# If you use the same .cnf file for MariaDB of different versions," >> $MARIADB_OPTS_FILE
+  echo "# use this group for options that older servers don't understand" >> $MARIADB_OPTS_FILE
+  echo "[mariadb-10.5]" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  cp /tmp/mariadb.config/$MARIADB_OPTS_FILE $MARIADB_SYSTEMD_CONFIG_DIR/$MARIADB_OPTS_FILE
+  
+  rm $MARIADB_SYSTEMD_CONFIG_DIR/60-galera.cnf
+  MARIADB_OPTS_FILE=60-galera.cnf
+  echo "" > $MARIADB_OPTS_FILE
+  echo "# MariaDB database server configuration file." >> $MARIADB_OPTS_FILE
+  echo "# Configured template by eRQee (rizky@prihanto.web.id)" >> $MARIADB_OPTS_FILE
+  echo "# -------------------------------------------------------------------------------" >> $MARIADB_OPTS_FILE
+  echo "#" >> $MARIADB_OPTS_FILE
+  echo "# * Galera-related settings" >> $MARIADB_OPTS_FILE
+  echo "#" >> $MARIADB_OPTS_FILE
+  echo "# See the examples of server wsrep.cnf files in /usr/share/mysql" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "[galera]" >> $MARIADB_OPTS_FILE
+  echo "# Mandatory Settings" >> $MARIADB_OPTS_FILE
+  echo "#wsrep_on                 = ON" >> $MARIADB_OPTS_FILE
+  echo "#wsrep_provider           =" >> $MARIADB_OPTS_FILE
+  echo "#wsrep_cluster_address    =" >> $MARIADB_OPTS_FILE
+  echo "binlog-format             = ROW" >> $MARIADB_OPTS_FILE
+  echo "#report_host              = master1" >> $MARIADB_OPTS_FILE
+  echo "#sync_binlog              = 1   ## not fab for performance, but safer" >> $MARIADB_OPTS_FILE
+  echo "max_binlog_size           = 100M" >> $MARIADB_OPTS_FILE
+  echo "expire_logs_days          = 10" >> $MARIADB_OPTS_FILE
+  echo "default_storage_engine    = InnoDB" >> $MARIADB_OPTS_FILE
+  echo "innodb_autoinc_lock_mode  = 2" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "# Allow server to accept connections on all interfaces." >> $MARIADB_OPTS_FILE
+  echo "#bind-address=0.0.0.0" >> $MARIADB_OPTS_FILE
+  echo "" >> $MARIADB_OPTS_FILE
+  echo "# Optional Settings" >> $MARIADB_OPTS_FILE
+  echo "#wsrep_slave_threads      = 1" >> $MARIADB_OPTS_FILE
+  echo "innodb_flush_log_at_trx_commit  = 0" >> $MARIADB_OPTS_FILE
+  cp /tmp/mariadb.config/$MARIADB_OPTS_FILE $MARIADB_SYSTEMD_CONFIG_DIR/$MARIADB_OPTS_FILE
+
+  ln -s /etc/mysql/mariadb.cnf /etc/mysql/my.cnf
+  
   # restart the services
   systemctl restart mariadb.service
   
