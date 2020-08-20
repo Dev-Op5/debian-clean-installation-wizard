@@ -232,8 +232,7 @@ echo "" >> /etc/bash.bashrc
 echo "alias sedot='wget --recursive --page-requisites --html-extension --convert-links --no-parent --random-wait -r -p -E -e robots=off'" >> /etc/bash.bashrc
 echo "alias cp='rsync -ravz --progress'" >> /etc/bash.bashrc
 echo "alias mkdir='mkdir -pv'" >> /etc/bash.bashrc
-echo "alias nocomment='grep -Ev '''^(#|$)''''" >> /etc/bash.bashrc
-echo "alias wget='wget -c" >> /etc/bash.bashrc
+echo "alias wget='wget -c'" >> /etc/bash.bashrc
 
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
