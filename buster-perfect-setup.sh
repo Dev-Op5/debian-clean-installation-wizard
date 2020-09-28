@@ -93,8 +93,8 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2'  ] || [ "$appserver_
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
-  echo "deb [arch=amd64] http://mirror.biznetgio.com/mariadb/repo/10.4/debian $(lsb_release -sc) main" > /etc/apt/sources.list.d/mariadb-10.4.list
-  echo "deb-src [arch=amd64] http://mirror.biznetgio.com/mariadb/repo/10.4/debian $(lsb_release -sc) main" >> /etc/apt/sources.list.d/mariadb-10.4.list
+  echo "deb [arch=amd64] http://mirror.biznetgio.com/mariadb/repo/10.5/debian $(lsb_release -sc) main" > /etc/apt/sources.list.d/mariadb-10.5.list
+  echo "deb-src [arch=amd64] http://mirror.biznetgio.com/mariadb/repo/10.5/debian $(lsb_release -sc) main" >> /etc/apt/sources.list.d/mariadb-10.5.list
   apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 0xF1656F24C74CD1D8
 fi
 
@@ -192,9 +192,9 @@ fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
   export DEBIAN_FRONTEND=noninteractive
-  echo "mariadb-server-10.4 mysql-server/root_password password $db_root_password" | sudo /usr/bin/debconf-set-selections
-  echo "mariadb-server-10.4 mysql-server/root_password_again password $db_root_password" | sudo /usr/bin/debconf-set-selections
-  apt install -y mariadb-server-10.4 mariadb-server-core-10.4 mariadb-client-10.4 mariadb-client-core-10.4 \
+  echo "mariadb-server-10.5 mysql-server/root_password password $db_root_password" | sudo /usr/bin/debconf-set-selections
+  echo "mariadb-server-10.5 mysql-server/root_password_again password $db_root_password" | sudo /usr/bin/debconf-set-selections
+  apt install -y mariadb-server-10.5 mariadb-server-core-10.5 mariadb-client-10.5 mariadb-client-core-10.5 \
                  mariadb-plugin-connect mariadb-plugin-cracklib-password-check mariadb-plugin-gssapi-server \
                  mariadb-plugin-gssapi-client mariadb-plugin-oqgraph mariadb-plugin-mroonga mariadb-plugin-spider 
 
