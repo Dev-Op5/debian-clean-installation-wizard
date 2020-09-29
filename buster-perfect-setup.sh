@@ -77,14 +77,14 @@ fi
 ##############################
 #rebuild the software sources#
 ##############################
-# choose preferred repository list
+
+repo=/etc/apt/sources.list
+repo_address=kebo.pens.ac.id
+
 if [ -f /etc/apt/sources.list.old ]; then
   rm /etc/apt/sources.list.old
 fi
 mv $repo /etc/apt/sources.list.old && touch $repo
-
-repo=/etc/apt/sources.list
-repo_address=kartolo.sby.datautama.net.id
 
 echo "deb http://$repo_address/debian/ $(lsb_release -sc) main non-free contrib" > $repo
 echo "deb-src http://$repo_address/debian/ $(lsb_release -sc) main non-free contrib" >> $repo
@@ -93,7 +93,7 @@ echo "deb-src http://$repo_address/debian/ $(lsb_release -sc)-updates main non-f
 echo "deb http://$repo_address/debian-security/ $(lsb_release -sc)/updates main non-free contrib" >> $repo
 echo "deb-src http://$repo_address/debian-security/ $(lsb_release -sc)/updates main non-free contrib" >> $repo
 
-apt update && apt install -y curl wget apt-transport-https ca-certificates lsb-release software-properties-common ed debian-keyring
+apt update && apt install -y curl wget apt-transport-https ca-certificates lsb-release gnupg gnupg2 gnupg1 software-properties-common ed debian-keyring
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2'  ] || [ "$appserver_type" = '5' ]; then
   #nginx
