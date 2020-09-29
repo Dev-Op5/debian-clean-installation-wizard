@@ -55,6 +55,7 @@ echo ""
 read -p "Mail Account : " zoho_mail_account
 if [ ! -z "$zoho_mail_account" ]; then
   read -p "Password : " zoho_mail_password
+  read -p "Mail From Alias : " zoho_mail_from
 fi
 echo ""
 echo "Enter your DevOps name/email below."
@@ -164,7 +165,12 @@ locale-gen en_US en_US.UTF-8 id_ID id_ID.UTF-8
 #############################
 
 update-ca-certificates
+
 if [ ! -z "$zoho_mail_account" ]; then
+  
+  if [ ! -z "$zoho_mail_from" ]; then
+    zoho_mail_from=$zoho_mail_account
+  fi
   apt install -y msmtp-mta mailutils 
 
   echo "defaults" > /etc/msmtprc
