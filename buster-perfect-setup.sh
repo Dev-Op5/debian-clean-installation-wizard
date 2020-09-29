@@ -29,7 +29,7 @@ fi
 
 echo ""
 echo "**************************************************************"
-echo "   DEBIAN BUSTER 10.5 PERFECT APPLICATION SERVER INSTALLER    "
+echo "   DEBIAN BUSTER 10.6 PERFECT APPLICATION SERVER INSTALLER    "
 echo "   -- proudly present by eRQee (rizky@prihanto.web.id)  --    "
 echo "**************************************************************"
 echo ""
@@ -155,7 +155,7 @@ apt install -y autoconf automake bash-completion bison build-essential ca-certif
                libxml-parser-perl libxml2-dev libxrender-dev libxrender1 libxslt1-dev libyaml-dev \
                locales-all locate lynx module-assistant net-tools openssh-server openssl optipng \
                p7zip-full pcregrep pdftk perl poppler-utils python python-pip rsync ruby-full sudo \
-               sysv-rc-conf tcl tcpdump tor traceroute unixodbc-bin unrar unzip uuid-dev whois \
+               sysv-rc-conf tcl tcpdump traceroute unixodbc-bin unrar unzip uuid-dev whois \
                wkhtmltopdf xfonts-75dpi xfonts-base xfonts-scalable zip zlib1g-dev
 
 locale-gen en_US en_US.UTF-8 id_ID id_ID.UTF-8
@@ -1143,7 +1143,7 @@ fi
 touch $install_summarize
 timestamp_flag=` date +%F\ %H:%M:%S`
 echo "*************************************************************" > $install_summarize
-echo "   DEBIAN BUSTER 10.5 PERFECT APPLICATION SERVER INSTALLER   " >> $install_summarize
+echo "   DEBIAN BUSTER 10.6 PERFECT APPLICATION SERVER INSTALLER   " >> $install_summarize
 echo "   -- proudly present by eRQee (rizky@prihanto.web.id)  --   " >> $install_summarize
 echo "                         *   *   *                           " >> $install_summarize
 echo "                     INSTALL SUMMARIZE                       " >> $install_summarize
@@ -1227,7 +1227,7 @@ cat $install_summarize
 if [ ! -z "$zoho_mail_account" ]; then
   public_ip=$( curl https://ifconfig.me/ip  )
   timestamp_flag=` date +%F-%H-%M-%S`
-  mail_subject="Server $public_ip installed with Debian 10.5!"
+  mail_subject="Server $public_ip installed with Debian 10.6!"
   echo "Well done!" > /tmp/mail-body.txt 
   echo "You've finished the Ubuntu 20.04 LTS Perfect Server installation on $public_ip at $timestamp_flag." >> /tmp/mail-body.txt 
   echo "" >> /tmp/mail-body.txt
