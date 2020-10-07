@@ -78,8 +78,10 @@ fi
 #rebuild the software sources#
 ##############################
 
+apt install -y gnupg gnupg2 gnupg1 debian-keyring dirmngr lsb-release software-properties-common apt-transport-https 
+
 repo=/etc/apt/sources.list
-repo_address=kebo.pens.ac.id
+repo_address=deb.debian.org
 
 if [ -f /etc/apt/sources.list.old ]; then
   rm /etc/apt/sources.list.old
@@ -93,7 +95,7 @@ echo "deb-src http://$repo_address/debian/ $(lsb_release -sc)-updates main non-f
 echo "deb http://$repo_address/debian-security/ $(lsb_release -sc)/updates main non-free contrib" >> $repo
 echo "deb-src http://$repo_address/debian-security/ $(lsb_release -sc)/updates main non-free contrib" >> $repo
 
-apt update && apt install -y curl wget apt-transport-https ca-certificates lsb-release gnupg gnupg2 gnupg1 software-properties-common ed debian-keyring
+apt update && apt install -y ed curl ca-certificates 
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2'  ] || [ "$appserver_type" = '5' ]; then
   #nginx
@@ -108,7 +110,7 @@ fi
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
   echo "deb [arch=amd64] http://mirror.biznetgio.com/mariadb/repo/10.5/debian $(lsb_release -sc) main" > /etc/apt/sources.list.d/mariadb-10.5.list
   echo "deb-src [arch=amd64] http://mirror.biznetgio.com/mariadb/repo/10.5/debian $(lsb_release -sc) main" >> /etc/apt/sources.list.d/mariadb-10.5.list
-  apt-key adv --recv-keys --keyserver keyserver.ubuntu.com 0xF1656F24C74CD1D8
+  apt-key adv --fetch-keys 'https://mariadb.org/mariadb_release_signing_key.asc'
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
