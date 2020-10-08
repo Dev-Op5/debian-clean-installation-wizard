@@ -265,7 +265,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_t
   echo "mariadb-server-10.5 mysql-server/root_password_again password $db_root_password" | sudo /usr/bin/debconf-set-selections
   apt install -y mariadb-server-10.5 mariadb-server-core-10.5 mariadb-client-10.5 mariadb-client-core-10.5 \
                  mariadb-plugin-connect mariadb-plugin-cracklib-password-check mariadb-plugin-gssapi-server \
-                 mariadb-plugin-gssapi-client mariadb-plugin-oqgraph mariadb-plugin-mroonga mariadb-plugin-spider 
+                 mariadb-plugin-gssapi-client mariadb-plugin-oqgraph mariadb-plugin-mroonga 
 
  # reconfigure my.cnf
   mkdir -p /tmp/mariadb.config
