@@ -583,7 +583,13 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   apt install -y php7.4 php7.4-bcmath php7.4-bz2 php7.4-cgi php7.4-cli php7.4-common php7.4-curl php7.4-dba php7.4-dev php7.4-enchant \
                  php7.4-fpm php7.4-gd php7.4-gmp php7.4-imap php7.4-interbase php7.4-intl php7.4-json php7.4-ldap php7.4-mbstring php7.4-mysql \
                  php7.4-odbc php7.4-opcache php7.4-pgsql php7.4-pspell php7.4-readline php7.4-snmp php7.4-soap php7.4-sqlite3 php7.4-sybase \
-                 php7.4-tidy php7.4-xml php7.4-xmlrpc php7.4-xsl php7.4-zip php-mongodb php-geoip libgeoip-dev snmp-mibs-downloader nginx
+                 php7.4-tidy php7.4-xml php7.4-xmlrpc php7.4-xsl php7.4-zip php-mongodb php-geoip libgeoip-dev snmp-mibs-downloader nginx \
+                 php8.0 php8.0-amqp php8.0-ast php8.0-bcmath php8.0-bz2 php8.0-cgi php8.0-cli php8.0-common php8.0-curl php8.0-dba php8.0-dev \
+                 php8.0-ds php8.0-enchant php8.0-fpm php8.0-gd php8.0-gmp php8.0-igbinary php8.0-imagick php8.0-imap php8.0-interbase php8.0-intl \
+                 php8.0-ldap php8.0-mailparse php8.0-mbstring php8.0-memcached php8.0-msgpack php8.0-mysql php8.0-oauth php8.0-odbc php8.0-opcache \
+                 php8.0-pgsql php8.0-phpdbg php8.0-pspell php8.0-psr php8.0-raphf php8.0-readline php8.0-redis php8.0-rrd php8.0-smbclient \
+                 php8.0-snmp php8.0-soap php8.0-solr php8.0-sqlite3 php8.0-sybase php8.0-tidy php8.0-uuid php8.0-xdebug php8.0-xhprof php8.0-xml \
+                 php8.0-xsl php8.0-yac php8.0-yaml php8.0-zip php8.0-zmq
 
   if [ "$appserver_type" = '5' ]; then
     apt install -y libpq-dev
@@ -786,7 +792,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   echo '    if (!-f $document_root$fastcgi_script_name) { return 404; }' >> /tmp/000default.conf
   echo '    fastcgi_split_path_info ^(.+?\.php)(/.*)$;' >> /tmp/000default.conf
   echo '    ## [alternative] ##  fastcgi_split_path_info ^(.+\.php)(/.+)$;' >> /tmp/000default.conf
-  echo '    fastcgi_pass         unix:/var/run/php7.4-fpm.sock;' >> /tmp/000default.conf
+  echo '    fastcgi_pass         unix:/var/run/php8.0-fpm.sock;' >> /tmp/000default.conf
   echo '    fastcgi_index        index.php;' >> /tmp/000default.conf
   echo '    include              /etc/nginx/fastcgi_params;' >> /tmp/000default.conf
   echo '    fastcgi_param        SCRIPT_FILENAME  $document_root$fastcgi_script_name;' >> /tmp/000default.conf
@@ -816,8 +822,8 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   echo '  listen                 [::]:443 ssl http2;' >> /tmp/000default-ssl.conf
   echo '  server_name            nginx.vbox;' >> /tmp/000default-ssl.conf
   echo '' >> /tmp/000default-ssl.conf
-  echo '  access_log           /dev/null gzip;' >> /tmp/000default-ssl.conf
-  echo '  error_log          /dev/null notice;' >> /tmp/000default-ssl.conf
+  echo '  access_log             /dev/null gzip;' >> /tmp/000default-ssl.conf
+  echo '  error_log              /dev/null notice;' >> /tmp/000default-ssl.conf
   echo '' >> /tmp/000default-ssl.conf
   echo '  ssl_certificate        /etc/letsencrypt/live/nginx.vbox/fullchain.pem;' >> /tmp/000default-ssl.conf
   echo '  ssl_certificate_key    /etc/letsencrypt/live/nginx.vbox/privkey.pem;' >> /tmp/000default-ssl.conf
@@ -836,7 +842,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   echo '    if (!-f $document_root$fastcgi_script_name) { return 404; }' >> /tmp/000default-ssl.conf
   echo '    fastcgi_split_path_info ^(.+?\.php)(/.*)$;' >> /tmp/000default-ssl.conf
   echo '    ## [alternative] ##  fastcgi_split_path_info ^(.+\.php)(/.+)$;' >> /tmp/000default-ssl.conf
-  echo '    fastcgi_pass         unix:/var/run/php7.4-fpm.sock;' >> /tmp/000default-ssl.conf
+  echo '    fastcgi_pass         unix:/var/run/php8.0-fpm.sock;' >> /tmp/000default-ssl.conf
   echo '    fastcgi_index        index.php;' >> /tmp/000default-ssl.conf
   echo '    include              /etc/nginx/fastcgi_params;' >> /tmp/000default-ssl.conf
   echo '    fastcgi_param        SCRIPT_FILENAME  $document_root$fastcgi_script_name;' >> /tmp/000default-ssl.conf
@@ -867,8 +873,8 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   echo '  listen                 [::]:443 ssl http2;' >> /tmp/000default-ssl-reverse-proxy.conf
   echo '  server_name            nginx.vbox;' >> /tmp/000default-ssl-reverse-proxy.conf
   echo '' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '  access_log           /dev/null gzip;' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '  error_log          /dev/null notice;' >> /tmp/000default-ssl-reverse-proxy.conf
+  echo '  access_log             /dev/null gzip;' >> /tmp/000default-ssl-reverse-proxy.conf
+  echo '  error_log              /dev/null notice;' >> /tmp/000default-ssl-reverse-proxy.conf
   echo '' >> /tmp/000default-ssl-reverse-proxy.conf
   echo '  ssl_certificate        /etc/letsencrypt/live/nginx.vbox/fullchain.pem;' >> /tmp/000default-ssl-reverse-proxy.conf
   echo '  ssl_certificate_key    /etc/letsencrypt/live/nginx.vbox/privkey.pem;' >> /tmp/000default-ssl-reverse-proxy.conf
@@ -921,6 +927,41 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   cp /tmp/www.conf-serverq.recommended /etc/php/7.4/fpm/pool.d/www.conf-serverq.recommended
   cp /tmp/www.conf-serverq.recommended /etc/php/7.4/fpm/pool.d/www.conf
 
+  #configuring php8.0-fpm
+  mkdir -p /var/lib/php/8.0/sessions
+  chmod -R 777 /var/lib/php/8.0/sessions
+
+  cp /etc/php/8.0/fpm/php.ini /tmp/php.ini-serverq.recommended
+  sed -i '/post_max_size/c\post_max_size = 100M' /tmp/php.ini-serverq.recommended
+  sed -i '/;cgi.fix_pathinfo/c\cgi.fix_pathinfo=1' /tmp/php.ini-serverq.recommended
+  sed -i '/;upload_tmp_dir/c\upload_tmp_dir=/tmp' /tmp/php.ini-serverq.recommended
+  sed -i '/upload_max_filesize/c\upload_max_filesize=64M' /tmp/php.ini-serverq.recommended
+  sed -i '/;date.timezone/c\date.timezone=Asia/Jakarta' /tmp/php.ini-serverq.recommended
+  sed -i '/;date.default_latitude/c\date.default_latitude = -6.211544' /tmp/php.ini-serverq.recommended
+  sed -i '/;date.default_longitude/c\date.default_longitude = 106.84517200000005' /tmp/php.ini-serverq.recommended
+  sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/8.0/sessions"' /tmp/php.ini-serverq.recommended  
+  sed -i '/;opcache.enable=1/c\opcache.enable=1' /tmp/php.ini-serverq.recommended
+  sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' /tmp/php.ini-serverq.recommended
+  sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' /tmp/php.ini-serverq.recommended
+
+  mv /etc/php/8.0/fpm/php.ini /etc/php/8.0/fpm/php.ini-original
+  mv /etc/php/8.0/cli/php.ini /etc/php/8.0/cli/php.ini-original
+  cp /tmp/php.ini-serverq.recommended /etc/php/8.0/php.ini-serverq.recommended
+  cp /tmp/php.ini-serverq.recommended /etc/php/8.0/fpm/php.ini
+  cp /tmp/php.ini-serverq.recommended /etc/php/8.0/cli/php.ini
+
+  cp /etc/php/8.0/fpm/pool.d/www.conf /tmp/www.conf-serverq.recommended
+  sed -i '/listen = \/run\/php\/php8.0-fpm.sock/c\listen = \/var\/run\/php8.0-fpm.sock' /tmp/www.conf-serverq.recommended
+  sed -i '/;listen.mode = 0660/c\listen.mode = 0660' /tmp/www.conf-serverq.recommended
+  sed -i '/pm.max_children/c\pm.max_children = 10' /tmp/www.conf-serverq.recommended
+  sed -i '/pm.min_spare_servers/c\pm.min_spare_servers = 2' /tmp/www.conf-serverq.recommended
+  sed -i '/pm.max_spare_servers/c\pm.max_spare_servers = 8' /tmp/www.conf-serverq.recommended
+  
+  mv /etc/php/8.0/fpm/pool.d/www.conf /etc/php/8.0/fpm/pool.d/www.conf-original
+  cp /tmp/www.conf-serverq.recommended /etc/php/8.0/fpm/pool.d/www.conf-serverq.recommended
+  cp /tmp/www.conf-serverq.recommended /etc/php/8.0/fpm/pool.d/www.conf
+
+
   # create the webroot workspaces
   mkdir -p /var/www/
   chown -R www-data:www-data /var/www/
@@ -946,7 +987,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   echo '    </Directory>' >> /etc/apache2/sites-available/000-default.conf
   echo ' ' >> /etc/apache2/sites-available/000-default.conf
   echo '    <FilesMatch \.php$>' >> /etc/apache2/sites-available/000-default.conf
-  echo '        SetHandler "proxy:unix:/var/run/php7.4-fpm.sock|fcgi://localhost"' >> /etc/apache2/sites-available/000-default.conf
+  echo '        SetHandler "proxy:unix:/var/run/php8.0-fpm.sock|fcgi://localhost"' >> /etc/apache2/sites-available/000-default.conf
   echo '    </FilesMatch>' >> /etc/apache2/sites-available/000-default.conf
   echo ' ' >> /etc/apache2/sites-available/000-default.conf
   echo '    ErrorLog ${APACHE_LOG_DIR}/error.log' >> /etc/apache2/sites-available/000-default.conf
@@ -957,6 +998,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   systemctl restart apache2.service
   systemctl restart nginx.service
   systemctl restart php7.4-fpm
+  systemctl restart php8.0-fpm
 
   # normalize the /etc/hosts values
   echo '127.0.0.1       localhost' > /etc/hosts
