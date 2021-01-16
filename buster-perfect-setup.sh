@@ -29,7 +29,7 @@ fi
 
 echo ""
 echo "**************************************************************"
-echo "   DEBIAN BUSTER 10.6 PERFECT APPLICATION SERVER INSTALLER    "
+echo "   DEBIAN BUSTER 10.7 PERFECT APPLICATION SERVER INSTALLER    "
 echo "   -- proudly present by eRQee (rizky@prihanto.web.id)  --    "
 echo "**************************************************************"
 echo ""
@@ -239,7 +239,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   ################
   #install nodejs#
   ################
-  curl -sL https://deb.nodesource.com/setup_14.x | bash -
+  curl -sL https://deb.nodesource.com/setup_15.x | bash -
   curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
   echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
   apt update && apt install -y nodejs yarn
@@ -1187,7 +1187,7 @@ fi
 touch $install_summarize
 timestamp_flag=` date +%F\ %H:%M:%S`
 echo "*************************************************************" > $install_summarize
-echo "   DEBIAN BUSTER 10.6 PERFECT APPLICATION SERVER INSTALLER   " >> $install_summarize
+echo "   DEBIAN BUSTER 10.7 PERFECT APPLICATION SERVER INSTALLER   " >> $install_summarize
 echo "   -- proudly present by eRQee (rizky@prihanto.web.id)  --   " >> $install_summarize
 echo "                         *   *   *                           " >> $install_summarize
 echo "                     INSTALL SUMMARIZE                       " >> $install_summarize
