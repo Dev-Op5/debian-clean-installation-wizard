@@ -692,6 +692,11 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   echo "    fastcgi_buffers       16 16k;" >> /tmp/nginx.conf
   echo "    fastcgi_max_temp_file_size 0;" >> /tmp/nginx.conf
   echo "" >> /tmp/nginx.conf
+  echo "    map $http_upgrade $connection_upgrade {" >> /tmp/nginx.conf
+  echo "      default   upgrade;" >> /tmp/nginx.conf
+  echo "      ''        close;" >> /tmp/nginx.conf
+  echo "    }" >> /tmp/nginx.conf
+  echo "" >> /tmp/nginx.conf
   echo "    upstream apache    { server 127.0.0.1:77; }" >> /tmp/nginx.conf
   if [ "$appserver_type" = '5' ]; then
     echo "    upstream odoo      { server 127.0.0.1:8069; }" >> /tmp/nginx.conf
@@ -749,20 +754,38 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
 
   mv /tmp/ssl-params.conf /etc/nginx/snippets/ssl-params.conf
 
-  echo 'proxy_next_upstream     error timeout invalid_header http_500 http_502 http_503 http_504;' > /tmp/reverse-proxy.conf
-  echo 'proxy_redirect          off;' >> /tmp/reverse-proxy.conf
-  echo 'proxy_buffering         off;' >> /tmp/reverse-proxy.conf
-  echo 'proxy_set_header        X-Forwarded-Proto       $scheme;' >> /tmp/reverse-proxy.conf
-  echo 'proxy_set_header        Host                    $http_host;' >> /tmp/reverse-proxy.conf
-  echo 'proxy_set_header        X-Forwarded-Host        $http_host;' >> /tmp/reverse-proxy.conf
-  echo 'proxy_set_header        X-Real-IP               $remote_addr;' >> /tmp/reverse-proxy.conf
-  echo 'proxy_set_header        X-Forwarded-For         $proxy_add_x_forwarded_for;' >> /tmp/reverse-proxy.conf
-  echo 'proxy_set_header        X-Frame-Options         SAMEORIGIN;' >> /tmp/reverse-proxy.conf
-  echo 'proxy_connect_timeout   60;' >> /tmp/reverse-proxy.conf
-  echo 'proxy_send_timeout      60;' >> /tmp/reverse-proxy.conf
-  echo 'proxy_read_timeout      60;' >> /tmp/reverse-proxy.conf
+  echo 'proxy_next_upstream       error timeout invalid_header http_500 http_502 http_503 http_504;' > /tmp/reverse-proxy.conf
+  echo 'proxy_redirect            off;' >> /tmp/reverse-proxy.conf
+  echo 'proxy_buffering           off;' >> /tmp/reverse-proxy.conf
+  echo 'proxy_set_header          X-Forwarded-Proto       $scheme;' >> /tmp/reverse-proxy.conf
+  echo 'proxy_set_header          Host                    $http_host;' >> /tmp/reverse-proxy.conf
+  echo 'proxy_set_header          X-Forwarded-Host        $http_host;' >> /tmp/reverse-proxy.conf
+  echo 'proxy_set_header          X-Real-IP               $remote_addr;' >> /tmp/reverse-proxy.conf
+  echo 'proxy_set_header          X-Forwarded-For         $proxy_add_x_forwarded_for;' >> /tmp/reverse-proxy.conf
+  echo 'proxy_set_header          X-Frame-Options         SAMEORIGIN;' >> /tmp/reverse-proxy.conf
+  echo 'proxy_connect_timeout     60;' >> /tmp/reverse-proxy.conf
+  echo 'proxy_send_timeout        60;' >> /tmp/reverse-proxy.conf
+  echo 'proxy_read_timeout        60;' >> /tmp/reverse-proxy.conf
         
   mv /tmp/reverse-proxy.conf /etc/nginx/snippets/reverse-proxy.conf    
+
+  echo 'proxy_next_upstream       error timeout invalid_header http_500 http_502 http_503 http_504;' > /tmp/websocket-reverse-proxy.conf
+  echo 'proxy_http_version        1.1;' > /tmp/websocket-reverse-proxy.conf
+  echo 'proxy_set_header          Upgrade $http_upgrade;' > /tmp/websocket-reverse-proxy.conf
+  echo 'proxy_set_header          Connection $connection_upgrade;' > /tmp/websocket-reverse-proxy.conf
+  echo 'proxy_redirect            off;' >> /tmp/websocket-reverse-proxy.conf
+  echo 'proxy_buffering           off;' >> /tmp/websocket-reverse-proxy.conf
+  echo 'proxy_set_header          X-Forwarded-Proto       $scheme;' >> /tmp/websocket-reverse-proxy.conf
+  echo 'proxy_set_header          Host                    $http_host;' >> /tmp/websocket-reverse-proxy.conf
+  echo 'proxy_set_header          X-Forwarded-Host        $http_host;' >> /tmp/websocket-reverse-proxy.conf
+  echo 'proxy_set_header          X-Real-IP               $remote_addr;' >> /tmp/websocket-reverse-proxy.conf
+  echo 'proxy_set_header          X-Forwarded-For         $proxy_add_x_forwarded_for;' >> /tmp/websocket-reverse-proxy.conf
+  echo 'proxy_set_header          X-Frame-Options         SAMEORIGIN;' >> /tmp/websocket-reverse-proxy.conf
+  echo 'proxy_connect_timeout     60;' >> /tmp/websocket-reverse-proxy.conf
+  echo 'proxy_send_timeout        60;' >> /tmp/websocket-reverse-proxy.conf
+  echo 'proxy_read_timeout        60;' >> /tmp/websocket-reverse-proxy.conf
+        
+  mv /tmp/websocket-reverse-proxy.conf /etc/nginx/snippets/websocket-reverse-proxy.conf    
 
   mkdir -p /etc/nginx/sites-available
   mkdir -p /etc/nginx/sites-enabled
@@ -892,6 +915,45 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   echo '}' >> /tmp/000default-ssl-reverse-proxy.conf
 
   mv /tmp/000default-ssl-reverse-proxy.conf /etc/nginx/sites-available/000default-ssl-reverse-proxy.conf
+
+  echo 'server {' > /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '  charset                utf8;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '  listen                 80;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '  listen                 [::]:80;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '  server_name            nginx.vbox;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '  return 302             https://$server_name$request_uri;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '}' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo 'upstream mywebsocketapp {' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '  ip_hash;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '  server 127.0.0.1:8888;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '  server 127.0.0.1:8989;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '}' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo 'server {' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '  listen                 443 ssl http2;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '  listen                 [::]:443 ssl http2;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '  server_name            nginx.vbox;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '  access_log             /dev/null gzip;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '  error_log              /dev/null notice;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '' >> /tmp/000default-ssl--websocketreverse-proxy.conf
+  echo '  ssl_certificate        /etc/letsencrypt/live/nginx.vbox/fullchain.pem;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '  ssl_certificate_key    /etc/letsencrypt/live/nginx.vbox/privkey.pem;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '  include                /etc/nginx/snippets/ssl-params.conf;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '  root                   /var/www/nginx.vbox/;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '  location / {' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '    proxy_pass              http://mywebsocketapp;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '    error_page              502 = /502.html;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '    include                 /etc/nginx/snippets/websocket-reverse-proxy.conf;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '    send_timeout            60;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '    client_max_body_size    100M;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '    client_body_buffer_size 100M;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '  }' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '}' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+
+  mv /tmp/000default-ssl-websocket-reverse-proxy.conf /etc/nginx/sites-available/000default-ssl-websocket-reverse-proxy.conf
 
   # configuring php7.4-fpm
   mkdir -p /var/lib/php/7.4/sessions
@@ -1271,9 +1333,9 @@ cat $install_summarize
 if [ ! -z "$zoho_mail_account" ]; then
   public_ip=$( curl https://ifconfig.me/ip  )
   timestamp_flag=` date +%F-%H-%M-%S`
-  mail_subject="Server $public_ip installed with Debian 10.6!"
+  mail_subject="Server $public_ip installed with Debian 10.7!"
   echo "Well done!" > /tmp/mail-body.txt 
-  echo "You've finished the Ubuntu 20.04 LTS Perfect Server installation on $public_ip at $timestamp_flag." >> /tmp/mail-body.txt 
+  echo "You've finished the Debian Buster Perfect Server installation on $public_ip at $timestamp_flag." >> /tmp/mail-body.txt 
   echo "" >> /tmp/mail-body.txt
   echo "Please review the attached install summarize report below, and keep for future references." >> /tmp/mail-body.txt 
   echo "" >> /tmp/mail-body.txt
