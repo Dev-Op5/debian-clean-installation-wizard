@@ -28,11 +28,14 @@ if [ -f $install_summarize ]; then
 fi
 
 echo ""
-echo "**************************************************************"
-echo "   DEBIAN BUSTER 10.7 PERFECT APPLICATION SERVER INSTALLER    "
-echo "   -- proudly present by eRQee (rizky@prihanto.web.id)  --    "
-echo "**************************************************************"
+echo "****************************************************************"
+echo "     DEBIAN BUSTER 10.7 PERFECT APPLICATION SERVER INSTALLER    "
+echo "     -- proudly present by eRQee (rizky@prihanto.web.id)  --    "
+echo "****************************************************************"
 echo ""
+echo "Note:"
+echo "Your machine needs to have proper network/internet access first"
+echo "before run this autoinstall scripts."
 echo ""
 echo "What kind of application server role do you want to apply?"
 echo "1. Perfect Server for Nginx, PHP-FPM, and MariaDB"
@@ -572,6 +575,12 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_t
   chmod +x /scripts/mysqltuner/mysqltuner.pl
   echo "alias mysqltuner='/scripts/mysqltuner/mysqltuner.pl --cvefile=/scripts/mysqltuner/vulnerabilities.csv --passwordfile=/scripts/mysqltuner/basic_passwords.txt'" >> /etc/bash.bashrc
   cd /tmp
+  
+  wget -qO - https://www.mongodb.org/static/pgp/server-4.4.asc | sudo apt-key add -
+  echo "deb http://repo.mongodb.org/apt/debian buster/mongodb-org/4.4 main" | sudo tee /etc/apt/sources.list.d/mongodb-org-4.4.list 
+  apt update && apt install -y mongodb-org 
+  systemctl enable mongod --now 
+
 fi
 
 
@@ -1022,7 +1031,6 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   mv /etc/php/8.0/fpm/pool.d/www.conf /etc/php/8.0/fpm/pool.d/www.conf-original
   cp /tmp/www.conf-serverq.recommended /etc/php/8.0/fpm/pool.d/www.conf-serverq.recommended
   cp /tmp/www.conf-serverq.recommended /etc/php/8.0/fpm/pool.d/www.conf
-
 
   # create the webroot workspaces
   mkdir -p /var/www/
