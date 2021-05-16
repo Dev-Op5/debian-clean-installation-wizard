@@ -240,7 +240,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   #install nodejs#
   ################
   curl -sL https://deb.nodesource.com/setup_15.x | bash -
-  curl -sL https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
+  curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | sudo apt-key add -
   echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
   apt update && apt install -y nodejs yarn
 
@@ -633,24 +633,26 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   cd /tmp
   echo "" > /tmp/nginx.conf
   echo "##---------------------------------------------##" >> /tmp/nginx.conf
-  echo "# Last Update May 23, 2020  08:15 WIB by eRQee  #" >> /tmp/nginx.conf
+  echo "# Last Update Jan 23, 2021  22:06 WIB by eRQee  #" >> /tmp/nginx.conf
   echo "##---------------------------------------------##" >> /tmp/nginx.conf
   echo "" >> /tmp/nginx.conf
   echo "user                    www-data;" >> /tmp/nginx.conf
   cpu_core_count=$( nproc )
   echo "worker_processes        $cpu_core_count;" >> /tmp/nginx.conf
-  echo "pid                     /run/nginx.pid;" >> /tmp/nginx.conf
-  echo "include                 /etc/nginx/modules-enabled/*.conf;" >> /tmp/nginx.conf
-  echo "" >> /tmp/nginx.conf
-  echo "" >> /tmp/nginx.conf
+  echo "worker_rlimit_nofile    8192;" >> /tmp/nginx.conf
+    echo "" >> /tmp/nginx.conf
   echo "events {" >> /tmp/nginx.conf
-  echo "    worker_connections  1024;" >> /tmp/nginx.conf
+  echo "    worker_connections  8000;" >> /tmp/nginx.conf
   echo "}" >> /tmp/nginx.conf
   echo "" >> /tmp/nginx.conf
+  echo "pid                     /run/nginx.pid;" >> /tmp/nginx.conf
+  echo "include                 /etc/nginx/modules-enabled/*.conf;" >> /tmp/nginx.conf
   echo "" >> /tmp/nginx.conf
   echo "http {" >> /tmp/nginx.conf
   echo "    include       /etc/nginx/mime.types;" >> /tmp/nginx.conf
   echo "    default_type  application/octet-stream;" >> /tmp/nginx.conf
+  echo "    charset       utf-8;" >> /tmp/nginx.conf
+  echo "    charset_types text/css text/plain text/vnd.wap.wml text/javascript text/markdown text/calendar text/x-component text/vcard text/cache-manifest text/vtt application/json application/manifest+json;" >> /tmp/nginx.conf
   echo "" >> /tmp/nginx.conf
   echo "    log_format  main '\$status \$time_local \$remote_addr \$body_bytes_sent \"\$request\" \"\$http_referer\" \"\$http_user_agent\" \"\$http_x_forwarded_for\"';" >> /tmp/nginx.conf
   echo "    log_format  gzip '\$status \$time_local \$remote_addr \$body_bytes_sent \"\$request\" \"\$http_referer\" \"\$http_user_agent\" \"\$http_x_forwarded_for\" \"\$gzip_ratio\"';" >> /tmp/nginx.conf
@@ -664,19 +666,19 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   echo "    server_name_in_redirect             off;" >> /tmp/nginx.conf
   echo "" >> /tmp/nginx.conf
   echo "    gzip                  on;" >> /tmp/nginx.conf
-  echo "    gzip_comp_level       2;" >> /tmp/nginx.conf
-  echo "    gzip_min_length       1000;" >> /tmp/nginx.conf
+  echo "    gzip_comp_level       5;" >> /tmp/nginx.conf
+  echo "    gzip_min_length       256;" >> /tmp/nginx.conf
   echo "    gzip_vary             on;" >> /tmp/nginx.conf
   echo "    gzip_proxied          any;" >> /tmp/nginx.conf
   echo "    gzip_buffers          16 8k;" >> /tmp/nginx.conf
   echo "    gzip_http_version     1.1;" >> /tmp/nginx.conf
-  echo "    gzip_types            text/plain text/css application/json application/x-javascript text/xml application/xml application/xml+rss text/javascript;" >> /tmp/nginx.conf
+  echo "    gzip_types            application/atom+xml application/geo+json application/javascript application/x-javascript application/json application/ld+json application/manifest+json application/rdf+xml application/rss+xml application/vnd.ms-fontobject application/wasm application/x-web-app-manifest+json application/xhtml+xml application/xml font/eot font/otf font/ttf image/bmp image/svg+xml text/cache-manifest text/calendar text/css text/javascript text/markdown text/plain text/xml text/vcard text/vnd.rim.location.xloc text/vtt text/x-component text/x-cross-domain-policy;" >> /tmp/nginx.conf
   echo "    gzip_disable          \"msie6\";" >> /tmp/nginx.conf
   echo "" >> /tmp/nginx.conf
-  echo "    access_log            /dev/null main;" >> /tmp/nginx.conf
-  echo "    error_log             /dev/null warn;" >> /tmp/nginx.conf
+  echo "    access_log            /var/log/nginx/access.log main;" >> /tmp/nginx.conf
+  echo "    error_log             /var/log/nginx/error.log warn;" >> /tmp/nginx.conf
   echo "" >> /tmp/nginx.conf
-  echo "    keepalive_timeout     12;" >> /tmp/nginx.conf
+  echo "    keepalive_timeout     20s;" >> /tmp/nginx.conf
   echo "    send_timeout          10;" >> /tmp/nginx.conf
   echo "" >> /tmp/nginx.conf
   echo "    proxy_connect_timeout 60;" >> /tmp/nginx.conf
@@ -692,7 +694,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   echo "    fastcgi_buffers       16 16k;" >> /tmp/nginx.conf
   echo "    fastcgi_max_temp_file_size 0;" >> /tmp/nginx.conf
   echo "" >> /tmp/nginx.conf
-  echo "    map $http_upgrade $connection_upgrade {" >> /tmp/nginx.conf
+  echo "    map \$http_upgrade \$connection_upgrade {" >> /tmp/nginx.conf
   echo "      default   upgrade;" >> /tmp/nginx.conf
   echo "      ''        close;" >> /tmp/nginx.conf
   echo "    }" >> /tmp/nginx.conf
@@ -794,7 +796,6 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
 
   cd /tmp
   echo 'server {' > /tmp/000default.conf
-  echo '  charset                utf8;' >> /tmp/000default.conf
   echo '  listen                 80;' >> /tmp/000default.conf
   echo '  listen                 [::]:80;' >> /tmp/000default.conf
   echo '  server_name            nginx.vbox;' >> /tmp/000default.conf
@@ -833,7 +834,6 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   ln -s /etc/nginx/sites-available/000default.conf /etc/nginx/sites-enabled/000default.conf
 
   echo 'server {' > /tmp/000default-ssl.conf
-  echo '  charset                utf8;' >> /tmp/000default-ssl.conf
   echo '  listen                 80;' >> /tmp/000default-ssl.conf
   echo '  listen                 [::]:80;' >> /tmp/000default-ssl.conf
   echo '  server_name            nginx.vbox;' >> /tmp/000default-ssl.conf
@@ -884,7 +884,6 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   mv /tmp/000default-ssl.conf /etc/nginx/sites-available/000default-ssl.conf
 
   echo 'server {' > /tmp/000default-ssl-reverse-proxy.conf
-  echo '  charset                utf8;' >> /tmp/000default-ssl-reverse-proxy.conf
   echo '  listen                 80;' >> /tmp/000default-ssl-reverse-proxy.conf
   echo '  listen                 [::]:80;' >> /tmp/000default-ssl-reverse-proxy.conf
   echo '  server_name            nginx.vbox;' >> /tmp/000default-ssl-reverse-proxy.conf
@@ -917,7 +916,6 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   mv /tmp/000default-ssl-reverse-proxy.conf /etc/nginx/sites-available/000default-ssl-reverse-proxy.conf
 
   echo 'server {' > /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '  charset                utf8;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
   echo '  listen                 80;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
   echo '  listen                 [::]:80;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
   echo '  server_name            nginx.vbox;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
@@ -937,12 +935,15 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   echo '' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
   echo '  access_log             /dev/null gzip;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
   echo '  error_log              /dev/null notice;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '' >> /tmp/000default-ssl--websocketreverse-proxy.conf
+  echo '' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
   echo '  ssl_certificate        /etc/letsencrypt/live/nginx.vbox/fullchain.pem;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
   echo '  ssl_certificate_key    /etc/letsencrypt/live/nginx.vbox/privkey.pem;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
   echo '  include                /etc/nginx/snippets/ssl-params.conf;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
   echo '' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
   echo '  root                   /var/www/nginx.vbox/;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '   ' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  echo '' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
   echo '  location / {' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
   echo '    proxy_pass              http://mywebsocketapp;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
   echo '    error_page              502 = /502.html;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
