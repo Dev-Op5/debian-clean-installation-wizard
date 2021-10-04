@@ -24,11 +24,15 @@ fi
 ###########################################
 install_summarize=/root/.setup_perfectly.txt
 lsb_deb_version=$( dpkg --status tzdata|grep Provides|cut -f2 -d'-' )
+str_arch=$(dpkg --print-architecture)
 if [ -f $install_summarize ]; then
   clear
   cat $install_summarize
   exit 0
 fi
+# temporarily disable ipv6
+sysctl -w net.ipv6.conf.all.disable_ipv6=1
+sysctl -w net.ipv6.conf.default.disable_ipv6=1
 
 echo ""
 echo "****************************************************************"
@@ -76,7 +80,6 @@ if [ "$lets_go" != 'Y' ]; then
   fi
 fi
 
-
 ##############################
 #rebuild the software sources#
 ##############################
@@ -84,23 +87,23 @@ fi
 apt install -y gnupg gnupg2 gnupg1 debian-keyring dirmngr lsb-release software-properties-common apt-transport-https
 
 repo=/etc/apt/sources.list
-repo_address=mirror.poliwangi.ac.id
+repo_address=mirror.0x.sg
 
 if [ -f /etc/apt/sources.list.old ]; then
   rm /etc/apt/sources.list.old
 fi
 mv $repo /etc/apt/sources.list.old && touch $repo
 
-echo "deb http://$repo_address/debian/ $lsb_deb_version main non-free contrib" > $repo
-echo "deb-src http://$repo_address/debian/ $lsb_deb_version main non-free contrib" >> $repo
-echo "deb http://$repo_address/debian/ $lsb_deb_version-updates main non-free contrib" >> $repo
-echo "deb-src http://$repo_address/debian/ $lsb_deb_version-updates main non-free contrib" >> $repo
-echo "deb http://$repo_address/debian-security/ $lsb_deb_version-security main non-free contrib" >> $repo
-echo "deb-src http://$repo_address/debian-security/ $lsb_deb_version-security main non-free contrib" >> $repo
+cat > $repo << EOL
+deb http://${repo_address}/debian/ ${lsb_deb_version} main non-free contrib
+deb-src http://${repo_address}/debian/ ${lsb_deb_version} main non-free contrib
+deb http://${repo_address}/debian/ ${lsb_deb_version}-updates main non-free contrib
+deb-src http://${repo_address}/debian/ ${lsb_deb_version}-updates main non-free contrib
+deb http://security.debian.org/debian-security/ ${lsb_deb_version}-security main non-free contrib
+deb-src http://security.debian.org/debian-security/ ${lsb_deb_version}-security main non-free contrib
+EOL
 
 apt update && apt upgrade -y && apt install -y ed curl ca-certificates unzip zip
-
-str_arch=$(dpkg --print-architecture)
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2'  ] || [ "$appserver_type" = '5' ]; then
   #nginx
@@ -116,8 +119,8 @@ fi
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
   str_keyring=/usr/share/keyrings/mariadb-archive-keyring.asc
   wget --no-check-certificate --quiet -O - https://mariadb.org/mariadb_release_signing_key.asc | sudo tee -a $str_keyring
-  echo "deb [arch=$str_arch signed-by=$str_keyring] http://mirror.biznetgio.com/mariadb/repo/10.5/debian sid main" > /etc/apt/sources.list.d/mariadb-10.5.list
-  echo "deb-src [arch=$str_arch signed-by=$str_keyring] http://mirror.biznetgio.com/mariadb/repo/10.5/debian sid main" >> /etc/apt/sources.list.d/mariadb-10.5.list
+  echo "deb [arch=$str_arch signed-by=$str_keyring] http://sgp1.mirrors.digitalocean.com/mariadb/repo/10.6/debian bullseye main" > /etc/apt/sources.list.d/mariadb.list
+  echo "deb-src [arch=$str_arch signed-by=$str_keyring] http://sgp1.mirrors.digitalocean.com/mariadb/repo/10.6/debian bullseye main" >> /etc/apt/sources.list.d/mariadb.list
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
@@ -130,25 +133,34 @@ fi
 
 
 ###########################################################
-# little configuration
+# system configuration
 ###########################################################
 
 mv /etc/localtime /etc/localtime.old
 ln -sf /usr/share/zoneinfo/Asia/Jakarta /etc/localtime
 
-sysctl -w net.ipv6.conf.all.disable_ipv6=1
-sysctl -w net.ipv6.conf.default.disable_ipv6=1
+# change filesystem's file limit to the max
+cat >> /etc/security/limits.conf << EOL
+root soft nofile 65536
+root hard nofile 65536
+* soft nofile 65536
+* hard nofile 65536
+EOL
 
-echo "root soft nofile 65536" >> /etc/security/limits.conf
-echo "root hard nofile 65536" >> /etc/security/limits.conf
-echo "* soft nofile 65536" >> /etc/security/limits.conf
-echo "* hard nofile 65536" >> /etc/security/limits.conf
+# tuning up the IPv4 port registration capabilities
+cat >> /etc/sysctl.conf << EOL
+net.ipv4.tcp_tw_recycle = 1
+net.ipv4.tcp_tw_reuse = 1
+net.ipv4.ip_local_port_range = 10240    65535
+EOL
 
-echo "net.ipv4.tcp_tw_recycle = 1" >> /etc/sysctl.conf
-echo "net.ipv4.tcp_tw_reuse = 1" >> /etc/sysctl.conf
-echo "net.ipv4.ip_local_port_range = 10240    65535" >> /etc/sysctl.conf
-echo "net.ipv6.conf.default.disable_ipv6=1" >> /etc/sysctl.conf
-echo "net.ipv6.conf.all.disable_ipv6=1" >> /etc/sysctl.conf
+# prioritize IPv4 over IPv6 rather than completely disable the IPv6 support.
+cat >> /etc/gai.conf << EOL
+precedence ::ffff:0:0/96  100
+scopev4 ::ffff:169.254.0.0/112  2
+scopev4 ::ffff:127.0.0.0/104    2
+scopev4 ::ffff:0.0.0.0/96       14
+EOL
 
 ############################
 #install essential packages#
@@ -184,35 +196,35 @@ if [ ! -z "$zoho_mail_account" ]; then
   fi
   apt install -y msmtp-mta mailutils 
 
-  echo "defaults" > /etc/msmtprc
-  echo "  auth on" >> /etc/msmtprc
-  echo "  tls on" >> /etc/msmtprc
-  echo "  tls_trust_file /etc/ssl/certs/ca-certificates.crt" >> /etc/msmtprc
-  echo "  logfile /var/log/msmtp" >> /etc/msmtprc
-  echo "" >> /etc/msmtprc
-  echo "account default" >> /etc/msmtprc
-  echo "" >> /etc/msmtprc
-  echo "  host smtp.zoho.com" >> /etc/msmtprc
-  echo "  port 465" >> /etc/msmtprc
-  echo "" >> /etc/msmtprc
-  echo "  auth on" >> /etc/msmtprc
-  echo "  user $zoho_mail_account" >> /etc/msmtprc
-  echo "  password $zoho_mail_password" >> /etc/msmtprc
-  echo "  from $zoho_mail_from" >> /etc/msmtprc
-  echo "" >> /etc/msmtprc
-  echo "  tls on" >> /etc/msmtprc
-  echo "  tls_starttls off" >> /etc/msmtprc
-  echo "  tls_certcheck off" >> /etc/msmtprc
+cat > /etc/msmtprc << EOL
+defaults
+  auth on
+  tls on
+  tls_trust_file /etc/ssl/certs/ca-certificates.crt
+  logfile /var/log/msmtp.log
+account default
+  host smtp.zoho.com
+  port 465
+  auth on
+  user ${zoho_mail_account}
+  password ${zoho_mail_password}
+  from ${zoho_mail_from}
+  tls on
+  tls_starttls off
+  tls_certcheck off
+EOL
 
   chmod 0640 /etc/msmtprc
-  touch /var/log/msmtp
-  chmod 666 /var/log/msmtp
+  touch /var/log/msmtp.log
+  chmod 666 /var/log/msmtp.log
 
-  echo 'set sendmail="/usr/bin/msmtp"' > /root/.mailrc
-  echo 'set use_from=yes' >> /root/.mailrc
-  echo 'set realname="Mail Notification"' >> /root/.mailrc
-  echo "set from=\"$zoho_mail_from\"" >> /root/.mailrc
-  echo 'set envelope_from=yes' >> /root/.mailrc
+cat > /root/.mailrc << EOL
+set sendmail=/usr/bin/msmtp
+set use_from=yes
+set realname="Mail Notification"
+set from="${zoho_mail_from}"
+set envelope_from=yes
+EOL
 
   systemctl restart msmtpd.service
 
@@ -232,9 +244,50 @@ if [ ! -z "$git_user_email" ]; then
 
   echo "" >> /etc/bash.bashrc
   echo "alias commit='git add --all . && git commit -m'" >> /etc/bash.bashrc
-  echo "alias push='git push -u origin master'" >> /etc/bash.bashrc
-  echo "alias pull='git pull origin master'" >> /etc/bash.bashrc
+  echo "alias push='git push -u origin'" >> /etc/bash.bashrc
+  echo "alias pull='git pull origin'" >> /etc/bash.bashrc
 fi
+
+###############################
+#configure automation & checks#
+###############################
+
+mkdir -p /scripts/secure-poweroff
+cd /scripts/secure-poweroff
+
+cat > /scripts/secure-poweroff/poweroff << 'EOL'
+#!/bin/bash
+if [ "x$(id -u)" != 'x0' ]; then
+  echo 'Error: this script can only be executed by root'
+  exit 1
+fi
+
+read -p "You launched command to shutdown this machine. Are you serious? (Y/N) : " confirm_answer
+
+if [ "$confirm_answer" = 'Y' ] || [ "$confirm_answer" = 'y' ]; then
+  poweroff
+fi
+
+exit 0
+EOL
+chmod +x /scripts/secure-poweroff/poweroff
+
+cat > /scripts/secure-poweroff/reboot << 'EOL'
+#!/bin/bash
+if [ "x$(id -u)" != 'x0' ]; then
+  echo 'Error: this script can only be executed by root'
+  exit 1
+fi
+
+read -p "You launched command to reboot this machine. Are you serious? (Y/N) : " confirm_answer
+
+if [ "$confirm_answer" = 'Y' ] || [ "$confirm_answer" = 'y' ]; then
+  reboot
+fi
+
+exit 0
+EOL
+chmod +x /scripts/secure-poweroff/reboot
 
 echo "" >> /etc/bash.bashrc
 echo "" >> /etc/bash.bashrc
@@ -242,26 +295,43 @@ echo "alias sedot='wget --recursive --page-requisites --html-extension --convert
 echo "alias cp='rsync -ravz --progress'" >> /etc/bash.bashrc
 echo "alias mkdir='mkdir -pv'" >> /etc/bash.bashrc
 echo "alias wget='wget -c'" >> /etc/bash.bashrc
+echo "" >> /etc/bash.bashrc
+echo "alias poweroff='/scripts/secure-poweroff/poweroff" >> /etc/bash.bashrc
+echo "alias reboot='/scripts/secure-poweroff/reboot" >> /etc/bash.bashrc
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
 
   ################
   #install nodejs#
   ################
-  curl -sL https://deb.nodesource.com/setup_14.x | bash -
+  curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
   str_keyring=/usr/share/keyrings/yarn-archive-keyring.gpg
   curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | sudo tee $str_keyring
   echo "deb [arch=$str_arch signed-by=$str_keyring] https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
   apt update && apt install -y nodejs yarn
+  npm install -g npm@latest
 
   ################
   #install redis #
   ################
   apt install -y redis-server
+  usermod -g www-data redis
+  mkdir -p /var/run/redis
+  chown -R redis:www-data /var/run/redis
   sed -i '/\<supervised no\>/c\supervised systemd' /etc/redis/redis.conf
+  # set random password
   redis_password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
   sed -i "/# requirepass foobared/c\requirepass $redis_password" /etc/redis/redis.conf
-  systemctl restart redis.service
+  # make redis-server just listen to unix socket rather dan listen to global network via TCP
+  sed -i '/\<# bind 127.0.0.1 ::1\>/c\bind 127.0.0.1 ::1' /etc/redis/redis.conf
+  sed -i '/\<# unixsocket /var/run/redis/redis-server.sock\>/c\unixsocket /var/run/redis/redis.sock' /etc/redis/redis.conf
+  sed -i '/\<# unixsocketperm 700\>/c\unixsocketperm 775' /etc/redis/redis.conf
+  # other optimization
+  sed -i '/\<stop-writes-on-bgsave-error yes\>/c\stop-writes-on-bgsave-error no' /etc/redis/redis.conf
+  echo "maxmemory 50M" >> /etc/redis/redis.conf
+  echo "maxmemory-policy allkeys-lru" >> /etc/redis/redis.conf
+
+  systemctl restart redis-server
 
 fi
 
@@ -270,15 +340,18 @@ fi
 #################################
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
-  export DEBIAN_FRONTEND=noninteractive
-  echo "mariadb-server-10.5 mysql-server/root_password password $db_root_password" | sudo /usr/bin/debconf-set-selections
-  echo "mariadb-server-10.5 mysql-server/root_password_again password $db_root_password" | sudo /usr/bin/debconf-set-selections
-  apt install -y mariadb-server-10.5 mariadb-server-core-10.5 mariadb-client-10.5 mariadb-client-core-10.5 \
-                 mariadb-plugin-connect mariadb-plugin-cracklib-password-check mariadb-plugin-gssapi-server \
-                 mariadb-plugin-gssapi-client mariadb-plugin-oqgraph mariadb-plugin-mroonga mariadb-plugin-rocksdb \
-                 mariadb-plugin-s3 mariadb-plugin-spider 
+  
+  # these lines is not implemented anymore since MariaDB 10.5 and above changes the default 'root' connection authorized via system Auth
+  # export DEBIAN_FRONTEND=noninteractive
+  # echo "mariadb-server-10.6 mysql-server/root_password password $db_root_password" | sudo /usr/bin/debconf-set-selections
+  # echo "mariadb-server-10.6 mysql-server/root_password_again password $db_root_password" | sudo /usr/bin/debconf-set-selections
+  apt install -y mariadb-server-10.6 mariadb-server-core-10.6 mariadb-client-10.6 mariadb-client-core-10.6 \
+                 mariadb-plugin-connect mariadb-plugin-cracklib-password-check
 
- # reconfigure my.cnf
+  # plugins that not applied:
+  # mariadb-plugin-gssapi-server mariadb-plugin-gssapi-client mariadb-plugin-oqgraph mariadb-plugin-mroonga mariadb-plugin-rocksdb mariadb-plugin-s3 mariadb-plugin-spider percona-xtrabackup-24
+
+  # reconfigure my.cnf
   mkdir -p /tmp/mariadb.config
 
   MARIADB_SYSTEMD_CONFIG_DIR=/etc/mysql/mariadb.conf.d
@@ -286,314 +359,305 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_t
   cp -r $MARIADB_SYSTEMD_CONFIG_DIR /etc/mysql/0riginal.mariadb.conf.d 
   
   cd /tmp/mariadb.config
-  rm $MARIADB_SYSTEMD_CONFIG_DIR/50-client.cnf 
-  MARIADB_OPTS_FILE=50-client.cnf
-  echo "" > $MARIADB_OPTS_FILE
-  echo "# MariaDB database server configuration file." >> $MARIADB_OPTS_FILE
-  echo "# Configured template by eRQee (rizky@prihanto.web.id)" >> $MARIADB_OPTS_FILE
-  echo "# -------------------------------------------------------------------------------" >> $MARIADB_OPTS_FILE
-  echo "#" >> $MARIADB_OPTS_FILE
-  echo "# This group is read by the client library" >> $MARIADB_OPTS_FILE
-  echo "# Use it for options that affect all clients, but not the server" >> $MARIADB_OPTS_FILE
-  echo "#" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "[client]" >> $MARIADB_OPTS_FILE
-  echo "port                      = 3306" >> $MARIADB_OPTS_FILE
-  echo "socket                    = /var/run/mysqld/mysqld.sock" >> $MARIADB_OPTS_FILE
-  echo "default-character-set     = utf8mb4" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "# Default is Latin1, if you need UTF-8 set this (also in server section)" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "# Example of client certificate usage" >> $MARIADB_OPTS_FILE
-  echo "# ssl-ca                  = /etc/mysql/cacert.pem" >> $MARIADB_OPTS_FILE
-  echo "# ssl-cert                = /etc/mysql/server-cert.pem" >> $MARIADB_OPTS_FILE
-  echo "# ssl-key                 = /etc/mysql/server-key.pem" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "# Allow only TLS encrypted connections" >> $MARIADB_OPTS_FILE
-  echo "# ssl-verify-server-cert  = on" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "# This group is *never* read by mysql client library, though this" >> $MARIADB_OPTS_FILE
-  echo "# /etc/mysql/mariadb.cnf.d/client.cnf file is not read by Oracle MySQL" >> $MARIADB_OPTS_FILE
-  echo "# client anyway." >> $MARIADB_OPTS_FILE
-  echo "# If you use the same .cnf file for MySQL and MariaDB," >> $MARIADB_OPTS_FILE
-  echo "# use it for MariaDB-only client options" >> $MARIADB_OPTS_FILE
-  echo "[client-mariadb]" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  cp /tmp/mariadb.config/$MARIADB_OPTS_FILE $MARIADB_SYSTEMD_CONFIG_DIR/$MARIADB_OPTS_FILE
 
-  rm $MARIADB_SYSTEMD_CONFIG_DIR/50-mysql-clients.cnf
-  MARIADB_OPTS_FILE=50-mysql-clients.cnf
-  echo "" > $MARIADB_OPTS_FILE
-  echo "# MariaDB database server configuration file." >> $MARIADB_OPTS_FILE
-  echo "# Configured template by eRQee (rizky@prihanto.web.id)" >> $MARIADB_OPTS_FILE
-  echo "# -------------------------------------------------------------------------------" >> $MARIADB_OPTS_FILE
-  echo "#" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "# These groups are read by MariaDB command-line tools" >> $MARIADB_OPTS_FILE
-  echo "# Use it for options that affect only one utility" >> $MARIADB_OPTS_FILE
-  echo "#" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "[mysql]" >> $MARIADB_OPTS_FILE
-  echo "socket                    = /var/run/mysqld/mysqld.sock" >> $MARIADB_OPTS_FILE
-  echo "no-auto-rehash  " >> $MARIADB_OPTS_FILE
-  echo "local-infile" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "[mysql_upgrade]" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "[mysqladmin]" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "[mysqlbinlog]" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "[mysqlcheck]" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "[mysqldump]" >> $MARIADB_OPTS_FILE
-  echo "quick" >> $MARIADB_OPTS_FILE
-  echo "quote-names" >> $MARIADB_OPTS_FILE
-  echo "max_allowed_packet        = 1024M" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "[mysqlimport]" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "[mysqlshow]" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "[mysqlslap]" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  cp /tmp/mariadb.config/$MARIADB_OPTS_FILE $MARIADB_SYSTEMD_CONFIG_DIR/$MARIADB_OPTS_FILE
-
-  rm $MARIADB_SYSTEMD_CONFIG_DIR/50-mysqld_safe.cnf 
-  MARIADB_OPTS_FILE=50-mysqld_safe.cnf
-  echo "" > $MARIADB_OPTS_FILE
-  echo "# MariaDB database server configuration file." >> $MARIADB_OPTS_FILE
-  echo "# Configured template by eRQee (rizky@prihanto.web.id)" >> $MARIADB_OPTS_FILE
-  echo "# -------------------------------------------------------------------------------" >> $MARIADB_OPTS_FILE
-  echo "#" >> $MARIADB_OPTS_FILE
-  echo "# NOTE: THIS FILE IS READ ONLY BY THE TRADITIONAL SYSV INIT SCRIPT, NOT SYSTEMD." >> $MARIADB_OPTS_FILE
-  echo "# MARIADB SYSTEMD DOES _NOT_ UTILIZE MYSQLD_SAFE NOR READ THIS FILE." >> $MARIADB_OPTS_FILE
-  echo "#" >> $MARIADB_OPTS_FILE
-  echo "# For similar behavior, systemd users should create the following file:" >> $MARIADB_OPTS_FILE
-  echo "# /etc/systemd/system/mariadb.service.d/migrated-from-my.cnf-settings.conf" >> $MARIADB_OPTS_FILE
-  echo "#" >> $MARIADB_OPTS_FILE
-  echo "# To achieve the same result as the default 50-mysqld_safe.cnf, please create" >> $MARIADB_OPTS_FILE
-  echo "# /etc/systemd/system/mariadb.service.d/migrated-from-my.cnf-settings.conf" >> $MARIADB_OPTS_FILE
-  echo "# with the following contents:" >> $MARIADB_OPTS_FILE
-  echo "#" >> $MARIADB_OPTS_FILE
-  echo "# [Service]" >> $MARIADB_OPTS_FILE
-  echo "# User=mysql" >> $MARIADB_OPTS_FILE
-  echo "# StandardOutput=syslog" >> $MARIADB_OPTS_FILE
-  echo "# StandardError=syslog" >> $MARIADB_OPTS_FILE
-  echo "# SyslogFacility=daemon" >> $MARIADB_OPTS_FILE
-  echo "# SyslogLevel=err" >> $MARIADB_OPTS_FILE
-  echo "# SyslogIdentifier=mysqld" >> $MARIADB_OPTS_FILE
-  echo "#" >> $MARIADB_OPTS_FILE
-  echo "# For more information, please read https://mariadb.com/kb/en/mariadb/systemd/" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "[mysqld_safe]" >> $MARIADB_OPTS_FILE
-  echo "# This will be passed to all mysql clients" >> $MARIADB_OPTS_FILE
-  echo "# It has been reported that passwords should be enclosed with ticks/quotes" >> $MARIADB_OPTS_FILE
-  echo "# especially if they contain "#" chars..." >> $MARIADB_OPTS_FILE
-  echo "#" >> $MARIADB_OPTS_FILE
-  echo "socket                    = /var/run/mysqld/mysqld.sock" >> $MARIADB_OPTS_FILE
-  echo "log_error                 = /var/log/mysql/mariadb.err" >> $MARIADB_OPTS_FILE
-  echo "nice                      = 0" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  cp /tmp/mariadb.config/$MARIADB_OPTS_FILE $MARIADB_SYSTEMD_CONFIG_DIR/$MARIADB_OPTS_FILE
-
-  MARIADB_SYSTEMD_CONF=/etc/systemd/system/mariadb.service.d/migrated-from-my.cnf-settings.conf
-  echo "#empty placeholder" > $MARIADB_SYSTEMD_CONF  
-  echo "" >> $MARIADB_SYSTEMD_CONF  
-  echo "[Service]" >> $MARIADB_SYSTEMD_CONF
-  echo "User=mysql" >> $MARIADB_SYSTEMD_CONF
-  echo "StandardOutput=syslog" >> $MARIADB_SYSTEMD_CONF
-  echo "StandardError=syslog" >> $MARIADB_SYSTEMD_CONF
-  echo "SyslogFacility=daemon" >> $MARIADB_SYSTEMD_CONF
-  echo "SyslogLevel=err" >> $MARIADB_SYSTEMD_CONF
-  echo "SyslogIdentifier=mysqld" >> $MARIADB_SYSTEMD_CONF
-    
-  rm $MARIADB_SYSTEMD_CONFIG_DIR/50-server.cnf 
-  MARIADB_OPTS_FILE=50-server.cnf
-  echo "" > $MARIADB_OPTS_FILE
-  echo "# MariaDB database server configuration file." >> $MARIADB_OPTS_FILE
-  echo "# Configured template by eRQee (rizky@prihanto.web.id)" >> $MARIADB_OPTS_FILE
-  echo "# -------------------------------------------------------------------------------" >> $MARIADB_OPTS_FILE
-  echo "#" >> $MARIADB_OPTS_FILE 
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "#" >> $MARIADB_OPTS_FILE
-  echo "# These groups are read by MariaDB server." >> $MARIADB_OPTS_FILE
-  echo "# Use it for options that only the server (but not clients) should see" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "# this is read by the standalone daemon and embedded servers" >> $MARIADB_OPTS_FILE
-  echo "[server]" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "[mysqld]" >> $MARIADB_OPTS_FILE
-  echo "# ------------------------------------------------------------------------------- : SERVER PROFILE" >> $MARIADB_OPTS_FILE
-  echo "server_id                 = 1" >> $MARIADB_OPTS_FILE
-  if [ "$appserver_type" = '3' ]; then
-    echo "bind-address              = 0.0.0.0" >> $MARIADB_OPTS_FILE
-  fi
-  if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '5' ]; then
-    echo "bind-address              = 127.0.0.1" >> $MARIADB_OPTS_FILE
-  fi
-  echo "port                      = 3306" >> $MARIADB_OPTS_FILE
-  echo "socket                    = /var/run/mysqld/mysqld.sock" >> $MARIADB_OPTS_FILE
-  echo "pid-file                  = /var/run/mysqld/mysqld.pid" >> $MARIADB_OPTS_FILE
-  echo "user                      = mysql" >> $MARIADB_OPTS_FILE
-  echo "sql_mode                  = NO_ENGINE_SUBSTITUTION,TRADITIONAL" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "# ------------------------------------------------------------------------------- : PATH" >> $MARIADB_OPTS_FILE
-  echo "basedir                   = /usr" >> $MARIADB_OPTS_FILE
-  echo "datadir                   = /var/lib/mysql" >> $MARIADB_OPTS_FILE
-  echo "tmpdir                    = /tmp" >> $MARIADB_OPTS_FILE
-  echo "#general_log_file         = /var/log/mysql/mysql.log" >> $MARIADB_OPTS_FILE
-  echo "log_bin                   = /var/log/mysql/mariadb-bin" >> $MARIADB_OPTS_FILE
-  echo "log_bin_index             = /var/log/mysql/mariadb-bin.index" >> $MARIADB_OPTS_FILE
-  echo "slow_query_log_file       = /var/log/mysql/mariadb-slow.log" >> $MARIADB_OPTS_FILE
-  echo "#relay_log                = /var/log/mysql/relay-bin" >> $MARIADB_OPTS_FILE
-  echo "#relay_log_index          = /var/log/mysql/relay-bin.index" >> $MARIADB_OPTS_FILE
-  echo "#relay_log_info_file      = /var/log/mysql/relay-bin.info" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "# ------------------------------------------------------------------------------- : LOCALE SETTING" >> $MARIADB_OPTS_FILE
-  echo "lc_messages_dir           = /usr/share/mysql" >> $MARIADB_OPTS_FILE
-  echo "lc_messages               = en_US" >> $MARIADB_OPTS_FILE
-  echo "init_connect              = 'SET collation_connection=utf8mb4_unicode_ci; SET NAMES utf8mb4;'" >> $MARIADB_OPTS_FILE
-  echo "character_set_server      = utf8mb4" >> $MARIADB_OPTS_FILE
-  echo "collation_server          = utf8mb4_unicode_ci" >> $MARIADB_OPTS_FILE
-  echo "character-set-server      = utf8mb4" >> $MARIADB_OPTS_FILE
-  echo "collation-server          = utf8mb4_unicode_ci" >> $MARIADB_OPTS_FILE
-  echo "skip-character-set-client-handshake" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : GENERIC FEATURES" >> $MARIADB_OPTS_FILE
-  echo "big_tables                = 1" >> $MARIADB_OPTS_FILE
-  echo "event_scheduler           = 1" >> $MARIADB_OPTS_FILE
-  echo "lower_case_table_names    = 1" >> $MARIADB_OPTS_FILE
-  echo "performance_schema        = 0" >> $MARIADB_OPTS_FILE
-  echo "group_concat_max_len      = 184467440737095475" >> $MARIADB_OPTS_FILE
-  echo "skip-external-locking     = 1" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : CONNECTION SETTING" >> $MARIADB_OPTS_FILE
-  echo "max_connections           = 100" >> $MARIADB_OPTS_FILE
-  echo "max_connect_errors        = 9999" >> $MARIADB_OPTS_FILE
-  echo "connect_timeout           = 60" >> $MARIADB_OPTS_FILE
-  echo "wait_timeout              = 600" >> $MARIADB_OPTS_FILE
-  echo "interactive_timeout       = 600" >> $MARIADB_OPTS_FILE
-  echo "max_allowed_packet        = 128M" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : CACHE SETTING" >> $MARIADB_OPTS_FILE
-  echo "thread_stack              = 192K" >> $MARIADB_OPTS_FILE
-  echo "thread_cache_size         = 8" >> $MARIADB_OPTS_FILE
-  echo "sort_buffer_size          = 4M" >> $MARIADB_OPTS_FILE
-  echo "bulk_insert_buffer_size   = 64M" >> $MARIADB_OPTS_FILE
-  echo "tmp_table_size            = 256M" >> $MARIADB_OPTS_FILE
-  echo "max_heap_table_size       = 256M" >> $MARIADB_OPTS_FILE
-  echo "table_cache               = 64" >> $MARIADB_OPTS_FILE
-  echo "query_cache_limit         = 128K    ## default: 128K" >> $MARIADB_OPTS_FILE
-  echo "query_cache_size          = 64      ## default: 64M" >> $MARIADB_OPTS_FILE
-  echo "query_cache_type          = DEMAND  ## for more write intensive setups, set to DEMAND or OFF" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : Logging" >> $MARIADB_OPTS_FILE
-  echo "general_log               = 0" >> $MARIADB_OPTS_FILE
-  echo "log_warnings              = 2" >> $MARIADB_OPTS_FILE
-  echo "slow_query_log            = 0" >> $MARIADB_OPTS_FILE
-  echo "long_query_time           = 10" >> $MARIADB_OPTS_FILE
-  echo "#log_slow_rate_limit      = 1000" >> $MARIADB_OPTS_FILE
-  echo "log_slow_verbosity        = query_plan" >> $MARIADB_OPTS_FILE
-  echo "#log-queries-not-using-indexes" >> $MARIADB_OPTS_FILE
-  echo "#log_slow_admin_statements" >> $MARIADB_OPTS_FILE
-  echo "log_bin_trust_function_creators = 1" >> $MARIADB_OPTS_FILE
-  echo "#sync_binlog              = 1" >> $MARIADB_OPTS_FILE
-  echo "expire_logs_days          = 10" >> $MARIADB_OPTS_FILE
-  echo "max_binlog_size           = 100M" >> $MARIADB_OPTS_FILE
-  echo "#log_slave_updates" >> $MARIADB_OPTS_FILE
-  echo "#read_only" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : InnoDB" >> $MARIADB_OPTS_FILE
-  echo "# InnoDB is enabled by default with a 10MB datafile in /var/lib/mysql/." >> $MARIADB_OPTS_FILE
-  echo "# Read the manual for more InnoDB related options. There are many!" >> $MARIADB_OPTS_FILE
-  echo "# Most important is to give InnoDB 80 % of the system RAM for buffer use:" >> $MARIADB_OPTS_FILE
-  echo "# https://mariadb.com/kb/en/innodb-system-variables/#innodb_buffer_pool_size" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "default_storage_engine    = InnoDB" >> $MARIADB_OPTS_FILE
-  echo "#innodb_log_file_size     = 50M     ## you can't just change log file size, requires special procedure" >> $MARIADB_OPTS_FILE
-  echo "innodb_buffer_pool_size   = 1638M" >> $MARIADB_OPTS_FILE
-  echo "innodb_log_buffer_size    = 8M" >> $MARIADB_OPTS_FILE
-  echo "innodb_file_per_table     = 1" >> $MARIADB_OPTS_FILE
-  echo "innodb_open_files         = 400" >> $MARIADB_OPTS_FILE
-  echo "innodb_io_capacity        = 400" >> $MARIADB_OPTS_FILE
-  echo "innodb_flush_method       = O_DIRECT" >> $MARIADB_OPTS_FILE
-  echo "innodb_doublewrite        = 1" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : MyISAM" >> $MARIADB_OPTS_FILE
-  echo "myisam_recover_options    = BACKUP" >> $MARIADB_OPTS_FILE
-  echo "key_buffer_size           = 128M" >> $MARIADB_OPTS_FILE
-  echo "open-files-limit          = 4000" >> $MARIADB_OPTS_FILE
-  echo "table_open_cache          = 400" >> $MARIADB_OPTS_FILE
-  echo "myisam_sort_buffer_size   = 512M" >> $MARIADB_OPTS_FILE
-  echo "concurrent_insert         = 2" >> $MARIADB_OPTS_FILE
-  echo "read_buffer_size          = 2M" >> $MARIADB_OPTS_FILE
-  echo "read_rnd_buffer_size      = 1M" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "#auto_increment_increment = 2" >> $MARIADB_OPTS_FILE
-  echo "#auto_increment_offset    = 1" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : Security Features" >> $MARIADB_OPTS_FILE
-  echo "# [Docs] https://mariadb.com/kb/en/securing-connections-for-client-and-server/" >> $MARIADB_OPTS_FILE
-  echo "# ssl-ca                  = /etc/mysql/cacert.pem" >> $MARIADB_OPTS_FILE
-  echo "# ssl-cert                = /etc/mysql/server-cert.pem" >> $MARIADB_OPTS_FILE
-  echo "# ssl-key                 = /etc/mysql/server-key.pem" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "# this is only for embedded server" >> $MARIADB_OPTS_FILE
-  echo "[embedded]" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "# This group is only read by MariaDB servers, not by MySQL." >> $MARIADB_OPTS_FILE
-  echo "# If you use the same .cnf file for MySQL and MariaDB," >> $MARIADB_OPTS_FILE
-  echo "# you can put MariaDB-only options here" >> $MARIADB_OPTS_FILE
-  echo "[mariadb]" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "# This group is only read by MariaDB-10.5 servers." >> $MARIADB_OPTS_FILE
-  echo "# If you use the same .cnf file for MariaDB of different versions," >> $MARIADB_OPTS_FILE
-  echo "# use this group for options that older servers don't understand" >> $MARIADB_OPTS_FILE
-  echo "[mariadb-10.5]" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  cp /tmp/mariadb.config/$MARIADB_OPTS_FILE $MARIADB_SYSTEMD_CONFIG_DIR/$MARIADB_OPTS_FILE
+cat > $MARIADB_SYSTEMD_CONFIG_DIR/50-client.cnf << EOL
+# MariaDB database server configuration file.
+# Configured template by eRQee (rizky@prihanto.web.id)
+# -------------------------------------------------------------------------------
+#
+# This group is read by the client library
+# Use it for options that affect all clients, but not the server
+#
   
-  rm $MARIADB_SYSTEMD_CONFIG_DIR/60-galera.cnf
-  MARIADB_OPTS_FILE=60-galera.cnf
-  echo "" > $MARIADB_OPTS_FILE
-  echo "# MariaDB database server configuration file." >> $MARIADB_OPTS_FILE
-  echo "# Configured template by eRQee (rizky@prihanto.web.id)" >> $MARIADB_OPTS_FILE
-  echo "# -------------------------------------------------------------------------------" >> $MARIADB_OPTS_FILE
-  echo "#" >> $MARIADB_OPTS_FILE
-  echo "# * Galera-related settings" >> $MARIADB_OPTS_FILE
-  echo "#" >> $MARIADB_OPTS_FILE
-  echo "# See the examples of server wsrep.cnf files in /usr/share/mysql" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "[galera]" >> $MARIADB_OPTS_FILE
-  echo "# Mandatory Settings" >> $MARIADB_OPTS_FILE
-  echo "#wsrep_on                 = ON" >> $MARIADB_OPTS_FILE
-  echo "#wsrep_provider           =" >> $MARIADB_OPTS_FILE
-  echo "#wsrep_cluster_address    =" >> $MARIADB_OPTS_FILE
-  echo "binlog-format             = ROW" >> $MARIADB_OPTS_FILE
-  echo "#report_host              = master1" >> $MARIADB_OPTS_FILE
-  echo "#sync_binlog              = 1   ## not fab for performance, but safer" >> $MARIADB_OPTS_FILE
-  echo "max_binlog_size           = 100M" >> $MARIADB_OPTS_FILE
-  echo "expire_logs_days          = 10" >> $MARIADB_OPTS_FILE
-  echo "default_storage_engine    = InnoDB" >> $MARIADB_OPTS_FILE
-  echo "innodb_autoinc_lock_mode  = 2" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "# Allow server to accept connections on all interfaces." >> $MARIADB_OPTS_FILE
-  echo "#bind-address=0.0.0.0" >> $MARIADB_OPTS_FILE
-  echo "" >> $MARIADB_OPTS_FILE
-  echo "# Optional Settings" >> $MARIADB_OPTS_FILE
-  echo "#wsrep_slave_threads      = 1" >> $MARIADB_OPTS_FILE
-  echo "innodb_flush_log_at_trx_commit  = 0" >> $MARIADB_OPTS_FILE
-  cp /tmp/mariadb.config/$MARIADB_OPTS_FILE $MARIADB_SYSTEMD_CONFIG_DIR/$MARIADB_OPTS_FILE
+[client]
+port                      = 3306
+socket                    = /var/run/mysqld/mysqld.sock
+default-character-set     = utf8mb4
+  
+# Default is Latin1, if you need UTF-8 set this (also in server section)
+  
+# Example of client certificate usage
+# ssl-ca                  = /etc/mysql/cacert.pem
+# ssl-cert                = /etc/mysql/server-cert.pem
+# ssl-key                 = /etc/mysql/server-key.pem
+  
+# Allow only TLS encrypted connections
+# ssl-verify-server-cert  = on
 
-  CMAPI_X_API_KEY=$( openssl rand -hex 32 )
-  curl -k -s -X PUT https://mcs1:8640/cmapi/0.4.0/cluster/add-node --header "Content-Type:application/json" --header "x-api-key:$CMAPI_X_API_KEY" --data '{"timeout":120, "node": "127.0.0.1"}'  | jq .
+# This group is *never* read by mysql client library, though this
+# /etc/mysql/mariadb.cnf.d/client.cnf file is not read by Oracle MySQL
+# client anyway.
+# If you use the same .cnf file for MySQL and MariaDB,
+# use it for MariaDB-only client options
 
-  # restart the services
-  systemctl daemon-reload
-  systemctl restart mariadb.service
+[client-mariadb]
+  
+EOL
+
+cat > $MARIADB_SYSTEMD_CONFIG_DIR/50-mysql-clients.cnf << EOL
+# MariaDB database server configuration file.
+# Configured template by eRQee (rizky@prihanto.web.id)
+# -------------------------------------------------------------------------------
+#
+
+# These groups are read by MariaDB command-line tools
+# Use it for options that affect only one utility
+#
+
+[mysql]
+socket                    = /var/run/mysqld/mysqld.sock
+no-auto-rehash  
+local-infile
+
+[mysql_upgrade]
+
+[mysqladmin]
+
+[mysqlbinlog]
+
+[mysqlcheck]
+
+[mysqldump]
+quick
+quote-names
+max_allowed_packet        = 1024M
+
+[mysqlimport]
+
+[mysqlshow]
+
+[mysqlslap]
+
+EOL
+
+cat > $MARIADB_SYSTEMD_CONFIG_DIR/50-mysqld_safe.cnf << EOL
+# MariaDB database server configuration file.
+# Configured template by eRQee (rizky@prihanto.web.id)
+# -------------------------------------------------------------------------------
+#
+# NOTE: THIS FILE IS READ ONLY BY THE TRADITIONAL SYSV INIT SCRIPT, NOT SYSTEMD.
+# MARIADB SYSTEMD DOES _NOT_ UTILIZE MYSQLD_SAFE NOR READ THIS FILE.
+#
+# For similar behavior, systemd users should create the following file:
+# /etc/systemd/system/mariadb.service.d/migrated-from-my.cnf-settings.conf
+#
+# To achieve the same result as the default 50-mysqld_safe.cnf, please create
+# /etc/systemd/system/mariadb.service.d/migrated-from-my.cnf-settings.conf
+# with the following contents:
+#
+# [Service]
+# User=mysql
+# StandardOutput=syslog
+# StandardError=syslog
+# SyslogFacility=daemon
+# SyslogLevel=err
+# SyslogIdentifier=mysqld
+#
+# For more information, please read https://mariadb.com/kb/en/mariadb/systemd/
+
+[mysqld_safe]
+# This will be passed to all mysql clients
+# It has been reported that passwords should be enclosed with ticks/quotes
+# especially if they contain "#" chars...
+#
+socket                    = /var/run/mysqld/mysqld.sock
+log_error                 = /var/log/mysql/mariadb.err
+nice                      = 0
+
+EOL
+
+MARIADB_SYSTEMD_CONF=/etc/systemd/system/mariadb.service.d/migrated-from-my.cnf-settings.conf
+cat > $MARIADB_SYSTEMD_CONF << EOL
+#empty placeholder
+
+[Service]
+User=mysql
+StandardOutput=syslog
+StandardError=syslog
+SyslogFacility=daemon
+SyslogLevel=err
+SyslogIdentifier=mysqld
+
+EOL
+
+cfg_binded_address=127.0.0.1
+if [ "$appserver_type" = '3' ]; then
+  cfg_binded_address=0.0.0.0
+fi
+
+cat > $MARIADB_SYSTEMD_CONFIG_DIR/50-server.cnf << EOL
+# MariaDB database server configuration file.
+# Configured template by eRQee (rizky@prihanto.web.id)
+# -------------------------------------------------------------------------------
+# 
+# These groups are read by MariaDB server.
+# Use it for options that only the server (but not clients) should see
+
+# this is read by the standalone daemon and embedded servers
+[server]
+
+[mysqld]
+# ------------------------------------------------------------------------------- : SERVER PROFILE
+server_id                 = 1
+bind-address              = ${cfg_binded_address}
+port                      = 3306
+socket                    = /var/run/mysqld/mysqld.sock
+pid-file                  = /var/run/mysqld/mysqld.pid
+user                      = mysql
+sql_mode                  = NO_ENGINE_SUBSTITUTION,TRADITIONAL
+
+# ------------------------------------------------------------------------------- : PATH
+basedir                   = /usr
+datadir                   = /var/lib/mysql
+tmpdir                    = /tmp
+#general_log_file         = /var/log/mysql/mysql.log
+log_bin                   = /var/log/mysql/mariadb-bin
+log_bin_index             = /var/log/mysql/mariadb-bin.index
+slow_query_log_file       = /var/log/mysql/mariadb-slow.log
+#relay_log                = /var/log/mysql/relay-bin
+#relay_log_index          = /var/log/mysql/relay-bin.index
+#relay_log_info_file      = /var/log/mysql/relay-bin.info
+
+# ------------------------------------------------------------------------------- : LOCALE SETTING
+lc_messages_dir           = /usr/share/mysql
+lc_messages               = en_US
+init_connect              = 'SET collation_connection=utf8mb4_unicode_ci; SET NAMES utf8mb4;'
+character_set_server      = utf8mb4
+collation_server          = utf8mb4_unicode_ci
+character-set-server      = utf8mb4
+collation-server          = utf8mb4_unicode_ci
+skip-character-set-client-handshake
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : GENERIC FEATURES
+big_tables                = 1
+event_scheduler           = 1
+lower_case_table_names    = 1
+performance_schema        = 0
+group_concat_max_len      = 184467440737095475
+skip-external-locking     = 1
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : CONNECTION SETTING
+max_connections           = 100
+max_connect_errors        = 9999
+connect_timeout           = 60
+wait_timeout              = 600
+interactive_timeout       = 600
+max_allowed_packet        = 128M
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : CACHE SETTING
+thread_stack              = 192K
+thread_cache_size         = 8
+sort_buffer_size          = 4M
+bulk_insert_buffer_size   = 64M
+tmp_table_size            = 256M
+max_heap_table_size       = 256M
+table_cache               = 64
+query_cache_limit         = 128K    ## default: 128K
+query_cache_size          = 64      ## default: 64M
+query_cache_type          = DEMAND  ## for more write intensive setups, set to DEMAND or OFF
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : Logging
+general_log               = 0
+log_warnings              = 2
+slow_query_log            = 0
+long_query_time           = 10
+#log_slow_rate_limit      = 1000
+log_slow_verbosity        = query_plan
+#log-queries-not-using-indexes
+#log_slow_admin_statements
+log_bin_trust_function_creators = 1
+#sync_binlog              = 1
+expire_logs_days          = 10
+max_binlog_size           = 100M
+#log_slave_updates
+#read_only
+
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : InnoDB
+# InnoDB is enabled by default with a 10MB datafile in /var/lib/mysql/.
+# Read the manual for more InnoDB related options. There are many!
+# Most important is to give InnoDB 80 % of the system RAM for buffer use:
+# https://mariadb.com/kb/en/innodb-system-variables/#innodb_buffer_pool_size
+
+default_storage_engine    = InnoDB
+#innodb_log_file_size     = 50M     ## you can't just change log file size, requires special procedure
+innodb_buffer_pool_size   = 1638M
+innodb_log_buffer_size    = 8M
+innodb_file_per_table     = 1
+innodb_open_files         = 400
+innodb_io_capacity        = 400
+innodb_flush_method       = O_DIRECT
+innodb_doublewrite        = 1
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : MyISAM
+myisam_recover_options    = BACKUP
+key_buffer_size           = 128M
+open-files-limit          = 4000
+table_open_cache          = 400
+myisam_sort_buffer_size   = 512M
+concurrent_insert         = 2
+read_buffer_size          = 2M
+read_rnd_buffer_size      = 1M
+
+#auto_increment_increment = 2
+#auto_increment_offset    = 1
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : Security Features
+# [Docs] https://mariadb.com/kb/en/securing-connections-for-client-and-server/
+# ssl-ca                  = /etc/mysql/cacert.pem
+# ssl-cert                = /etc/mysql/server-cert.pem
+# ssl-key                 = /etc/mysql/server-key.pem
+
+
+# this is only for embedded server
+[embedded]
+
+# This group is only read by MariaDB servers, not by MySQL.
+# If you use the same .cnf file for MySQL and MariaDB,
+# you can put MariaDB-only options here
+[mariadb]
+
+# This group is only read by MariaDB-10.6 servers.
+# If you use the same .cnf file for MariaDB of different versions,
+# use this group for options that older servers don't understand
+[mariadb-10.6]
+
+EOL
+
+cat > $MARIADB_SYSTEMD_CONFIG_DIR/60-galera.cnf << EOL
+# MariaDB database server configuration file.
+# Configured template by eRQee (rizky@prihanto.web.id)
+# -------------------------------------------------------------------------------
+#
+# * Galera-related settings
+#
+# See the examples of server wsrep.cnf files in /usr/share/mysql
+
+[galera]
+# Mandatory Settings
+#wsrep_on                 = ON
+#wsrep_provider           =
+#wsrep_cluster_address    =
+binlog-format             = ROW
+#report_host              = master1
+#sync_binlog              = 1   ## not fab for performance, but safer
+max_binlog_size           = 100M
+expire_logs_days          = 10
+default_storage_engine    = InnoDB
+innodb_autoinc_lock_mode  = 2
+
+# Allow server to accept connections on all interfaces.
+#bind-address=0.0.0.0
+
+# Optional Settings
+#wsrep_slave_threads      = 1
+innodb_flush_log_at_trx_commit  = 0
+
+EOL
+
+# restart the services
+systemctl daemon-reload
+systemctl restart mariadb.service
   
   #mysqltuner
   mkdir -p /scripts/mysqltuner
@@ -602,472 +666,522 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_t
   wget https://raw.githubusercontent.com/major/MySQLTuner-perl/master/basic_passwords.txt -O basic_passwords.txt
   wget https://raw.githubusercontent.com/major/MySQLTuner-perl/master/vulnerabilities.csv -O vulnerabilities.csv
   chmod +x /scripts/mysqltuner/mysqltuner.pl
+  echo "" >> /etc/bash.bashrc
   echo "alias mysqltuner='/scripts/mysqltuner/mysqltuner.pl --cvefile=/scripts/mysqltuner/vulnerabilities.csv --passwordfile=/scripts/mysqltuner/basic_passwords.txt'" >> /etc/bash.bashrc
   cd /tmp
 fi
 
 
 ##########################################
-#install (and configure) nginx & php-fpm#
+#install (and configure) nginx & php-fpm #
 ##########################################
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
  
-  apt install -y php7.4 php7.4-bcmath php7.4-bz2 php7.4-cgi php7.4-cli php7.4-common php7.4-curl php7.4-dba php7.4-dev php7.4-enchant \
+  apt install -y nginx snmp-mibs-downloader libgeoip-dev \
+                 php7.4 php7.4-bcmath php7.4-bz2 php7.4-cgi php7.4-cli php7.4-common php7.4-curl php7.4-dba php7.4-dev php7.4-enchant \
                  php7.4-fpm php7.4-gd php7.4-gmp php7.4-imap php7.4-interbase php7.4-intl php7.4-json php7.4-ldap php7.4-mbstring php7.4-mysql \
                  php7.4-odbc php7.4-opcache php7.4-pgsql php7.4-pspell php7.4-readline php7.4-snmp php7.4-soap php7.4-sqlite3 php7.4-sybase \
-                 php7.4-tidy php7.4-xml php7.4-xmlrpc php7.4-xsl php7.4-zip php-mongodb php-geoip libgeoip-dev snmp-mibs-downloader nginx \
-                 php8.0 php8.0-amqp php8.0-ast php8.0-bcmath php8.0-bz2 php8.0-cgi php8.0-cli php8.0-common php8.0-curl php8.0-dba php8.0-dev \
-                 php8.0-ds php8.0-enchant php8.0-fpm php8.0-gd php8.0-gmp php8.0-igbinary php8.0-imagick php8.0-imap php8.0-interbase php8.0-intl \
-                 php8.0-ldap php8.0-mailparse php8.0-mbstring php8.0-memcached php8.0-msgpack php8.0-mysql php8.0-oauth php8.0-odbc php8.0-opcache \
-                 php8.0-pgsql php8.0-phpdbg php8.0-pspell php8.0-psr php8.0-raphf php8.0-readline php8.0-redis php8.0-rrd php8.0-smbclient \
-                 php8.0-snmp php8.0-soap php8.0-solr php8.0-sqlite3 php8.0-sybase php8.0-tidy php8.0-uuid php8.0-xdebug php8.0-xhprof php8.0-xml \
-                 php8.0-xsl php8.0-yac php8.0-yaml php8.0-zip php8.0-zmq
+                 php7.4-tidy php7.4-xml php7.4-xmlrpc php7.4-xsl php7.4-zip php-mongodb php-geoip \
+                 php8.1 php8.1-bcmath php8.1-bz2 php8.1-cgi php8.1-cli php8.1-common php8.1-curl php8.1-dba php8.1-dev php8.1-enchant \
+                 php8.1-fpm php8.1-gd php8.1-gmp php8.1-imap php8.1-interbase php8.1-intl php8.1-ldap php8.1-mbstring php8.1-mysql php8.1-odbc \
+                 php8.1-opcache php8.1-pgsql php8.1-phpdbg php8.1-pspell php8.1-readline php8.1-snmp php8.1-soap php8.1-sqlite3 php8.1-sybase \
+                 php8.1-tidy php8.1-xml php8.1-xsl php8.1-zip
 
-  if [ "$appserver_type" = '5' ]; then
-    apt install -y libpq-dev
-  fi
 
-  # configuring nginx
-  cd /tmp
-  echo "" > /tmp/fastcgi_params
-  echo "fastcgi_param  QUERY_STRING       \$query_string;" >> /tmp/fastcgi_params
-  echo "fastcgi_param  REQUEST_METHOD     \$request_method;" >> /tmp/fastcgi_params
-  echo "fastcgi_param  CONTENT_TYPE       \$content_type;" >> /tmp/fastcgi_params
-  echo "fastcgi_param  CONTENT_LENGTH     \$content_length;" >> /tmp/fastcgi_params
-  echo "" >> /tmp/fastcgi_params
-  echo "fastcgi_param  SCRIPT_NAME        \$fastcgi_script_name;" >> /tmp/fastcgi_params
-  echo "fastcgi_param  REQUEST_URI        \$request_uri;" >> /tmp/fastcgi_params
-  echo "fastcgi_param  DOCUMENT_URI       \$document_uri;" >> /tmp/fastcgi_params
-  echo "fastcgi_param  DOCUMENT_ROOT      \$document_root;" >> /tmp/fastcgi_params
-  echo "fastcgi_param  SERVER_PROTOCOL    \$server_protocol;" >> /tmp/fastcgi_params
-  echo "fastcgi_param  REQUEST_SCHEME     \$scheme;" >> /tmp/fastcgi_params
-  echo "fastcgi_param  HTTPS              \$https if_not_empty;" >> /tmp/fastcgi_params
-  echo "" >> /tmp/fastcgi_params
-  echo "fastcgi_param  SCRIPT_FILENAME    \$document_root\$fastcgi_script_name;" >> /tmp/fastcgi_params
-  echo "fastcgi_param  PATH_INFO          \$fastcgi_path_info;" >> /tmp/fastcgi_params
-  echo "fastcgi_param  PATH_TRANSLATED    \$document_root\$fastcgi_path_info;" >> /tmp/fastcgi_params
-  echo "" >> /tmp/fastcgi_params
-  echo "fastcgi_param  GATEWAY_INTERFACE  CGI/1.1;" >> /tmp/fastcgi_params
-  echo "fastcgi_param  SERVER_SOFTWARE    nginx/\$nginx_version;" >> /tmp/fastcgi_params
-  echo "" >> /tmp/fastcgi_params
-  echo "fastcgi_param  REMOTE_ADDR        \$remote_addr;" >> /tmp/fastcgi_params
-  echo "fastcgi_param  REMOTE_PORT        \$remote_port;" >> /tmp/fastcgi_params
-  echo "fastcgi_param  REMOTE_USER        \$remote_user;" >> /tmp/fastcgi_params
-  echo "fastcgi_param  SERVER_ADDR        \$server_addr;" >> /tmp/fastcgi_params
-  echo "fastcgi_param  SERVER_PORT        \$server_port;" >> /tmp/fastcgi_params
-  echo "fastcgi_param  SERVER_NAME        \$server_name;" >> /tmp/fastcgi_params
-  echo "" >> /tmp/fastcgi_params
-  echo "" >> /tmp/fastcgi_params
-  echo "# PHP only, required if PHP was built with --enable-force-cgi-redirect" >> /tmp/fastcgi_params
-  echo "fastcgi_param  REDIRECT_STATUS    200;" >> /tmp/fastcgi_params
+##########################################
+# configuring the webservers             #
+##########################################
 
-  rm /etc/nginx/fastcgi_params
-  cp /tmp/fastcgi_params /etc/nginx
+# backup original nginx configs
+mkdir -p /etc/nginx/0riginal.config
+mv /etc/nginx/fastcgi_params /etc/nginx/0riginal.config/
+mv /etc/nginx/nginx.conf /etc/nginx/0riginal.config/
 
-  cd /tmp
-  echo "" > /tmp/nginx.conf
-  echo "##---------------------------------------------##" >> /tmp/nginx.conf
-  echo "# Last Update Jan 23, 2021  22:06 WIB by eRQee  #" >> /tmp/nginx.conf
-  echo "##---------------------------------------------##" >> /tmp/nginx.conf
-  echo "" >> /tmp/nginx.conf
-  echo "user                    www-data;" >> /tmp/nginx.conf
-  cpu_core_count=$( nproc )
-  echo "worker_processes        $cpu_core_count;" >> /tmp/nginx.conf
-  echo "" >> /tmp/nginx.conf
-  echo "pid                     /run/nginx.pid;" >> /tmp/nginx.conf
-  echo "include                 /etc/nginx/modules-enabled/*.conf;" >> /tmp/nginx.conf
-  echo "worker_rlimit_nofile    8192;" >> /tmp/nginx.conf
-    echo "" >> /tmp/nginx.conf
-  echo "events {" >> /tmp/nginx.conf
-  echo "    worker_connections  8000;" >> /tmp/nginx.conf
-  echo "}" >> /tmp/nginx.conf
-  echo "" >> /tmp/nginx.conf
-  echo "http {" >> /tmp/nginx.conf
-  echo "    include       /etc/nginx/mime.types;" >> /tmp/nginx.conf
-  echo "    default_type  application/octet-stream;" >> /tmp/nginx.conf
-  echo "    charset       utf-8;" >> /tmp/nginx.conf
-  echo "    charset_types text/css text/plain text/vnd.wap.wml text/javascript text/markdown text/calendar text/x-component text/vcard text/cache-manifest text/vtt application/json application/manifest+json;" >> /tmp/nginx.conf
-  echo "" >> /tmp/nginx.conf
-  echo "    log_format  main '\$status \$time_local \$remote_addr \$body_bytes_sent \"\$request\" \"\$http_referer\" \"\$http_user_agent\" \"\$http_x_forwarded_for\"';" >> /tmp/nginx.conf
-  echo "    log_format  gzip '\$status \$time_local \$remote_addr \$body_bytes_sent \"\$request\" \"\$http_referer\" \"\$http_user_agent\" \"\$http_x_forwarded_for\" \"\$gzip_ratio\"';" >> /tmp/nginx.conf
-  echo "" >> /tmp/nginx.conf
-  echo "    sendfile              on;" >> /tmp/nginx.conf
-  echo "    tcp_nopush            on;" >> /tmp/nginx.conf
-  echo "    tcp_nodelay           on;" >> /tmp/nginx.conf
-  echo "    types_hash_max_size   2048;" >> /tmp/nginx.conf
-  echo "    server_tokens         off;" >> /tmp/nginx.conf
-  echo "    server_names_hash_bucket_size       512;" >> /tmp/nginx.conf
-  echo "    server_name_in_redirect             off;" >> /tmp/nginx.conf
-  echo "" >> /tmp/nginx.conf
-  echo "    gzip                  on;" >> /tmp/nginx.conf
-  echo "    gzip_comp_level       5;" >> /tmp/nginx.conf
-  echo "    gzip_min_length       256;" >> /tmp/nginx.conf
-  echo "    gzip_vary             on;" >> /tmp/nginx.conf
-  echo "    gzip_proxied          any;" >> /tmp/nginx.conf
-  echo "    gzip_buffers          16 8k;" >> /tmp/nginx.conf
-  echo "    gzip_http_version     1.1;" >> /tmp/nginx.conf
-  echo "    gzip_types            application/atom+xml application/geo+json application/javascript application/x-javascript application/json application/ld+json application/manifest+json application/rdf+xml application/rss+xml application/vnd.ms-fontobject application/wasm application/x-web-app-manifest+json application/xhtml+xml application/xml font/eot font/otf font/ttf image/bmp image/svg+xml text/cache-manifest text/calendar text/css text/javascript text/markdown text/plain text/xml text/vcard text/vnd.rim.location.xloc text/vtt text/x-component text/x-cross-domain-policy;" >> /tmp/nginx.conf
-  echo "    gzip_disable          \"msie6\";" >> /tmp/nginx.conf
-  echo "" >> /tmp/nginx.conf
-  echo "    access_log            /var/log/nginx/access.log main;" >> /tmp/nginx.conf
-  echo "    error_log             /var/log/nginx/error.log warn;" >> /tmp/nginx.conf
-  echo "" >> /tmp/nginx.conf
-  echo "    keepalive_timeout     20s;" >> /tmp/nginx.conf
-  echo "    send_timeout          10;" >> /tmp/nginx.conf
-  echo "" >> /tmp/nginx.conf
-  echo "    proxy_connect_timeout 60;" >> /tmp/nginx.conf
-  echo "    proxy_send_timeout    60;" >> /tmp/nginx.conf
-  echo "    proxy_read_timeout    60;" >> /tmp/nginx.conf
-  echo "" >> /tmp/nginx.conf
-  echo "    client_max_body_size  100M;" >> /tmp/nginx.conf
-  echo "    client_header_timeout 12;" >> /tmp/nginx.conf
-  echo "    client_body_timeout   12;" >> /tmp/nginx.conf
-  echo "" >> /tmp/nginx.conf
-  echo "    fastcgi_read_timeout  600;" >> /tmp/nginx.conf
-  echo "    fastcgi_buffer_size   32k;" >> /tmp/nginx.conf
-  echo "    fastcgi_buffers       16 16k;" >> /tmp/nginx.conf
-  echo "    fastcgi_max_temp_file_size 0;" >> /tmp/nginx.conf
-  echo "" >> /tmp/nginx.conf
-  echo "    map \$http_upgrade \$connection_upgrade {" >> /tmp/nginx.conf
-  echo "      default   upgrade;" >> /tmp/nginx.conf
-  echo "      ''        close;" >> /tmp/nginx.conf
-  echo "    }" >> /tmp/nginx.conf
-  echo "" >> /tmp/nginx.conf
-  echo "    upstream apache    { server 127.0.0.1:77; }" >> /tmp/nginx.conf
-  if [ "$appserver_type" = '5' ]; then
-    echo "    upstream odoo      { server 127.0.0.1:8069; }" >> /tmp/nginx.conf
-  fi
-  echo "" >> /tmp/nginx.conf
-  echo "    include /etc/nginx/conf.d/*.conf;" >> /tmp/nginx.conf
-  echo "    include /etc/nginx/sites-enabled/*.conf;" >> /tmp/nginx.conf
-  echo "" >> /tmp/nginx.conf
-  echo "}" >> /tmp/nginx.conf
+# configure fastcgi_params
+cat > /etc/nginx/fastcgi_params << 'EOL'
+fastcgi_param  QUERY_STRING       $query_string;
+fastcgi_param  REQUEST_METHOD     $request_method;
+fastcgi_param  CONTENT_TYPE       $content_type;
+fastcgi_param  CONTENT_LENGTH     $content_length;
 
-  mv /etc/nginx/nginx.conf /etc/nginx/nginx.original.conf
-  cp /tmp/nginx.conf /etc/nginx/nginx.conf
+fastcgi_param  SCRIPT_NAME        $fastcgi_script_name;
+fastcgi_param  REQUEST_URI        $request_uri;
+fastcgi_param  DOCUMENT_URI       $document_uri;
+fastcgi_param  DOCUMENT_ROOT      $document_root;
+fastcgi_param  SERVER_PROTOCOL    $server_protocol;
+fastcgi_param  REQUEST_SCHEME     $scheme;
+fastcgi_param  HTTPS              $https if_not_empty;
 
-  mkdir -p /etc/systemd/system/nginx.service.d
-  printf "[Service]\nExecStartPost=/bin/sleep 0.1\n" > /etc/systemd/system/nginx.service.d/override.conf
+fastcgi_param  SCRIPT_FILENAME    $document_root$fastcgi_script_name;
+fastcgi_param  PATH_INFO          $fastcgi_path_info;
+fastcgi_param  PATH_TRANSLATED    $document_root$fastcgi_path_info;
 
-  mkdir -p /etc/nginx/snippets
+fastcgi_param  GATEWAY_INTERFACE  CGI/1.1;
+fastcgi_param  SERVER_SOFTWARE    nginx/$nginx_version;
 
-  cd /tmp
-  echo "" > /tmp/security.conf
-  echo '## Only requests to our Host are allowed' >> /tmp/security.conf
-  echo '# if ($host !~ ^($server_name)$ ) { return 444; }' >> /tmp/security.conf
-  echo '## Only allow these request methods' >> /tmp/security.conf
-  echo 'if ($request_method !~ ^(GET|HEAD|POST|PUT|DELETE|OPTIONS)$ ) { return 444; }' >> /tmp/security.conf
-  echo '## Deny certain Referers' >> /tmp/security.conf
-  echo 'if ( $http_referer ~* (babes|love|nudit|poker|porn|sex) )  { return 404; return 403; }' >> /tmp/security.conf
-  echo '## Cache the static contents' >> /tmp/security.conf
-  echo 'location ~* ^.+.(jpg|jpeg|gif|png|ico|svg|woff|woff2|ttf|eot|txt|swf|mp4|ogg|flv|mp3|wav|mid|mkv|avi|3gp|webm|webp)$ { access_log off; expires max; }' >> /tmp/security.conf
+fastcgi_param  REMOTE_ADDR        $remote_addr;
+fastcgi_param  REMOTE_PORT        $remote_port;
+fastcgi_param  REMOTE_USER        $remote_user;
+fastcgi_param  SERVER_ADDR        $server_addr;
+fastcgi_param  SERVER_PORT        $server_port;
+fastcgi_param  SERVER_NAME        $server_name;
 
-  mv /tmp/security.conf /etc/nginx/snippets/security.conf
+# PHP only, required if PHP was built with --enable-force-cgi-redirect
+fastcgi_param  REDIRECT_STATUS    200;
 
-  mkdir -p /etc/nginx/certs
-  wget -O /etc/nginx/certs/lets-encrypt-x3-cross-signed.pem "https://letsencrypt.org/certs/lets-encrypt-x3-cross-signed.pem"
-  openssl dhparam -out /etc/nginx/certs/dhparam.pem 2048
+EOL
 
-  cd /tmp
-  echo '' > /tmp/ssl-params.conf
-  echo 'ssl_protocols             TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;' >> /tmp/ssl-params.conf
-  echo 'ssl_session_cache         shared:le_nginx_SSL:10m;' >> /tmp/ssl-params.conf
-  echo 'ssl_session_timeout       6h;' >> /tmp/ssl-params.conf
-  echo 'ssl_session_tickets       on;' >> /tmp/ssl-params.conf
-  echo '' >> /tmp/ssl-params.conf
-  echo 'ssl_prefer_server_ciphers on;' >> /tmp/ssl-params.conf
-  echo 'ssl_ciphers               "ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA:ECDHE-ECDSA-DES-CBC3-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA:!DSS";' >> /tmp/ssl-params.conf
-  echo 'ssl_ecdh_curve            secp521r1:secp384r1;' >> /tmp/ssl-params.conf
-  echo 'ssl_dhparam               /etc/nginx/certs/dhparam.pem;' >> /tmp/ssl-params.conf
-  echo '' >> /tmp/ssl-params.conf
-  echo 'ssl_stapling              on;' >> /tmp/ssl-params.conf
-  echo 'ssl_stapling_verify       on;' >> /tmp/ssl-params.conf
-  echo 'resolver                  8.8.8.8 8.8.4.4 valid=300s;' >> /tmp/ssl-params.conf
-  echo 'resolver_timeout          10s;' >> /tmp/ssl-params.conf
-  echo 'ssl_trusted_certificate   /etc/nginx/certs/lets-encrypt-x3-cross-signed.pem;' >> /tmp/ssl-params.conf
-  echo '' >> /tmp/ssl-params.conf
-  echo 'add_header                Strict-Transport-Security "max-age=63072000; includeSubDomains" always;' >> /tmp/ssl-params.conf
-  echo 'add_header                X-Frame-Options SAMEORIGIN;' >> /tmp/ssl-params.conf
-  echo 'add_header                X-Content-Type-Options nosniff always;' >> /tmp/ssl-params.conf
-  echo 'add_header                X-XSS-Protection "1; mode=block" always;' >> /tmp/ssl-params.conf
+# configure nginx.conf
+cpu_core_count=$( nproc )
+NGINX_CONFIG_FILE=/etc/nginx/nginx.conf
 
-  mv /tmp/ssl-params.conf /etc/nginx/snippets/ssl-params.conf
+cat > $NGINX_CONFIG_FILE << EOL
+##---------------------------------------------##
+# Last Update Oct 02, 2021  08:36 WIB by eRQee  #
+##---------------------------------------------##
 
-  echo 'proxy_next_upstream       error timeout invalid_header http_500 http_502 http_503 http_504;' > /tmp/reverse-proxy.conf
-  echo 'proxy_redirect            off;' >> /tmp/reverse-proxy.conf
-  echo 'proxy_buffering           off;' >> /tmp/reverse-proxy.conf
-  echo 'proxy_set_header          X-Forwarded-Proto       $scheme;' >> /tmp/reverse-proxy.conf
-  echo 'proxy_set_header          Host                    $http_host;' >> /tmp/reverse-proxy.conf
-  echo 'proxy_set_header          X-Forwarded-Host        $http_host;' >> /tmp/reverse-proxy.conf
-  echo 'proxy_set_header          X-Real-IP               $remote_addr;' >> /tmp/reverse-proxy.conf
-  echo 'proxy_set_header          X-Forwarded-For         $proxy_add_x_forwarded_for;' >> /tmp/reverse-proxy.conf
-  echo 'proxy_set_header          X-Frame-Options         SAMEORIGIN;' >> /tmp/reverse-proxy.conf
-  echo 'proxy_connect_timeout     60;' >> /tmp/reverse-proxy.conf
-  echo 'proxy_send_timeout        60;' >> /tmp/reverse-proxy.conf
-  echo 'proxy_read_timeout        60;' >> /tmp/reverse-proxy.conf
-        
-  mv /tmp/reverse-proxy.conf /etc/nginx/snippets/reverse-proxy.conf    
+user                    www-data;
+worker_processes        ${cpu_core_count};
 
-  echo 'proxy_next_upstream       error timeout invalid_header http_500 http_502 http_503 http_504;' > /tmp/websocket-reverse-proxy.conf
-  echo 'proxy_http_version        1.1;' > /tmp/websocket-reverse-proxy.conf
-  echo 'proxy_set_header          Upgrade $http_upgrade;' > /tmp/websocket-reverse-proxy.conf
-  echo 'proxy_set_header          Connection $connection_upgrade;' > /tmp/websocket-reverse-proxy.conf
-  echo 'proxy_redirect            off;' >> /tmp/websocket-reverse-proxy.conf
-  echo 'proxy_buffering           off;' >> /tmp/websocket-reverse-proxy.conf
-  echo 'proxy_set_header          X-Forwarded-Proto       $scheme;' >> /tmp/websocket-reverse-proxy.conf
-  echo 'proxy_set_header          Host                    $http_host;' >> /tmp/websocket-reverse-proxy.conf
-  echo 'proxy_set_header          X-Forwarded-Host        $http_host;' >> /tmp/websocket-reverse-proxy.conf
-  echo 'proxy_set_header          X-Real-IP               $remote_addr;' >> /tmp/websocket-reverse-proxy.conf
-  echo 'proxy_set_header          X-Forwarded-For         $proxy_add_x_forwarded_for;' >> /tmp/websocket-reverse-proxy.conf
-  echo 'proxy_set_header          X-Frame-Options         SAMEORIGIN;' >> /tmp/websocket-reverse-proxy.conf
-  echo 'proxy_connect_timeout     60;' >> /tmp/websocket-reverse-proxy.conf
-  echo 'proxy_send_timeout        60;' >> /tmp/websocket-reverse-proxy.conf
-  echo 'proxy_read_timeout        60;' >> /tmp/websocket-reverse-proxy.conf
-        
-  mv /tmp/websocket-reverse-proxy.conf /etc/nginx/snippets/websocket-reverse-proxy.conf    
+EOL 
 
-  mkdir -p /etc/nginx/sites-available
-  mkdir -p /etc/nginx/sites-enabled
-  rm /etc/nginx/sites-enabled/*
+cat >> $NGINX_CONFIG_FILE << 'EOL'
+pid                     /var/run/nginx.pid;
+include                 /etc/nginx/modules-enabled/*.conf;
+worker_rlimit_nofile    8192;
 
-  echo '<?php phpinfo(); ?>' > /usr/share/nginx/html/info.php
+events {
+  worker_connections  8000;
+}
 
-  cd /tmp
-  echo 'server {' > /tmp/000default.conf
-  echo '  listen                 80;' >> /tmp/000default.conf
-  echo '  listen                 [::]:80;' >> /tmp/000default.conf
-  echo '  server_name            nginx.vbox;' >> /tmp/000default.conf
-  echo '' >> /tmp/000default.conf
-  echo '  access_log             /dev/null gzip;' >> /tmp/000default.conf
-  echo '  error_log              /dev/null notice;' >> /tmp/000default.conf
-  echo '' >> /tmp/000default.conf
-  echo '  root                   /usr/share/nginx/html;' >> /tmp/000default.conf
-  echo '  index                  info.php index.php index.html;' >> /tmp/000default.conf
-  echo '' >> /tmp/000default.conf
-  echo '  error_page             404              /404.html;' >> /tmp/000default.conf
-  echo '  error_page             500 502 503 504  /50x.html;' >> /tmp/000default.conf
-  echo '  location  =           /50x.html { root  /usr/share/nginx/html; }' >> /tmp/000default.conf
-  echo '' >> /tmp/000default.conf
-  echo '  # location / { try_files $uri $uri/ /index.php$is_args$args; }  ## enable this line if you use PHP framework' >> /tmp/000default.conf
-  echo '' >> /tmp/000default.conf
-  echo '  location ~ [^/]\.php(/|$) {' >> /tmp/000default.conf
-  echo '    if (!-f $document_root$fastcgi_script_name) { return 404; }' >> /tmp/000default.conf
-  echo '    fastcgi_split_path_info ^(.+?\.php)(/.*)$;' >> /tmp/000default.conf
-  echo '    ## [alternative] ##  fastcgi_split_path_info ^(.+\.php)(/.+)$;' >> /tmp/000default.conf
-  echo '    fastcgi_pass         unix:/var/run/php8.0-fpm.sock;' >> /tmp/000default.conf
-  echo '    fastcgi_index        index.php;' >> /tmp/000default.conf
-  echo '    include              /etc/nginx/fastcgi_params;' >> /tmp/000default.conf
-  echo '    fastcgi_param        SCRIPT_FILENAME  $document_root$fastcgi_script_name;' >> /tmp/000default.conf
-  echo '    fastcgi_param        PATH_INFO        $fastcgi_path_info;' >> /tmp/000default.conf
-  echo '    fastcgi_param        PATH_TRANSLATED  $document_root$fastcgi_path_info;' >> /tmp/000default.conf
-  echo '  }' >> /tmp/000default.conf
-  echo '' >> /tmp/000default.conf
-  echo '  location ~ /\.ht { deny all; }' >> /tmp/000default.conf
-  echo '' >> /tmp/000default.conf
-  echo '  include     /etc/nginx/snippets/security.conf;' >> /tmp/000default.conf
-  echo '  client_max_body_size   20M;' >> /tmp/000default.conf
-  echo '}' >> /tmp/000default.conf
+http {
+  include       /etc/nginx/mime.types;
+  default_type  application/octet-stream;
+  charset       utf-8;
+  charset_types text/css text/plain text/vnd.wap.wml text/javascript text/markdown text/calendar text/x-component text/vcard text/cache-manifest text/vtt application/json application/manifest+json;
 
-  mv /tmp/000default.conf /etc/nginx/sites-available/000default.conf
-  ln -s /etc/nginx/sites-available/000default.conf /etc/nginx/sites-enabled/000default.conf
+  log_format  main    '$status $time_local $remote_addr $body_bytes_sent "$request" "$http_referer" "$http_user_agent" "$http_x_forwarded_for"';
+  log_format  gzip    '$status $time_local $remote_addr $body_bytes_sent "$request" "$http_referer" "$http_user_agent" "$http_x_forwarded_for" "$gzip_ratio"';
+  log_format  scripts '$document_root$fastcgi_script_name > $request';
 
-  echo 'server {' > /tmp/000default-ssl.conf
-  echo '  listen                 80;' >> /tmp/000default-ssl.conf
-  echo '  listen                 [::]:80;' >> /tmp/000default-ssl.conf
-  echo '  server_name            nginx.vbox;' >> /tmp/000default-ssl.conf
-  echo '  return 302             https://$server_name$request_uri;' >> /tmp/000default-ssl.conf
-  echo '}' >> /tmp/000default-ssl.conf
-  echo '' >> /tmp/000default-ssl.conf
-  echo 'server {' >> /tmp/000default-ssl.conf
-  echo '  listen                 443 ssl http2;' >> /tmp/000default-ssl.conf
-  echo '  listen                 [::]:443 ssl http2;' >> /tmp/000default-ssl.conf
-  echo '  server_name            nginx.vbox;' >> /tmp/000default-ssl.conf
-  echo '' >> /tmp/000default-ssl.conf
-  echo '  access_log             /dev/null gzip;' >> /tmp/000default-ssl.conf
-  echo '  error_log              /dev/null notice;' >> /tmp/000default-ssl.conf
-  echo '' >> /tmp/000default-ssl.conf
-  echo '  ssl_certificate        /etc/letsencrypt/live/nginx.vbox/fullchain.pem;' >> /tmp/000default-ssl.conf
-  echo '  ssl_certificate_key    /etc/letsencrypt/live/nginx.vbox/privkey.pem;' >> /tmp/000default-ssl.conf
-  echo '  include                /etc/nginx/snippets/ssl-params.conf;' >> /tmp/000default-ssl.conf
-  echo '' >> /tmp/000default-ssl.conf
-  echo '  root                   /var/www/nginx.vbox/;' >> /tmp/000default-ssl.conf
-  echo '  index                  index.php index.html;' >> /tmp/000default-ssl.conf
-  echo '' >> /tmp/000default-ssl.conf
-  echo '  error_page             404              /404.html;' >> /tmp/000default-ssl.conf
-  echo '  error_page             500 502 503 504  /50x.html;' >> /tmp/000default-ssl.conf
-  echo '  location            = /50x.html { root  /var/www/nginx.vbox/; }' >> /tmp/000default-ssl.conf
-  echo '' >> /tmp/000default-ssl.conf
-  echo '  # location / { try_files $uri $uri/ /index.php$is_args$args; }  ## enable this line if you use PHP framework' >> /tmp/000default-ssl.conf
-  echo '' >> /tmp/000default-ssl.conf
-  echo '  location ~ [^/]\.php(/|$) {' >> /tmp/000default-ssl.conf
-  echo '    if (!-f $document_root$fastcgi_script_name) { return 404; }' >> /tmp/000default-ssl.conf
-  echo '    fastcgi_split_path_info ^(.+?\.php)(/.*)$;' >> /tmp/000default-ssl.conf
-  echo '    ## [alternative] ##  fastcgi_split_path_info ^(.+\.php)(/.+)$;' >> /tmp/000default-ssl.conf
-  echo '    fastcgi_pass         unix:/var/run/php8.0-fpm.sock;' >> /tmp/000default-ssl.conf
-  echo '    fastcgi_index        index.php;' >> /tmp/000default-ssl.conf
-  echo '    include              /etc/nginx/fastcgi_params;' >> /tmp/000default-ssl.conf
-  echo '    fastcgi_param        SCRIPT_FILENAME  $document_root$fastcgi_script_name;' >> /tmp/000default-ssl.conf
-  echo '    fastcgi_param        PATH_INFO        $fastcgi_path_info;' >> /tmp/000default-ssl.conf
-  echo '    fastcgi_param        PATH_TRANSLATED  $document_root$fastcgi_path_info;' >> /tmp/000default-ssl.conf
-  echo '    fastcgi_param        HTTPS            $https if_not_empty;' >> /tmp/000default-ssl.conf
-  echo '  }' >> /tmp/000default-ssl.conf
-  echo '' >> /tmp/000default-ssl.conf
-  echo '  location ~ /\.ht { deny all; }' >> /tmp/000default-ssl.conf
-  echo '  location /.well-known/acme-challenge/ { root /usr/share/nginx/html; log_not_found off; }' >> /tmp/000default-ssl.conf
-  echo '' >> /tmp/000default-ssl.conf
-  echo '  include                /etc/nginx/snippets/security.conf;' >> /tmp/000default-ssl.conf
-  echo '  client_max_body_size   20M;' >> /tmp/000default-ssl.conf
-  echo '}' >> /tmp/000default-ssl.conf
+  sendfile              on;
+  tcp_nopush            on;
+  tcp_nodelay           on;
+  types_hash_max_size   2048;
+  server_tokens         off;
+  server_names_hash_bucket_size       512;
+  server_name_in_redirect             off;
 
-  mv /tmp/000default-ssl.conf /etc/nginx/sites-available/000default-ssl.conf
+  gzip                  on;
+  gzip_comp_level       5;
+  gzip_min_length       256;
+  gzip_vary             on;
+  gzip_proxied          any;
+  gzip_buffers          16 8k;
+  gzip_http_version     1.1;
+  gzip_types            application/atom+xml application/geo+json application/javascript application/x-javascript application/json application/ld+json application/manifest+json application/rdf+xml application/rss+xml application/vnd.ms-fontobject application/wasm application/x-web-app-manifest+json application/xhtml+xml application/xml font/eot font/otf font/ttf image/bmp image/svg+xml text/cache-manifest text/calendar text/css text/javascript text/markdown text/plain text/xml text/vcard text/vnd.rim.location.xloc text/vtt text/x-component text/x-cross-domain-policy;
+  gzip_disable          "msie6";
 
-  echo 'server {' > /tmp/000default-ssl-reverse-proxy.conf
-  echo '  listen                 80;' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '  listen                 [::]:80;' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '  server_name            nginx.vbox;' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '  return 302             https://$server_name$request_uri;' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '}' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo 'server {' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '  listen                 443 ssl http2;' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '  listen                 [::]:443 ssl http2;' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '  server_name            nginx.vbox;' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '  access_log             /dev/null gzip;' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '  error_log              /dev/null notice;' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '  ssl_certificate        /etc/letsencrypt/live/nginx.vbox/fullchain.pem;' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '  ssl_certificate_key    /etc/letsencrypt/live/nginx.vbox/privkey.pem;' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '  include                /etc/nginx/snippets/ssl-params.conf;' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '  root                   /var/www/nginx.vbox/;' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '  location / {' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '    proxy_pass              http://apache;' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '    error_page              502 = /502.html;' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '    include                 /etc/nginx/snippets/reverse-proxy.conf;' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '    send_timeout            60;' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '    client_max_body_size    100M;' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '    client_body_buffer_size 100M;' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '  }' >> /tmp/000default-ssl-reverse-proxy.conf
-  echo '}' >> /tmp/000default-ssl-reverse-proxy.conf
+  access_log            /dev/null main;
+  error_log             /dev/null warn;
 
-  mv /tmp/000default-ssl-reverse-proxy.conf /etc/nginx/sites-available/000default-ssl-reverse-proxy.conf
+  keepalive_timeout     20s;
+  send_timeout          10;
 
-  echo 'server {' > /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '  listen                 80;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '  listen                 [::]:80;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '  server_name            nginx.vbox;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '  return 302             https://$server_name$request_uri;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '}' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo 'upstream mywebsocketapp {' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '  ip_hash;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '  server 127.0.0.1:8888;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '  server 127.0.0.1:8989;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '}' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo 'server {' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '  listen                 443 ssl http2;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '  listen                 [::]:443 ssl http2;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '  server_name            nginx.vbox;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '  access_log             /dev/null gzip;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '  error_log              /dev/null notice;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '  ssl_certificate        /etc/letsencrypt/live/nginx.vbox/fullchain.pem;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '  ssl_certificate_key    /etc/letsencrypt/live/nginx.vbox/privkey.pem;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '  include                /etc/nginx/snippets/ssl-params.conf;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '  root                   /var/www/nginx.vbox/;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '   ' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '  location / {' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '    proxy_pass              http://mywebsocketapp;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '    error_page              502 = /502.html;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '    include                 /etc/nginx/snippets/websocket-reverse-proxy.conf;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '    send_timeout            60;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '    client_max_body_size    100M;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '    client_body_buffer_size 100M;' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '  }' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
-  echo '}' >> /tmp/000default-ssl-websocket-reverse-proxy.conf
+  proxy_connect_timeout 60;
+  proxy_send_timeout    60;
+  proxy_read_timeout    60;
 
-  mv /tmp/000default-ssl-websocket-reverse-proxy.conf /etc/nginx/sites-available/000default-ssl-websocket-reverse-proxy.conf
+  client_max_body_size  100M;
+  client_header_timeout 12;
+  client_body_timeout   12;
 
-  # configuring php7.4-fpm
+  fastcgi_read_timeout  600;
+  fastcgi_buffer_size   32k;
+  fastcgi_buffers       16 16k;
+  fastcgi_max_temp_file_size 0;
+
+  map $http_upgrade $connection_upgrade {
+    default   upgrade;
+    ''        close;
+  }
+
+  upstream apache    { server 127.0.0.1:77; }
+EOL
+  
+if [ "$appserver_type" = '5' ]; then
+  echo "  upstream odoo      { server 127.0.0.1:8069; }" >> $NGINX_CONFIG_FILE
+fi
+
+cat >> $NGINX_CONFIG_FILE << 'EOL'
+  include /etc/nginx/conf.d/*.conf;
+  include /etc/nginx/sites-enabled/*.conf;
+}
+EOL
+
+# configure systemd override for nginx.service
+mkdir -p /etc/systemd/system/nginx.service.d
+printf "[Service]\nExecStartPost=/bin/sleep 0.1\n" > /etc/systemd/system/nginx.service.d/override.conf
+
+#################################
+## eRQee's nginx custom config ##
+#################################
+#
+# usage examples, see the default site-enabled (virtualhost) script below
+#
+mkdir -p /etc/nginx/snippets
+
+### custom config 1 : security snippet 
+cat > /etc/nginx/snippets/security.conf << 'EOL'
+## Only requests to our Host are allowed
+# if ($host !~ ^($server_name)$ ) { return 444; }
+## Only allow these request methods
+if ($request_method !~ ^(GET|HEAD|POST|PUT|DELETE|OPTIONS)$ ) { return 444; }
+## Deny certain Referers
+if ( $http_referer ~* (babes|love|nudit|poker|porn|sex) )  { return 404; return 403; }
+## Cache the static contents
+location ~* ^.+.(jpg|jpeg|gif|png|ico|svg|woff|woff2|ttf|eot|txt|swf|mp4|ogg|flv|mp3|wav|mid|mkv|avi|3gp|webm|webp)$ { access_log off; expires max; }
+EOL
+
+### custom config 2 : SSL snippet
+mkdir -p /etc/nginx/certs
+wget -O /etc/nginx/certs/lets-encrypt-x3-cross-signed.pem "https://letsencrypt.org/certs/lets-encrypt-x3-cross-signed.pem"
+openssl dhparam -out /etc/nginx/certs/dhparam.pem 2048
+
+cat > /etc/nginx/snippets/ssl-params.conf << 'EOL'
+ssl_protocols             TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
+ssl_session_cache         shared:le_nginx_SSL:10m;
+ssl_session_timeout       6h;
+ssl_session_tickets       on;
+
+ssl_prefer_server_ciphers on;
+ssl_ciphers               "ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA:ECDHE-ECDSA-DES-CBC3-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA:!DSS";
+ssl_ecdh_curve            secp521r1:secp384r1;
+ssl_dhparam               /etc/nginx/certs/dhparam.pem;
+
+ssl_stapling              on;
+ssl_stapling_verify       on;
+resolver                  8.8.8.8 8.8.4.4 valid=300s;
+resolver_timeout          10s;
+ssl_trusted_certificate   /etc/nginx/certs/lets-encrypt-x3-cross-signed.pem;
+
+add_header                Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
+add_header                X-Frame-Options SAMEORIGIN;
+add_header                X-Content-Type-Options nosniff always;
+add_header                X-XSS-Protection "1; mode=block" always;
+
+EOL
+
+### custom config 3 : reverse proxy snippet
+cat > /etc/nginx/snippets/reverse-proxy.conf << 'EOL'
+proxy_next_upstream       error timeout invalid_header http_500 http_502 http_503 http_504;
+proxy_redirect            off;
+proxy_buffering           off;
+proxy_set_header          X-Forwarded-Proto       $scheme;
+proxy_set_header          Host                    $http_host;
+proxy_set_header          X-Forwarded-Host        $http_host;
+proxy_set_header          X-Real-IP               $remote_addr;
+proxy_set_header          X-Forwarded-For         $proxy_add_x_forwarded_for;
+proxy_set_header          X-Frame-Options         SAMEORIGIN;
+proxy_connect_timeout     60;
+proxy_send_timeout        60;
+proxy_read_timeout        60;
+EOL
+
+### custom config 3 : reverse proxy to websocket snippet
+cat > /etc/nginx/snippets/websocket-reverse-proxy.conf << 'EOL'
+proxy_next_upstream       error timeout invalid_header http_500 http_502 http_503 http_504;
+proxy_http_version        1.1;
+proxy_set_header          Upgrade $http_upgrade;
+proxy_set_header          Connection $connection_upgrade;
+proxy_redirect            off;
+proxy_buffering           off;
+proxy_set_header          X-Forwarded-Proto       $scheme;
+proxy_set_header          Host                    $http_host;
+proxy_set_header          X-Forwarded-Host        $http_host;
+proxy_set_header          X-Real-IP               $remote_addr;
+proxy_set_header          X-Forwarded-For         $proxy_add_x_forwarded_for;
+proxy_set_header          X-Frame-Options         SAMEORIGIN;
+proxy_connect_timeout     60;
+proxy_send_timeout        60;
+proxy_read_timeout        60;
+EOL
+
+###########################################################################
+## eRQee's examples of virtualhost site registration on nginx            ##
+###########################################################################
+#
+# the example scripts will available in /etc/nginx/sites-availables
+# (yeah, this config kinda mimic the apache2 configuration perspectives)
+# 
+
+mkdir -p /etc/nginx/sites-available
+mkdir -p /etc/nginx/sites-enabled
+echo '<?php phpinfo(); ?>' > /usr/share/nginx/html/info.php
+
+cat > /etc/nginx/sites-available/000default.conf << 'EOL'
+server {
+  listen                 80;
+  listen                 [::]:80;
+  server_name            nginx.example.domain;
+
+  access_log             /dev/null gzip;
+  error_log              /dev/null notice;
+
+  root                   /usr/share/nginx/html;
+  index                  index.php index.html info.php ;
+
+  error_page             404              /404.html;
+  error_page             500 502 503 504  /50x.html;
+  location  =           /50x.html { root  /usr/share/nginx/html; }
+
+  # location / { try_files $uri $uri/ /index.php$is_args$args; }  ## enable this line if you use PHP framework
+
+  location ~ [^/]\.php(/|$) {
+    if (!-f $document_root$fastcgi_script_name) { return 404; }
+    fastcgi_split_path_info ^(.+?\.php)(/.*)$;
+    ## [alternative] ##  fastcgi_split_path_info ^(.+\.php)(/.+)$;
+    fastcgi_pass         unix:/var/run/php8.1-fpm.sock;
+    fastcgi_index        index.php;
+    include              /etc/nginx/fastcgi_params;
+    fastcgi_param        SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+    fastcgi_param        PATH_INFO        $fastcgi_path_info;
+    fastcgi_param        PATH_TRANSLATED  $document_root$fastcgi_path_info;
+  }
+
+  location ~ /\.ht { deny all; }
+
+  include     /etc/nginx/snippets/security.conf;
+  client_max_body_size   20M;
+}
+EOL
+
+ln -s /etc/nginx/sites-available/000default.conf /etc/nginx/sites-enabled/000default.conf
+
+cat > /etc/nginx/sites-available/000default-ssl.conf << 'EOL'
+server {
+  listen                 80;
+  listen                 [::]:80;
+  server_name            nginx.example.domain;
+  return 302             https://$server_name$request_uri;
+}
+
+server {
+  listen                 443 ssl http2;
+  listen                 [::]:443 ssl http2;
+  server_name            nginx.example.domain;
+
+  access_log             /dev/null gzip;
+  error_log              /dev/null notice;
+
+  ssl_certificate        /etc/letsencrypt/live/nginx.example.domain/fullchain.pem;
+  ssl_certificate_key    /etc/letsencrypt/live/nginx.example.domain/privkey.pem;
+  include                /etc/nginx/snippets/ssl-params.conf;
+
+  root                   /var/www/nginx.example.domain/;
+  index                  index.php index.html info.php;
+
+  error_page             404              /404.html;
+  error_page             500 502 503 504  /50x.html;
+  location            = /50x.html { root  /var/www/nginx.example.domain/; }
+
+  # location / { try_files $uri $uri/ /index.php$is_args$args; }  ## enable this line if you use PHP framework
+
+  location ~ [^/]\.php(/|$) {
+    if (!-f $document_root$fastcgi_script_name) { return 404; }
+    fastcgi_split_path_info ^(.+?\.php)(/.*)$;
+    ## [alternative] ##  fastcgi_split_path_info ^(.+\.php)(/.+)$;
+    fastcgi_pass         unix:/var/run/php8.1-fpm.sock;
+    fastcgi_index        index.php;
+    include              /etc/nginx/fastcgi_params;
+    fastcgi_param        SCRIPT_FILENAME  $document_root$fastcgi_script_name;
+    fastcgi_param        PATH_INFO        $fastcgi_path_info;
+    fastcgi_param        PATH_TRANSLATED  $document_root$fastcgi_path_info;
+    fastcgi_param        HTTPS            $https if_not_empty;
+  }
+
+  location ~ /\.ht { deny all; }
+  location /.well-known/acme-challenge/ { root /usr/share/nginx/html; log_not_found off; }
+
+  include                /etc/nginx/snippets/security.conf;
+  client_max_body_size   20M;
+}
+EOL
+
+
+cat > /etc/nginx/sites-available/000default-ssl-reverse-proxy.conf << 'EOL'
+server {
+  listen                 80;
+  listen                 [::]:80;
+  server_name            nginx.example.domain;
+  return 302             https://$server_name$request_uri;
+}
+
+server {
+  listen                 443 ssl http2;
+  listen                 [::]:443 ssl http2;
+  server_name            nginx.example.domain;
+
+  access_log             /dev/null gzip;
+  error_log              /dev/null notice;
+
+  ssl_certificate        /etc/letsencrypt/live/nginx.example.domain/fullchain.pem;
+  ssl_certificate_key    /etc/letsencrypt/live/nginx.example.domain/privkey.pem;
+  include                /etc/nginx/snippets/ssl-params.conf;
+
+  root                   /var/www/nginx.example.domain/;
+
+  location / {
+    proxy_pass              http://apache;
+    error_page              502 = /502.html;
+    include                 /etc/nginx/snippets/reverse-proxy.conf;
+    send_timeout            60;
+    client_max_body_size    100M;
+    client_body_buffer_size 100M;
+  }
+}
+EOL
+
+cat > /etc/nginx/sites-available/000default-ssl-websocket-reverse-proxy.conf << 'EOL'
+server {
+  listen                 80;
+  listen                 [::]:80;
+  server_name            nginx.example.domain;
+  return 302             https://$server_name$request_uri;
+}
+
+upstream mywebsocketapp {
+  ip_hash;
+  server 127.0.0.1:8888;
+  server 127.0.0.1:8989;
+}
+
+server {
+  listen                 443 ssl http2;
+  listen                 [::]:443 ssl http2;
+  server_name            nginx.example.domain;
+
+  access_log             /dev/null gzip;
+  error_log              /dev/null notice;
+
+  ssl_certificate        /etc/letsencrypt/live/nginx.example.domain/fullchain.pem;
+  ssl_certificate_key    /etc/letsencrypt/live/nginx.example.domain/privkey.pem;
+  include                /etc/nginx/snippets/ssl-params.conf;
+
+  root                   /var/www/nginx.example.domain/;
+
+  location / {
+    proxy_pass              http://mywebsocketapp;
+    error_page              502 = /502.html;
+    include                 /etc/nginx/snippets/websocket-reverse-proxy.conf;
+    send_timeout            60;
+    client_max_body_size    100M;
+    client_body_buffer_size 100M;
+  }
+}
+EOL
+
+  ############################
+  ## configuring php7.4-fpm ##
+  ############################
+  
   mkdir -p /var/lib/php/7.4/sessions
   chmod -R 777 /var/lib/php/7.4/sessions
 
-  cp /etc/php/7.4/fpm/php.ini /tmp/php.ini-serverq.recommended
-  sed -i '/post_max_size/c\post_max_size = 100M' /tmp/php.ini-serverq.recommended
-  sed -i '/;cgi.fix_pathinfo/c\cgi.fix_pathinfo=1' /tmp/php.ini-serverq.recommended
-  sed -i '/;upload_tmp_dir/c\upload_tmp_dir=/tmp' /tmp/php.ini-serverq.recommended
-  sed -i '/upload_max_filesize/c\upload_max_filesize=64M' /tmp/php.ini-serverq.recommended
-  sed -i '/;date.timezone/c\date.timezone=Asia/Jakarta' /tmp/php.ini-serverq.recommended
-  sed -i '/;date.default_latitude/c\date.default_latitude = -6.211544' /tmp/php.ini-serverq.recommended
-  sed -i '/;date.default_longitude/c\date.default_longitude = 106.84517200000005' /tmp/php.ini-serverq.recommended
-  sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/7.4/sessions"' /tmp/php.ini-serverq.recommended  
-  sed -i '/;opcache.enable=1/c\opcache.enable=1' /tmp/php.ini-serverq.recommended
-  sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' /tmp/php.ini-serverq.recommended
-  sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' /tmp/php.ini-serverq.recommended
-
-  mv /etc/php/7.4/fpm/php.ini /etc/php/7.4/fpm/php.ini-original
-  mv /etc/php/7.4/cli/php.ini /etc/php/7.4/cli/php.ini-original
-  cp /tmp/php.ini-serverq.recommended /etc/php/7.4/php.ini-serverq.recommended
-  cp /tmp/php.ini-serverq.recommended /etc/php/7.4/fpm/php.ini
-  cp /tmp/php.ini-serverq.recommended /etc/php/7.4/cli/php.ini
-
-  cp /etc/php/7.4/fpm/pool.d/www.conf /tmp/www.conf-serverq.recommended
-  sed -i '/listen = \/run\/php\/php7.4-fpm.sock/c\listen = \/var\/run\/php7.4-fpm.sock' /tmp/www.conf-serverq.recommended
-  sed -i '/;listen.mode = 0660/c\listen.mode = 0660' /tmp/www.conf-serverq.recommended
-  sed -i '/pm.max_children/c\pm.max_children = 10' /tmp/www.conf-serverq.recommended
-  sed -i '/pm.min_spare_servers/c\pm.min_spare_servers = 2' /tmp/www.conf-serverq.recommended
-  sed -i '/pm.max_spare_servers/c\pm.max_spare_servers = 8' /tmp/www.conf-serverq.recommended
+  # backup existing configuration
+  mkdir -p /etc/php/7.4/0riginal.config  
+  mv /etc/php/7.4/fpm/php.ini /etc/php/7.4/0riginal.config/php-fpm.ini
+  mv /etc/php/7.4/cli/php.ini /etc/php/7.4/0riginal.config/php-cli.ini
+  mv /etc/php/7.4/fpm/pool.d/www.conf /etc/php/7.4/0riginal.config/fpm-pool.d-www.conf
   
-  mv /etc/php/7.4/fpm/pool.d/www.conf /etc/php/7.4/fpm/pool.d/www.conf-original
-  cp /tmp/www.conf-serverq.recommended /etc/php/7.4/fpm/pool.d/www.conf-serverq.recommended
-  cp /tmp/www.conf-serverq.recommended /etc/php/7.4/fpm/pool.d/www.conf
+  PHP_INI_FILE=/etc/php/7.4/fpm/php.ini
+  sed -i '/post_max_size/c\post_max_size = 100M' $PHP_INI_FILE
+  sed -i '/;cgi.fix_pathinfo/c\cgi.fix_pathinfo=1' $PHP_INI_FILE
+  sed -i '/;upload_tmp_dir/c\upload_tmp_dir=/tmp' $PHP_INI_FILE
+  sed -i '/upload_max_filesize/c\upload_max_filesize=64M' $PHP_INI_FILE
+  sed -i '/;date.timezone/c\date.timezone=Asia/Jakarta' $PHP_INI_FILE
+  sed -i '/;date.default_latitude/c\date.default_latitude = -6.211544' $PHP_INI_FILE
+  sed -i '/;date.default_longitude/c\date.default_longitude = 106.84517200000005' $PHP_INI_FILE
+  sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/7.4/sessions"' $PHP_INI_FILE
+  sed -i '/;opcache.enable=1/c\opcache.enable=1' $PHP_INI_FILE
+  sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' $PHP_INI_FILE
+  sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
 
-  #configuring php8.0-fpm
-  mkdir -p /var/lib/php/8.0/sessions
-  chmod -R 777 /var/lib/php/8.0/sessions
+  PHP_INI_FILE=/etc/php/7.4/cli/php.ini
+  sed -i '/post_max_size/c\post_max_size = 100M' $PHP_INI_FILE
+  sed -i '/;cgi.fix_pathinfo/c\cgi.fix_pathinfo=1' $PHP_INI_FILE
+  sed -i '/;upload_tmp_dir/c\upload_tmp_dir=/tmp' $PHP_INI_FILE
+  sed -i '/upload_max_filesize/c\upload_max_filesize=64M' $PHP_INI_FILE
+  sed -i '/;date.timezone/c\date.timezone=Asia/Jakarta' $PHP_INI_FILE
+  sed -i '/;date.default_latitude/c\date.default_latitude = -6.211544' $PHP_INI_FILE
+  sed -i '/;date.default_longitude/c\date.default_longitude = 106.84517200000005' $PHP_INI_FILE
+  sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/7.4/sessions"' $PHP_INI_FILE
+  sed -i '/;opcache.enable=1/c\opcache.enable=1' $PHP_INI_FILE
+  sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' $PHP_INI_FILE
+  sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
 
-  cp /etc/php/8.0/fpm/php.ini /tmp/php.ini-serverq.recommended
-  sed -i '/post_max_size/c\post_max_size = 100M' /tmp/php.ini-serverq.recommended
-  sed -i '/;cgi.fix_pathinfo/c\cgi.fix_pathinfo=1' /tmp/php.ini-serverq.recommended
-  sed -i '/;upload_tmp_dir/c\upload_tmp_dir=/tmp' /tmp/php.ini-serverq.recommended
-  sed -i '/upload_max_filesize/c\upload_max_filesize=64M' /tmp/php.ini-serverq.recommended
-  sed -i '/;date.timezone/c\date.timezone=Asia/Jakarta' /tmp/php.ini-serverq.recommended
-  sed -i '/;date.default_latitude/c\date.default_latitude = -6.211544' /tmp/php.ini-serverq.recommended
-  sed -i '/;date.default_longitude/c\date.default_longitude = 106.84517200000005' /tmp/php.ini-serverq.recommended
-  sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/8.0/sessions"' /tmp/php.ini-serverq.recommended  
-  sed -i '/;opcache.enable=1/c\opcache.enable=1' /tmp/php.ini-serverq.recommended
-  sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' /tmp/php.ini-serverq.recommended
-  sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' /tmp/php.ini-serverq.recommended
-
-  mv /etc/php/8.0/fpm/php.ini /etc/php/8.0/fpm/php.ini-original
-  mv /etc/php/8.0/cli/php.ini /etc/php/8.0/cli/php.ini-original
-  cp /tmp/php.ini-serverq.recommended /etc/php/8.0/php.ini-serverq.recommended
-  cp /tmp/php.ini-serverq.recommended /etc/php/8.0/fpm/php.ini
-  cp /tmp/php.ini-serverq.recommended /etc/php/8.0/cli/php.ini
-
-  cp /etc/php/8.0/fpm/pool.d/www.conf /tmp/www.conf-serverq.recommended
-  sed -i '/listen = \/run\/php\/php8.0-fpm.sock/c\listen = \/var\/run\/php8.0-fpm.sock' /tmp/www.conf-serverq.recommended
-  sed -i '/;listen.mode = 0660/c\listen.mode = 0660' /tmp/www.conf-serverq.recommended
-  sed -i '/pm.max_children/c\pm.max_children = 10' /tmp/www.conf-serverq.recommended
-  sed -i '/pm.min_spare_servers/c\pm.min_spare_servers = 2' /tmp/www.conf-serverq.recommended
-  sed -i '/pm.max_spare_servers/c\pm.max_spare_servers = 8' /tmp/www.conf-serverq.recommended
+  PHP_WWW_CONF_FILE=/etc/php/7.4/fpm/pool.d/www.conf
+  sed -i '/listen = \/run\/php\/php7.4-fpm.sock/c\listen = \/var\/run\/php7.4-fpm.sock' $PHP_WWW_CONF_FILE
+  sed -i '/;listen.mode = 0660/c\listen.mode = 0660' $PHP_WWW_CONF_FILE
+  sed -i '/pm.max_children/c\pm.max_children = 10' $PHP_WWW_CONF_FILE
+  sed -i '/pm.min_spare_servers/c\pm.min_spare_servers = 2' $PHP_WWW_CONF_FILE
+  sed -i '/pm.max_spare_servers/c\pm.max_spare_servers = 8' $PHP_WWW_CONF_FILE
   
-  mv /etc/php/8.0/fpm/pool.d/www.conf /etc/php/8.0/fpm/pool.d/www.conf-original
-  cp /tmp/www.conf-serverq.recommended /etc/php/8.0/fpm/pool.d/www.conf-serverq.recommended
-  cp /tmp/www.conf-serverq.recommended /etc/php/8.0/fpm/pool.d/www.conf
+  ############################
+  ## configuring php8.1-fpm ##
+  ############################
+  
+  mkdir -p /var/lib/php/8.1/sessions
+  chmod -R 777 /var/lib/php/8.1/sessions
 
+  # backup existing configuration
+  mkdir -p /etc/php/8.1/0riginal.config  
+  mv /etc/php/8.1/fpm/php.ini /etc/php/8.1/0riginal.config/php-fpm.ini
+  mv /etc/php/8.1/cli/php.ini /etc/php/8.1/0riginal.config/php-cli.ini
+  mv /etc/php/8.1/fpm/pool.d/www.conf /etc/php/8.1/0riginal.config/fpm-pool.d-www.conf
 
+  PHP_INI_FILE=/etc/php/8.1/fpm/php.ini
+  sed -i '/post_max_size/c\post_max_size = 100M' $PHP_INI_FILE
+  sed -i '/;cgi.fix_pathinfo/c\cgi.fix_pathinfo=1' $PHP_INI_FILE
+  sed -i '/;upload_tmp_dir/c\upload_tmp_dir=/tmp' $PHP_INI_FILE
+  sed -i '/upload_max_filesize/c\upload_max_filesize=64M' $PHP_INI_FILE
+  sed -i '/;date.timezone/c\date.timezone=Asia/Jakarta' $PHP_INI_FILE
+  sed -i '/;date.default_latitude/c\date.default_latitude = -6.211544' $PHP_INI_FILE
+  sed -i '/;date.default_longitude/c\date.default_longitude = 106.84517200000005' $PHP_INI_FILE
+  sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/8.1/sessions"' $PHP_INI_FILE
+  sed -i '/;opcache.enable=1/c\opcache.enable=1' $PHP_INI_FILE
+  sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' $PHP_INI_FILE
+  sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
+
+  PHP_INI_FILE=/etc/php/8.1/cli/php.ini
+  sed -i '/post_max_size/c\post_max_size = 100M' $PHP_INI_FILE
+  sed -i '/;cgi.fix_pathinfo/c\cgi.fix_pathinfo=1' $PHP_INI_FILE
+  sed -i '/;upload_tmp_dir/c\upload_tmp_dir=/tmp' $PHP_INI_FILE
+  sed -i '/upload_max_filesize/c\upload_max_filesize=64M' $PHP_INI_FILE
+  sed -i '/;date.timezone/c\date.timezone=Asia/Jakarta' $PHP_INI_FILE
+  sed -i '/;date.default_latitude/c\date.default_latitude = -6.211544' $PHP_INI_FILE
+  sed -i '/;date.default_longitude/c\date.default_longitude = 106.84517200000005' $PHP_INI_FILE
+  sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/8.1/sessions"' $PHP_INI_FILE
+  sed -i '/;opcache.enable=1/c\opcache.enable=1' $PHP_INI_FILE
+  sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' $PHP_INI_FILE
+  sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
+
+  PHP_WWW_CONF_FILE=/etc/php/8.1/fpm/pool.d/www.conf
+  sed -i '/listen = \/run\/php\/php8.1-fpm.sock/c\listen = \/var\/run\/php8.1-fpm.sock' $PHP_WWW_CONF_FILE
+  sed -i '/;listen.mode = 0660/c\listen.mode = 0660' $PHP_WWW_CONF_FILE
+  sed -i '/pm.max_children/c\pm.max_children = 10' $PHP_WWW_CONF_FILE
+  sed -i '/pm.min_spare_servers/c\pm.min_spare_servers = 2' $PHP_WWW_CONF_FILE
+  sed -i '/pm.max_spare_servers/c\pm.max_spare_servers = 8' $PHP_WWW_CONF_FILE
+  
   # create the webroot workspaces
   mkdir -p /var/www/
-  chown -R www-data:www-data /var/www/
-
+  
+  #################################
+  ## Apache2 Redundant Webserver ##
+  #################################
   # create secondary webserver instance (Apache) that runs in port 77 (HTTP) and 7447 (HTTP/SSL)
+  # 
+  
   systemctl stop nginx.service
   apt install -y apache2
   a2enmod actions alias deflate expires headers http2 negotiation proxy proxy_fcgi proxy_http2 reflector remoteip rewrite setenvif substitute vhost_alias
@@ -1077,57 +1191,70 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   sed -i '/Listen 80/c\Listen 77' /etc/apache2/ports.conf
   sed -i '/Listen 443/c\Listen 7447' /etc/apache2/ports.conf
 
-  echo '<VirtualHost *:77>' > /etc/apache2/sites-available/000-default.conf
-  echo '    ServerName apache.vbox' >> /etc/apache2/sites-available/000-default.conf
-  echo '    DocumentRoot /var/www/html' >> /etc/apache2/sites-available/000-default.conf
-  echo '' >> /etc/apache2/sites-available/000-default.conf
-  echo '    <Directory /var/www/html>' >> /etc/apache2/sites-available/000-default.conf
-  echo '        Options -Indexes +FollowSymLinks +MultiViews' >> /etc/apache2/sites-available/000-default.conf
-  echo '        AllowOverride All' >> /etc/apache2/sites-available/000-default.conf
-  echo '        Require all granted' >> /etc/apache2/sites-available/000-default.conf
-  echo '    </Directory>' >> /etc/apache2/sites-available/000-default.conf
-  echo ' ' >> /etc/apache2/sites-available/000-default.conf
-  echo '    <FilesMatch \.php$>' >> /etc/apache2/sites-available/000-default.conf
-  echo '        SetHandler "proxy:unix:/var/run/php8.0-fpm.sock|fcgi://localhost"' >> /etc/apache2/sites-available/000-default.conf
-  echo '    </FilesMatch>' >> /etc/apache2/sites-available/000-default.conf
-  echo ' ' >> /etc/apache2/sites-available/000-default.conf
-  echo '    ErrorLog ${APACHE_LOG_DIR}/error.log' >> /etc/apache2/sites-available/000-default.conf
-  echo '    CustomLog ${APACHE_LOG_DIR}/access.log combined' >> /etc/apache2/sites-available/000-default.conf
-  echo '</VirtualHost>' >> /etc/apache2/sites-available/000-default.conf
+cat > /etc/apache2/sites-available/000-default.conf << 'EOL'
+<VirtualHost 127.0.0.1:77>
+    ServerName apache.example.domain
+    DocumentRoot /usr/share/apache2/default-site
 
-  # restart the services
+    <Directory /usr/share/apache2/default-site>
+        Options -Indexes +FollowSymLinks +MultiViews
+        AllowOverride All
+        Require all granted
+    </Directory>
+ 
+    <FilesMatch \.php$>
+        SetHandler "proxy:unix:/var/run/php8.1-fpm.sock|fcgi://localhost"
+    </FilesMatch>
+ 
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+EOL
+
+  echo '<?php phpinfo(); ?>' > /usr/share/apache2/default-site/info.php
+  
+  rm -R /var/www/html
+  chown -R www-data:www-data /var/www/
+  
+  # restart all of the webserver's daemon
   systemctl daemon-reload
   systemctl enable nginx
   systemctl restart apache2.service
   systemctl restart nginx.service
   systemctl restart php7.4-fpm
-  systemctl restart php8.0-fpm
+  systemctl restart php8.1-fpm
 
-  # normalize the /etc/hosts values
-  echo '127.0.0.1       localhost' > /etc/hosts
-  echo "127.0.0.1       $(hostname)   $(hostname).apache" >> /etc/hosts
-  echo '' >> /etc/hosts
-  echo '# VirtualHost addresses.' >> /etc/hosts
-  echo '# Normally you do not need to register all of your project addresses here.' >> /etc/hosts
-  echo '# You must configure this on your client /etc/hosts or via your DNS Resolver' >> /etc/hosts
-  echo '' >> /etc/hosts
-  echo '127.0.0.1       nginx.vbox   apache.vbox' >> /etc/hosts
-  echo '' >> /etc/hosts
-  echo '' >> /etc/hosts
-  echo '' >> /etc/hosts
-  echo '# The following lines are desirable for IPv6 capable hosts' >> /etc/hosts
-  echo '::1             localhost ip6-localhost ip6-loopback' >> /etc/hosts
-  echo 'ff02::1         ip6-allnodes' >> /etc/hosts
-  echo 'ff02::2         ip6-allrouters' >> /etc/hosts
+# normalize the /etc/hosts values
+cfg_hostname=$(hostname)
+cat > /etc/hosts << EOL
+127.0.0.1       localhost
+127.0.0.1       ${cfg_hostname}   ${cfg_hostname}.apache
+
+# VirtualHost addresses.
+# Normally you do not need to register all of your project addresses here.
+# You must configure this on your client /etc/hosts or via your DNS Resolver
+
+127.0.0.1       nginx.example.domain   apache.example.domain
+
+
+# The following lines are desirable for IPv6 capable hosts
+::1             localhost ip6-localhost ip6-loopback
+ff02::1         ip6-allnodes
+ff02::2         ip6-allrouters
+
+EOL
   
-  ########################
-  # install composer.phar#
-  ########################
+  ####################
+  # install devtools #
+  ####################
 
   cd /tmp
   curl -sS https://getcomposer.org/installer | php
   chmod +x composer.phar
   mv composer.phar /usr/local/bin/composer
+
+  wget https://get.symfony.com/cli/installer -O - | bash
+  mv ~/.symfony/bin/symfony /usr/local/bin/symfony 
 
 fi
 
@@ -1137,7 +1264,7 @@ cd /tmp
 # install (and configure) postgresql        #
 #############################################
 if [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
-  apt install -y postgresql-13 postgresql-client-13 postgresql-contrib-13 postgresql-server-dev-13 libpq-dev
+  apt install -y postgresql-14 postgresql-client-14 postgresql-server-dev-14 libpq-dev
 
   if [ "$appserver_type" = '4' ]; then
     adduser --system --quiet --shell=/bin/bash --home=/home/enterprise --gecos 'enterprise' --group enterprise
@@ -1155,7 +1282,6 @@ fi
 #############################################
 
 cd /tmp
-
 if [ "$appserver_type" = '5' ]; then
 
   echo "Installing necessary python libraries"
@@ -1187,93 +1313,102 @@ if [ "$appserver_type" = '5' ]; then
   chown -R odoo:odoo /opt/odoo
   chown -R odoo:odoo /var/log/odoo/
   
-  touch /etc/odoo-server.conf
-  echo "[options]" > /etc/odoo-server.conf
-  echo "; This is the password that allows database operations:" >> /etc/odoo-server.conf
-  echo "; admin_passwd = admin" >> /etc/odoo-server.conf
-  echo "db_host = False" >> /etc/odoo-server.conf
-  echo "db_port = False" >> /etc/odoo-server.conf
-  echo "db_user = odoo" >> /etc/odoo-server.conf
-  echo "db_password = $db_root_password" >> /etc/odoo-server.conf
-  echo "addons_path = /opt/odoo/addons" >> /etc/odoo-server.conf
-  echo "logfile = /var/log/odoo/odoo-server.log" >> /etc/odoo-server.conf
+  echo "Write odoo global configuration to /etc/odoo-server.conf"
+
+cat > /etc/odoo-server.conf << EOL
+[options]
+; This is the password that allows database operations:
+; admin_passwd = admin
+db_host = False
+db_port = False
+db_user = odoo
+db_password = ${db_root_password}
+addons_path = /opt/odoo/addons
+logfile = /var/log/odoo/odoo-server.log
+
+EOL
 
   chown odoo: /etc/odoo-server.conf
   chmod 640 /etc/odoo-server.conf
 
+  echo "install another odoo dependencies..."
   cd /opt/odoo
   npm install -g less less-plugin-clean-css rtlcss generator-feathers graceful-fs@^4.0.0 yo minimatch@^3.0.2 -y
   pip3 install -r requirements.txt
 
-  cd /tmp
-  echo '#!/bin/sh' > /tmp/odoo-server
-  echo '### BEGIN INIT INFO' >> /tmp/odoo-server
-  echo '# Provides:             odoo-server' >> /tmp/odoo-server
-  echo '# Required-Start:       $remote_fs $syslog' >> /tmp/odoo-server
-  echo '# Required-Stop:        $remote_fs $syslog' >> /tmp/odoo-server
-  echo '# Should-Start:         $network' >> /tmp/odoo-server
-  echo '# Should-Stop:          $network' >> /tmp/odoo-server
-  echo '# Default-Start:        2 3 4 5' >> /tmp/odoo-server
-  echo '# Default-Stop:         0 1 6' >> /tmp/odoo-server
-  echo '# Short-Description:    Complete Business Application software' >> /tmp/odoo-server
-  echo '# Description:          Odoo is a complete suite of business tools.' >> /tmp/odoo-server
-  echo '### END INIT INFO' >> /tmp/odoo-server
-  echo 'PATH=/bin:/sbin:/usr/bin:/usr/local/bin' >> /tmp/odoo-server
-  echo 'DAEMON=/opt/odoo/odoo-bin' >> /tmp/odoo-server
-  echo 'NAME=odoo-server' >> /tmp/odoo-server
-  echo 'DESC=odoo-server' >> /tmp/odoo-server
-  echo '# Specify the user name (Default: odoo).' >> /tmp/odoo-server
-  echo 'USER=odoo' >> /tmp/odoo-server
-  echo '# Specify an alternate config file (Default: /etc/odoo-server.conf).' >> /tmp/odoo-server
-  echo 'CONFIGFILE="/etc/odoo-server.conf"' >> /tmp/odoo-server
-  echo '# pidfile' >> /tmp/odoo-server
-  echo 'PIDFILE=/var/run/$NAME.pid' >> /tmp/odoo-server
-  echo '# Additional options that are passed to the Daemon.' >> /tmp/odoo-server
-  echo 'DAEMON_OPTS="-c $CONFIGFILE"' >> /tmp/odoo-server
-  echo '[ -x $DAEMON ] || exit 0' >> /tmp/odoo-server
-  echo '[ -f $CONFIGFILE ] || exit 0' >> /tmp/odoo-server
-  echo 'checkpid() {' >> /tmp/odoo-server
-  echo '    [ -f $PIDFILE ] || return 1' >> /tmp/odoo-server
-  echo '    pid=`cat $PIDFILE`' >> /tmp/odoo-server
-  echo '    [ -d /proc/$pid ] && return 0' >> /tmp/odoo-server
-  echo '    return 1' >> /tmp/odoo-server
-  echo '}' >> /tmp/odoo-server
-  echo 'case "${1}" in' >> /tmp/odoo-server
-  echo '        start)' >> /tmp/odoo-server
-  echo '                echo -n "Starting ${DESC}: "' >> /tmp/odoo-server
-  echo '                start-stop-daemon --start --quiet --pidfile ${PIDFILE} \' >> /tmp/odoo-server
-  echo '                        --chuid ${USER} --background --make-pidfile \' >> /tmp/odoo-server
-  echo '                        --exec ${DAEMON} -- ${DAEMON_OPTS}' >> /tmp/odoo-server
-  echo '                echo "${NAME}."' >> /tmp/odoo-server
-  echo '                ;;' >> /tmp/odoo-server
-  echo '        stop)' >> /tmp/odoo-server
-  echo '                echo -n "Stopping ${DESC}: "' >> /tmp/odoo-server
-  echo '                start-stop-daemon --stop --quiet --pidfile ${PIDFILE} \' >> /tmp/odoo-server
-  echo '                        --oknodo' >> /tmp/odoo-server
-  echo '                echo "${NAME}."' >> /tmp/odoo-server
-  echo '                ;;' >> /tmp/odoo-server
-  echo '        restart|force-reload)' >> /tmp/odoo-server
-  echo '                echo -n "Restarting ${DESC}: "' >> /tmp/odoo-server
-  echo '                start-stop-daemon --stop --quiet --pidfile ${PIDFILE} \' >> /tmp/odoo-server
-  echo '                        --oknodo' >> /tmp/odoo-server
-  echo '' >> /tmp/odoo-server
-  echo '                sleep 1' >> /tmp/odoo-server
-  echo '                start-stop-daemon --start --quiet --pidfile ${PIDFILE} \' >> /tmp/odoo-server
-  echo '                        --chuid ${USER} --background --make-pidfile \' >> /tmp/odoo-server
-  echo '                        --exec ${DAEMON} -- ${DAEMON_OPTS}' >> /tmp/odoo-server
-  echo '                echo "${NAME}."' >> /tmp/odoo-server
-  echo '                ;;' >> /tmp/odoo-server
-  echo '        *)' >> /tmp/odoo-server
-  echo '                N=/etc/init.d/${NAME}' >> /tmp/odoo-server
-  echo '                echo "Usage: ${NAME} {start|stop|restart|force-reload}" >&2' >> /tmp/odoo-server
-  echo '                exit 1' >> /tmp/odoo-server
-  echo '                ;;' >> /tmp/odoo-server
-  echo 'esac' >> /tmp/odoo-server
-  echo 'exit 0' >> /tmp/odoo-server
+  echo "Write odoo startup script to /etc/init.d/odoo-server"
 
-  cp /tmp/odoo-server /etc/init.d/odoo-server
-  chmod 755 /etc/init.d/odoo-server
-  chown root: /etc/init.d/odoo-server
+cat > /etc/init.d/odoo-server << 'EOL'
+
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:             odoo-server
+# Required-Start:       $remote_fs $syslog
+# Required-Stop:        $remote_fs $syslog
+# Should-Start:         $network
+# Should-Stop:          $network
+# Default-Start:        2 3 4 5
+# Default-Stop:         0 1 6
+# Short-Description:    Complete Business Application software
+# Description:          Odoo is a complete suite of business tools.
+### END INIT INFO
+PATH=/bin:/sbin:/usr/bin:/usr/local/bin
+DAEMON=/opt/odoo/odoo-bin
+NAME=odoo-server
+DESC=odoo-server
+# Specify the user name (Default: odoo).
+USER=odoo
+# Specify an alternate config file (Default: /etc/odoo-server.conf).
+CONFIGFILE="/etc/odoo-server.conf"
+# pidfile
+PIDFILE=/var/run/$NAME.pid
+# Additional options that are passed to the Daemon.
+DAEMON_OPTS="-c $CONFIGFILE"
+[ -x $DAEMON ] || exit 0
+[ -f $CONFIGFILE ] || exit 0
+checkpid() {
+    [ -f $PIDFILE ] || return 1
+    pid=`cat $PIDFILE`
+    [ -d /proc/$pid ] && return 0
+    return 1
+}
+case "${1}" in
+        start)
+                echo -n "Starting ${DESC}: "
+                start-stop-daemon --start --quiet --pidfile ${PIDFILE} \
+                        --chuid ${USER} --background --make-pidfile \
+                        --exec ${DAEMON} -- ${DAEMON_OPTS}
+                echo "${NAME}."
+                ;;
+        stop)
+                echo -n "Stopping ${DESC}: "
+                start-stop-daemon --stop --quiet --pidfile ${PIDFILE} \
+                        --oknodo
+                echo "${NAME}."
+                ;;
+        restart|force-reload)
+                echo -n "Restarting ${DESC}: "
+                start-stop-daemon --stop --quiet --pidfile ${PIDFILE} \
+                        --oknodo
+
+                sleep 1
+                start-stop-daemon --start --quiet --pidfile ${PIDFILE} \
+                        --chuid ${USER} --background --make-pidfile \
+                        --exec ${DAEMON} -- ${DAEMON_OPTS}
+                echo "${NAME}."
+                ;;
+        *)
+                N=/etc/init.d/${NAME}
+                echo "Usage: ${NAME} {start|stop|restart|force-reload}" >&2
+                exit 1
+                ;;
+esac
+exit 0
+
+EOL
+ 
+chmod 755 /etc/init.d/odoo-server
+chown root: /etc/init.d/odoo-server
 
   mkdir -p /var/log/odoo
   chown -R odoo:root /var/log/odoo
