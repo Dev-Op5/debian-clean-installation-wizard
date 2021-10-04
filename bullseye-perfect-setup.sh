@@ -1090,9 +1090,9 @@ EOL
 
   # backup existing configuration
   mkdir -p /etc/php/7.4/0riginal.config  
-  mv /etc/php/7.4/fpm/php.ini /etc/php/7.4/0riginal.config/php-fpm.ini
-  mv /etc/php/7.4/cli/php.ini /etc/php/7.4/0riginal.config/php-cli.ini
-  mv /etc/php/7.4/fpm/pool.d/www.conf /etc/php/7.4/0riginal.config/fpm-pool.d-www.conf
+  cp /etc/php/7.4/fpm/php.ini /etc/php/7.4/0riginal.config/php-fpm.ini
+  cp /etc/php/7.4/cli/php.ini /etc/php/7.4/0riginal.config/php-cli.ini
+  cp /etc/php/7.4/fpm/pool.d/www.conf /etc/php/7.4/0riginal.config/fpm-pool.d-www.conf
   
   PHP_INI_FILE=/etc/php/7.4/fpm/php.ini
   sed -i '/post_max_size/c\post_max_size = 100M' $PHP_INI_FILE
@@ -1136,9 +1136,9 @@ EOL
 
   # backup existing configuration
   mkdir -p /etc/php/8.1/0riginal.config  
-  mv /etc/php/8.1/fpm/php.ini /etc/php/8.1/0riginal.config/php-fpm.ini
-  mv /etc/php/8.1/cli/php.ini /etc/php/8.1/0riginal.config/php-cli.ini
-  mv /etc/php/8.1/fpm/pool.d/www.conf /etc/php/8.1/0riginal.config/fpm-pool.d-www.conf
+  cp /etc/php/8.1/fpm/php.ini /etc/php/8.1/0riginal.config/php-fpm.ini
+  cp /etc/php/8.1/cli/php.ini /etc/php/8.1/0riginal.config/php-cli.ini
+  cp /etc/php/8.1/fpm/pool.d/www.conf /etc/php/8.1/0riginal.config/fpm-pool.d-www.conf
 
   PHP_INI_FILE=/etc/php/8.1/fpm/php.ini
   sed -i '/post_max_size/c\post_max_size = 100M' $PHP_INI_FILE
