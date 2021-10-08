@@ -49,7 +49,7 @@ echo "4. Dedicated PostgreSQL Database Server only"
 echo "5. Odoo 14 Perfect Server"
 read -p "Your Choice (1/2/3/4/5) : " appserver_type
 
-if [ "$appserver_type" != '2' ]; then
+if [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
   echo ""
   read -p "Enter the default database root password: " db_root_password
 fi
@@ -190,11 +190,11 @@ locale-gen en_US en_US.UTF-8 id_ID id_ID.UTF-8
 update-ca-certificates
 
 if [ ! -z "$zoho_mail_account" ]; then
-  
+
   if [ ! -z "$zoho_mail_from" ]; then
     zoho_mail_from=$zoho_mail_account
   fi
-  apt install -y msmtp-mta mailutils 
+  apt install -y msmtp-mta mailutils
 
 cat > /etc/msmtprc << EOL
 defaults
@@ -340,24 +340,20 @@ fi
 #################################
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
-  
-  # these lines is not implemented anymore since MariaDB 10.5 and above changes the default 'root' connection authorized via system Auth
-  # export DEBIAN_FRONTEND=noninteractive
-  # echo "mariadb-server-10.6 mysql-server/root_password password $db_root_password" | sudo /usr/bin/debconf-set-selections
-  # echo "mariadb-server-10.6 mysql-server/root_password_again password $db_root_password" | sudo /usr/bin/debconf-set-selections
-  apt install -y mariadb-server-10.6 mariadb-server-core-10.6 mariadb-client-10.6 mariadb-client-core-10.6 \
-                 mariadb-plugin-connect mariadb-plugin-cracklib-password-check
 
-  # plugins that not applied:
-  # mariadb-plugin-gssapi-server mariadb-plugin-gssapi-client mariadb-plugin-oqgraph mariadb-plugin-mroonga mariadb-plugin-rocksdb mariadb-plugin-s3 mariadb-plugin-spider percona-xtrabackup-24
+  apt install -y mariadb-server-10.6 mariadb-server-core-10.6 mariadb-client-10.6 mariadb-client-core-10.6 \
+                 mariadb-plugin-connect mariadb-plugin-columnstore mariadb-plugin-cracklib-password-check
+
+  # plugins that (commonly) will not installed:
+  # mariadb-plugin-gssapi-server mariadb-plugin-gssapi-client mariadb-plugin-oqgraph mariadb-plugin-mroonga mariadb-plugin-rocksdb mariadb-plugin-s3 mariadb-plugin-spider
 
   # reconfigure my.cnf
   mkdir -p /tmp/mariadb.config
 
   MARIADB_SYSTEMD_CONFIG_DIR=/etc/mysql/mariadb.conf.d
   zip -r /etc/mysql/0riginal.config.zip $MARIADB_SYSTEMD_CONFIG_DIR
-  cp -r $MARIADB_SYSTEMD_CONFIG_DIR /etc/mysql/0riginal.mariadb.conf.d 
-  
+  cp -r $MARIADB_SYSTEMD_CONFIG_DIR /etc/mysql/0riginal.mariadb.conf.d
+
   cd /tmp/mariadb.config
 
 cat > $MARIADB_SYSTEMD_CONFIG_DIR/50-client.cnf << EOL
@@ -368,19 +364,19 @@ cat > $MARIADB_SYSTEMD_CONFIG_DIR/50-client.cnf << EOL
 # This group is read by the client library
 # Use it for options that affect all clients, but not the server
 #
-  
+
 [client]
 port                      = 3306
 socket                    = /var/run/mysqld/mysqld.sock
 default-character-set     = utf8mb4
-  
+
 # Default is Latin1, if you need UTF-8 set this (also in server section)
-  
+
 # Example of client certificate usage
 # ssl-ca                  = /etc/mysql/cacert.pem
 # ssl-cert                = /etc/mysql/server-cert.pem
 # ssl-key                 = /etc/mysql/server-key.pem
-  
+
 # Allow only TLS encrypted connections
 # ssl-verify-server-cert  = on
 
@@ -391,7 +387,7 @@ default-character-set     = utf8mb4
 # use it for MariaDB-only client options
 
 [client-mariadb]
-  
+
 EOL
 
 cat > $MARIADB_SYSTEMD_CONFIG_DIR/50-mysql-clients.cnf << EOL
@@ -406,7 +402,7 @@ cat > $MARIADB_SYSTEMD_CONFIG_DIR/50-mysql-clients.cnf << EOL
 
 [mysql]
 socket                    = /var/run/mysqld/mysqld.sock
-no-auto-rehash  
+no-auto-rehash
 local-infile
 
 [mysql_upgrade]
@@ -658,7 +654,7 @@ EOL
 # restart the services
 systemctl daemon-reload
 systemctl restart mariadb.service
-  
+
   #mysqltuner
   mkdir -p /scripts/mysqltuner
   cd /scripts/mysqltuner
@@ -676,7 +672,7 @@ fi
 #install (and configure) nginx & php-fpm #
 ##########################################
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
- 
+
   apt install -y nginx snmp-mibs-downloader libgeoip-dev \
                  php7.4 php7.4-bcmath php7.4-bz2 php7.4-cgi php7.4-cli php7.4-common php7.4-curl php7.4-dba php7.4-dev php7.4-enchant \
                  php7.4-fpm php7.4-gd php7.4-gmp php7.4-imap php7.4-interbase php7.4-intl php7.4-json php7.4-ldap php7.4-mbstring php7.4-mysql \
@@ -808,7 +804,7 @@ http {
 
   upstream apache    { server 127.0.0.1:77; }
 EOL
-  
+
 if [ "$appserver_type" = '5' ]; then
   echo "  upstream odoo      { server 127.0.0.1:8069; }" >> $NGINX_CONFIG_FILE
 fi
@@ -831,7 +827,7 @@ printf "[Service]\nExecStartPost=/bin/sleep 0.1\n" > /etc/systemd/system/nginx.s
 #
 mkdir -p /etc/nginx/snippets
 
-### custom config 1 : security snippet 
+### custom config 1 : security snippet
 cat > /etc/nginx/snippets/security.conf << 'EOL'
 ## Only requests to our Host are allowed
 # if ($host !~ ^($server_name)$ ) { return 444; }
@@ -913,7 +909,7 @@ EOL
 #
 # the example scripts will available in /etc/nginx/sites-availables
 # (yeah, this config kinda mimic the apache2 configuration perspectives)
-# 
+#
 
 mkdir -p /etc/nginx/sites-available
 mkdir -p /etc/nginx/sites-enabled
@@ -1084,16 +1080,16 @@ EOL
   ############################
   ## configuring php7.4-fpm ##
   ############################
-  
+
   mkdir -p /var/lib/php/7.4/sessions
   chmod -R 777 /var/lib/php/7.4/sessions
 
   # backup existing configuration
-  mkdir -p /etc/php/7.4/0riginal.config  
+  mkdir -p /etc/php/7.4/0riginal.config
   cp /etc/php/7.4/fpm/php.ini /etc/php/7.4/0riginal.config/php-fpm.ini
   cp /etc/php/7.4/cli/php.ini /etc/php/7.4/0riginal.config/php-cli.ini
   cp /etc/php/7.4/fpm/pool.d/www.conf /etc/php/7.4/0riginal.config/fpm-pool.d-www.conf
-  
+
   PHP_INI_FILE=/etc/php/7.4/fpm/php.ini
   sed -i '/post_max_size/c\post_max_size = 100M' $PHP_INI_FILE
   sed -i '/;cgi.fix_pathinfo/c\cgi.fix_pathinfo=1' $PHP_INI_FILE
@@ -1126,16 +1122,16 @@ EOL
   sed -i '/pm.max_children/c\pm.max_children = 10' $PHP_WWW_CONF_FILE
   sed -i '/pm.min_spare_servers/c\pm.min_spare_servers = 2' $PHP_WWW_CONF_FILE
   sed -i '/pm.max_spare_servers/c\pm.max_spare_servers = 8' $PHP_WWW_CONF_FILE
-  
+
   ############################
   ## configuring php8.1-fpm ##
   ############################
-  
+
   mkdir -p /var/lib/php/8.1/sessions
   chmod -R 777 /var/lib/php/8.1/sessions
 
   # backup existing configuration
-  mkdir -p /etc/php/8.1/0riginal.config  
+  mkdir -p /etc/php/8.1/0riginal.config
   cp /etc/php/8.1/fpm/php.ini /etc/php/8.1/0riginal.config/php-fpm.ini
   cp /etc/php/8.1/cli/php.ini /etc/php/8.1/0riginal.config/php-cli.ini
   cp /etc/php/8.1/fpm/pool.d/www.conf /etc/php/8.1/0riginal.config/fpm-pool.d-www.conf
@@ -1172,20 +1168,20 @@ EOL
   sed -i '/pm.max_children/c\pm.max_children = 10' $PHP_WWW_CONF_FILE
   sed -i '/pm.min_spare_servers/c\pm.min_spare_servers = 2' $PHP_WWW_CONF_FILE
   sed -i '/pm.max_spare_servers/c\pm.max_spare_servers = 8' $PHP_WWW_CONF_FILE
-  
+
   # create the webroot workspaces
   mkdir -p /var/www/
-  
+
   #################################
   ## Apache2 Redundant Webserver ##
   #################################
   # create secondary webserver instance (Apache) that runs in port 77 (HTTP) and 7447 (HTTP/SSL)
-  # 
-  
+  #
+
   systemctl stop nginx.service
   apt install -y apache2
   a2enmod actions alias deflate expires headers http2 negotiation proxy proxy_fcgi proxy_http2 reflector remoteip rewrite setenvif substitute vhost_alias
-  
+
   this_server_name="$(hostname).apache"
   sed -i "/#ServerRoot/a ServerName $this_server_name" /etc/apache2/apache2.conf
   sed -i '/Listen 80/c\Listen 77' /etc/apache2/ports.conf
@@ -1201,21 +1197,21 @@ cat > /etc/apache2/sites-available/000-default.conf << 'EOL'
         AllowOverride All
         Require all granted
     </Directory>
- 
+
     <FilesMatch \.php$>
         SetHandler "proxy:unix:/var/run/php8.1-fpm.sock|fcgi://localhost"
     </FilesMatch>
- 
+
     ErrorLog ${APACHE_LOG_DIR}/error.log
     CustomLog ${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
 EOL
 
   echo '<?php phpinfo(); ?>' > /usr/share/apache2/default-site/info.php
-  
+
   rm -R /var/www/html
   chown -R www-data:www-data /var/www/
-  
+
   # restart all of the webserver's daemon
   systemctl daemon-reload
   systemctl enable nginx
@@ -1243,7 +1239,7 @@ ff02::1         ip6-allnodes
 ff02::2         ip6-allrouters
 
 EOL
-  
+
   ####################
   # install devtools #
   ####################
@@ -1254,7 +1250,7 @@ EOL
   mv composer.phar /usr/local/bin/composer
 
   wget https://get.symfony.com/cli/installer -O - | bash
-  mv ~/.symfony/bin/symfony /usr/local/bin/symfony 
+  mv ~/.symfony/bin/symfony /usr/local/bin/symfony
 
 fi
 
@@ -1274,7 +1270,7 @@ if [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
     sudo -u postgres -H psql -c"ALTER user enterprise WITH PASSWORD '$db_root_password'"
     service postgresql restart
   fi
-  
+
 fi
 
 #############################################
@@ -1291,11 +1287,11 @@ if [ "$appserver_type" = '5' ]; then
                jinja2 mako mock passlib psutil pydot \
                pyparsing reportlab requests tz unicodecsv unittest2 \
                vatnumber vobject
-      
+
   echo "--------------------------------"
   echo " INSTALLING odoo v14 ..........."
   echo "--------------------------------"
-  
+
   cd /tmp
   adduser --system --quiet --shell=/bin/bash --home=/opt/odoo --gecos 'odoo' --group odoo
   mkdir /etc/odoo && mkdir /var/log/odoo/
@@ -1312,7 +1308,7 @@ if [ "$appserver_type" = '5' ]; then
   mkdir -p /opt/odoo/addons
   chown -R odoo:odoo /opt/odoo
   chown -R odoo:odoo /var/log/odoo/
-  
+
   echo "Write odoo global configuration to /etc/odoo-server.conf"
 
 cat > /etc/odoo-server.conf << EOL
@@ -1406,7 +1402,7 @@ esac
 exit 0
 
 EOL
- 
+
 chmod 755 /etc/init.d/odoo-server
 chown root: /etc/init.d/odoo-server
 
@@ -1510,14 +1506,14 @@ if [ ! -z "$zoho_mail_account" ]; then
   public_ip=$( curl https://ifconfig.me/ip  )
   timestamp_flag=` date +%F-%H-%M-%S`
   mail_subject="Server $public_ip installed with Debian $lsb_deb_version!"
-  echo "Well done!" > /tmp/mail-body.txt 
-  echo "You've finished the Debian ${lsb_deb_version^} Perfect Server installation on $public_ip at $timestamp_flag." >> /tmp/mail-body.txt 
+  echo "Well done!" > /tmp/mail-body.txt
+  echo "You've finished the Debian ${lsb_deb_version^} Perfect Server installation on $public_ip at $timestamp_flag." >> /tmp/mail-body.txt
   echo "" >> /tmp/mail-body.txt
-  echo "Please review the attached install summarize report below, and keep for future references." >> /tmp/mail-body.txt 
+  echo "Please review the attached install summarize report below, and keep for future references." >> /tmp/mail-body.txt
   echo "" >> /tmp/mail-body.txt
   echo "--" >> /tmp/mail-body.txt
   echo "Your Private Auto DevOps" >> /tmp/mail-body.txt
-  cp $install_summarize /tmp/install-log-$timestamp_flag.txt 
+  cp $install_summarize /tmp/install-log-$timestamp_flag.txt
   mutt -a "/tmp/install-log-$timestamp_flag.txt" -s "$mail_subject" -- "$git_user_email" < /tmp/mail-body.txt
 fi
 rm $install_summarize
