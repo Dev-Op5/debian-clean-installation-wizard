@@ -107,24 +107,24 @@ apt update && apt upgrade -y && apt install -y ed curl ca-certificates unzip zip
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2'  ] || [ "$appserver_type" = '5' ]; then
   #nginx
-  str_keyring=/usr/share/keyrings/nginx-archive-keyring.gpg
+  str_keyring=/etc/apt/trusted.gpg.d/nginx-archive-keyring.gpg
   wget --no-check-certificate --quiet -O - https://packages.sury.org/nginx-mainline/apt.gpg | gpg --dearmor | sudo tee $str_keyring
   echo "deb [arch=$str_arch signed-by=$str_keyring] https://packages.sury.org/nginx-mainline/ $lsb_deb_version main" > /etc/apt/sources.list.d/nginx-mainline.list
   #php
-  str_keyring=/usr/share/keyrings/php-archive-keyring.gpg
+  str_keyring=/etc/apt/trusted.gpg.d/php-archive-keyring.gpg
   wget --no-check-certificate --quiet -O - https://packages.sury.org/php/apt.gpg | gpg --dearmor | sudo tee $str_keyring
   echo "deb [arch=$str_arch signed-by=$str_keyring] https://packages.sury.org/php/ $lsb_deb_version main" > /etc/apt/sources.list.d/php-deb.sury.org.list
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
-  str_keyring=/usr/share/keyrings/mariadb-archive-keyring.asc
+  str_keyring=/etc/apt/trusted.gpg.d/mariadb-archive-keyring.asc
   wget --no-check-certificate --quiet -O - https://mariadb.org/mariadb_release_signing_key.asc | sudo tee -a $str_keyring
   echo "deb [arch=$str_arch signed-by=$str_keyring] http://sgp1.mirrors.digitalocean.com/mariadb/repo/10.6/debian bullseye main" > /etc/apt/sources.list.d/mariadb.list
   echo "deb-src [arch=$str_arch signed-by=$str_keyring] http://sgp1.mirrors.digitalocean.com/mariadb/repo/10.6/debian bullseye main" >> /etc/apt/sources.list.d/mariadb.list
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
-  str_keyring=/usr/share/keyrings/postgresql-archive-keyring.asc
+  str_keyring=/etc/apt/trusted.gpg.d/postgresql-archive-keyring.asc
   wget --no-check-certificate --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee -a $str_keyring
   echo "deb [arch=$str_arch signed-by=$str_keyring] https://apt.postgresql.org/pub/repos/apt/ $lsb_deb_version-pgdg main" > /etc/apt/sources.list.d/postgresql.list
   echo "deb-src [arch=$str_arch signed-by=$str_keyring] https://apt.postgresql.org/pub/repos/apt/ $lsb_deb_version-pgdg main" >> /etc/apt/sources.list.d/postgresql.list
@@ -305,7 +305,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   #install nodejs#
   ################
   curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
-  str_keyring=/usr/share/keyrings/yarn-archive-keyring.gpg
+  str_keyring=/etc/apt/trusted.gpg.d/yarn-archive-keyring.gpg
   curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | sudo tee $str_keyring
   echo "deb [arch=$str_arch signed-by=$str_keyring] https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
   apt update && apt install -y nodejs yarn
