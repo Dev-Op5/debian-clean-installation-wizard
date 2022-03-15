@@ -46,7 +46,7 @@ echo "1. Perfect Server for Nginx, PHP-FPM, and MariaDB"
 echo "2. Dedicated Nginx & PHP-FPM Web Server only"
 echo "3. Dedicated MariaDB Database Server only"
 echo "4. Dedicated PostgreSQL Database Server only"
-echo "5. Odoo 14 Perfect Server"
+echo "5. Odoo 15 Perfect Server"
 read -p "Your Choice (1/2/3/4/5) : " appserver_type
 
 if [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
@@ -296,8 +296,8 @@ echo "alias cp='rsync -ravz --progress'" >> /etc/bash.bashrc
 echo "alias mkdir='mkdir -pv'" >> /etc/bash.bashrc
 echo "alias wget='wget -c'" >> /etc/bash.bashrc
 echo "" >> /etc/bash.bashrc
-echo "alias poweroff='/scripts/secure-poweroff/poweroff" >> /etc/bash.bashrc
-echo "alias reboot='/scripts/secure-poweroff/reboot" >> /etc/bash.bashrc
+echo "alias poweroff='/scripts/secure-poweroff/poweroff'" >> /etc/bash.bashrc
+echo "alias reboot='/scripts/secure-poweroff/reboot'" >> /etc/bash.bashrc
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
 
@@ -310,6 +310,8 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   echo "deb [arch=$str_arch signed-by=$str_keyring] https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
   apt update && apt install -y nodejs yarn
   npm install -g npm@latest
+  # install some cool server-administratives packages
+  npm install -g degit pm2 vtop
 
   ################
   #install redis #
@@ -1274,7 +1276,7 @@ if [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
 fi
 
 #############################################
-# install (and configure) odoo 14           #
+# install (and configure) odoo 15           #
 #############################################
 
 cd /tmp
@@ -1289,7 +1291,7 @@ if [ "$appserver_type" = '5' ]; then
                vatnumber vobject
 
   echo "--------------------------------"
-  echo " INSTALLING odoo v14 ..........."
+  echo " INSTALLING odoo v15 ..........."
   echo "--------------------------------"
 
   cd /tmp
@@ -1302,9 +1304,9 @@ if [ "$appserver_type" = '5' ]; then
   sudo -u postgres -H psql -c"ALTER user odoo WITH PASSWORD '$db_root_password'"
   service postgresql restart
 
-  echo "Clone the Odoo 14 latest sources"
+  echo "Clone the Odoo 15 latest sources"
   cd /opt/odoo
-  sudo -u odoo -H git clone https://github.com/odoo/odoo --depth 1 --branch 14.0 --single-branch .
+  sudo -u odoo -H git clone https://github.com/odoo/odoo --depth 1 --branch 15.0 --single-branch .
   mkdir -p /opt/odoo/addons
   chown -R odoo:odoo /opt/odoo
   chown -R odoo:odoo /var/log/odoo/
