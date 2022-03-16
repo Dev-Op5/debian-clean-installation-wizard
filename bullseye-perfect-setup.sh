@@ -741,7 +741,7 @@ cat > $NGINX_CONFIG_FILE << EOL
 user                    www-data;
 worker_processes        ${cpu_core_count};
 
-EOL 
+EOL
 
 cat >> $NGINX_CONFIG_FILE << 'EOL'
 pid                     /var/run/nginx.pid;
