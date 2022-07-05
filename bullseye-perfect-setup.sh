@@ -1,5 +1,7 @@
 #!/bin/bash
 
+export PATH=$PATH:/sbin
+
 clear
 ##############
 # Am I root? #
@@ -31,12 +33,12 @@ if [ -f $install_summarize ]; then
   exit 0
 fi
 # temporarily disable ipv6
-sysctl -w net.ipv6.conf.all.disable_ipv6=1
-sysctl -w net.ipv6.conf.default.disable_ipv6=1
+/sbin/sysctl -w net.ipv6.conf.all.disable_ipv6=1
+/sbin/sysctl -w net.ipv6.conf.default.disable_ipv6=1
 
 echo ""
 echo "****************************************************************"
-echo "   DEBIAN ${lsb_deb_version^^} PERFECT APPLICATION SERVER INSTALLER    "
+echo "   DEBIAN ${lsb_deb_version} PERFECT APPLICATION SERVER INSTALLER    "
 echo "    -- proudly present by eRQee (rizky@prihanto.web.id)  --     "
 echo "****************************************************************"
 echo ""
@@ -181,13 +183,13 @@ apt install -y autoconf automake bison build-essential cdbs certbot check chrpat
                tcl tcpdump traceroute unrar uuid-dev whois wkhtmltopdf xfonts-75dpi xfonts-base \
                xfonts-scalable zlib1g-dev
 
-locale-gen en_US en_US.UTF-8 id_ID id_ID.UTF-8
+/sbin/locale-gen en_US en_US.UTF-8 id_ID id_ID.UTF-8
 
 #############################
 #configure mail notification#
 #############################
 
-update-ca-certificates
+/sbin/update-ca-certificates
 
 if [ ! -z "$zoho_mail_account" ]; then
 
@@ -954,6 +956,7 @@ server {
 }
 EOL
 
+rm /etc/nginx/sites-enabled/default
 ln -s /etc/nginx/sites-available/000default.conf /etc/nginx/sites-enabled/000default.conf
 
 cat > /etc/nginx/sites-available/000default-ssl.conf << 'EOL'
@@ -1423,7 +1426,7 @@ fi
 touch $install_summarize
 timestamp_flag=` date +%F\ %H:%M:%S`
 echo "***************************************************************" > $install_summarize
-echo "   DEBIAN ${lsb_deb_version^^} PERFECT APPLICATION SERVER INSTALLER   " >> $install_summarize
+echo "   DEBIAN ${lsb_deb_version} PERFECT APPLICATION SERVER INSTALLER   " >> $install_summarize
 echo "    -- proudly present by eRQee (rizky@prihanto.web.id)  --    " >> $install_summarize
 echo "                          *   *   *                            " >> $install_summarize
 echo "                      INSTALL SUMMARIZE                        " >> $install_summarize
