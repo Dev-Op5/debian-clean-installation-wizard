@@ -141,6 +141,9 @@ fi
 mv /etc/localtime /etc/localtime.old
 ln -sf /usr/share/zoneinfo/Asia/Jakarta /etc/localtime
 
+# append /sbin to PATH, defined on /etc/bash.bashrc
+sed '3 export PATH=$PATH:/sbin' /etc/bash.bashrc
+
 # change filesystem's file limit to the max
 cat >> /etc/security/limits.conf << EOL
 root soft nofile 65536
@@ -171,7 +174,7 @@ EOL
 apt update && apt upgrade -y
 
 apt install -y autoconf automake bison build-essential cdbs certbot check chrpath debconf-utils \
-               devscripts dh-make fakeroot flex fontconfig g++ gawk gettext git gperf hdparm \
+               devscripts dh-make dnsutils fakeroot flex fontconfig g++ gawk gettext git gperf hdparm \
                imagemagick jq libaio1 libasound2 libasound2-data libbz2-dev libcurl4-gnutls-dev \
                libevent-dev libexpat1-dev libffi-dev libfontconfig1-dev libfreetype6 libgdbm-dev \
                libgif-dev libicu-dev libjpeg-dev libldap2-dev libmcrypt-dev libncurses5-dev \
