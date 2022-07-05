@@ -27,14 +27,18 @@ iptables -X
 
 # Always accept loopback traffic
 iptables -A INPUT -i lo -j ACCEPT
+iptables -A OUTPUT -o lo -j ACCEPT
+
+# Drop all bad, invalid & null packets
+iptables -A PREROUTING -t mangle -p tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG NONE -j DROP
+iptables -A PREROUTING -t mangle -p tcp ! --syn -m conntrack --ctstate NEW -j DROP
+iptables -A INPUT -p tcp --tcp-flags ALL NONE -j DROP
+iptables -A INPUT -m conntrack --ctstate INVALID -j DROP
 
 # Allow established connections, and those not coming from the outside
 iptables -A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
 iptables -A INPUT -m state --state NEW ! -i $outif -j ACCEPT
 iptables -A FORWARD -i $outif -o $lanif -m state --state ESTABLISHED,RELATED -j ACCEPT
-
-# Drop all null packets
-iptables -A INPUT -p tcp --tcp-flags ALL NONE -j DROP
 
 # Allow outgoing connections from the LAN side
 iptables -A FORWARD -i $lanif -o $outif -j ACCEPT
