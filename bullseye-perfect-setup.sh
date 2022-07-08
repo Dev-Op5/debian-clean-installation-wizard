@@ -110,24 +110,24 @@ apt update && apt upgrade -y && apt install -y ed curl ca-certificates unzip zip
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2'  ] || [ "$appserver_type" = '5' ]; then
   #nginx
   str_keyring=/etc/apt/trusted.gpg.d/nginx-archive-keyring.gpg
-  wget --no-check-certificate --quiet -O - https://packages.sury.org/nginx-mainline/apt.gpg | gpg --dearmor | sudo tee $str_keyring
+  wget --no-check-certificate --quiet -O - https://packages.sury.org/nginx-mainline/apt.gpg | gpg --dearmor | tee $str_keyring
   echo "deb [arch=$str_arch signed-by=$str_keyring] https://packages.sury.org/nginx-mainline/ $lsb_deb_version main" > /etc/apt/sources.list.d/nginx-mainline.list
   #php
   str_keyring=/etc/apt/trusted.gpg.d/php-archive-keyring.gpg
-  wget --no-check-certificate --quiet -O - https://packages.sury.org/php/apt.gpg | gpg --dearmor | sudo tee $str_keyring
+  wget --no-check-certificate --quiet -O - https://packages.sury.org/php/apt.gpg | gpg --dearmor | tee $str_keyring
   echo "deb [arch=$str_arch signed-by=$str_keyring] https://packages.sury.org/php/ $lsb_deb_version main" > /etc/apt/sources.list.d/php-deb.sury.org.list
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
   str_keyring=/etc/apt/trusted.gpg.d/mariadb-archive-keyring.asc
-  wget --no-check-certificate --quiet -O - https://mariadb.org/mariadb_release_signing_key.asc | sudo tee -a $str_keyring
+  wget --no-check-certificate --quiet -O - https://mariadb.org/mariadb_release_signing_key.asc | tee -a $str_keyring
   echo "deb [arch=$str_arch signed-by=$str_keyring] http://sgp1.mirrors.digitalocean.com/mariadb/repo/10.6/debian bullseye main" > /etc/apt/sources.list.d/mariadb.list
   echo "deb-src [arch=$str_arch signed-by=$str_keyring] http://sgp1.mirrors.digitalocean.com/mariadb/repo/10.6/debian bullseye main" >> /etc/apt/sources.list.d/mariadb.list
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
   str_keyring=/etc/apt/trusted.gpg.d/postgresql-archive-keyring.asc
-  wget --no-check-certificate --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo tee -a $str_keyring
+  wget --no-check-certificate --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | tee -a $str_keyring
   echo "deb [arch=$str_arch signed-by=$str_keyring] https://apt.postgresql.org/pub/repos/apt/ $lsb_deb_version-pgdg main" > /etc/apt/sources.list.d/postgresql.list
   echo "deb-src [arch=$str_arch signed-by=$str_keyring] https://apt.postgresql.org/pub/repos/apt/ $lsb_deb_version-pgdg main" >> /etc/apt/sources.list.d/postgresql.list
 
@@ -140,9 +140,6 @@ fi
 
 mv /etc/localtime /etc/localtime.old
 ln -sf /usr/share/zoneinfo/Asia/Jakarta /etc/localtime
-
-# append /sbin to PATH, defined on /etc/bash.bashrc
-sed '3 export PATH=$PATH:/sbin' /etc/bash.bashrc
 
 # change filesystem's file limit to the max
 cat >> /etc/security/limits.conf << EOL
@@ -172,6 +169,9 @@ EOL
 ############################
 
 apt update && apt upgrade -y
+
+echo "Breakpoint #1 : will install essentials packages, mail, git, and some scripts"
+read -p "Press any key to continue..." any_key
 
 apt install -y autoconf automake bison build-essential cdbs certbot check chrpath debconf-utils \
                devscripts dh-make dnsutils fakeroot flex fontconfig g++ gawk gettext git gperf hdparm \
@@ -306,13 +306,16 @@ echo "alias reboot='/scripts/secure-poweroff/reboot'" >> /etc/bash.bashrc
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
 
+echo "Breakpoint #2 : will install node.js & redis"
+read -p "Press any key to continue..." any_key
+
   ################
   #install nodejs#
   ################
   curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
   str_keyring=/etc/apt/trusted.gpg.d/yarn-archive-keyring.gpg
-  curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor | sudo tee $str_keyring
-  echo "deb [arch=$str_arch signed-by=$str_keyring] https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
+  curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor |  tee $str_keyring
+  echo "deb [arch=$str_arch signed-by=$str_keyring] https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
   apt update && apt install -y nodejs yarn
   npm install -g npm@latest
   # install some cool server-administratives packages
@@ -347,6 +350,9 @@ fi
 #################################
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
+
+echo "Breakpoint #3 : will install mariadb database"
+read -p "Press any key to continue..." any_key
 
   apt install -y mariadb-server-10.6 mariadb-server-core-10.6 mariadb-client-10.6 mariadb-client-core-10.6 \
                  mariadb-plugin-connect mariadb-plugin-columnstore mariadb-plugin-cracklib-password-check
@@ -679,6 +685,9 @@ fi
 #install (and configure) nginx & php-fpm #
 ##########################################
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
+
+echo "Breakpoint #4 : will install nginx, apache (on port 77), php and composer"
+read -p "Press any key to continue..." any_key
 
   apt install -y nginx snmp-mibs-downloader libgeoip-dev \
                  php7.4 php7.4-bcmath php7.4-bz2 php7.4-cgi php7.4-cli php7.4-common php7.4-curl php7.4-dba php7.4-dev php7.4-enchant \
@@ -1268,6 +1277,10 @@ cd /tmp
 # install (and configure) postgresql        #
 #############################################
 if [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
+  
+echo "Breakpoint #5 : will install postgresql database"
+read -p "Press any key to continue..." any_key
+
   apt install -y postgresql-14 postgresql-client-14 postgresql-server-dev-14 libpq-dev
 
   if [ "$appserver_type" = '4' ]; then
@@ -1287,6 +1300,9 @@ fi
 
 cd /tmp
 if [ "$appserver_type" = '5' ]; then
+
+echo "Breakpoint #6 : will install odoo"
+read -p "Press any key to continue..." any_key
 
   echo "Installing necessary python libraries"
   apt install -y python3-pip python3-setuptools python3-dev python3-openid python3-yaml python3-ldap
