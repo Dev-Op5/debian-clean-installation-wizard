@@ -89,7 +89,7 @@ fi
 apt install -y gnupg gnupg2 gnupg1 debian-keyring dirmngr lsb-release software-properties-common apt-transport-https
 
 repo=/etc/apt/sources.list
-repo_address=mirror.0x.sg
+repo_address=deb.debian.org
 
 if [ -f /etc/apt/sources.list.old ]; then
   rm /etc/apt/sources.list.old
@@ -1515,7 +1515,7 @@ if [ ! -z "$zoho_mail_account" ]; then
   timestamp_flag=` date +%F-%H-%M-%S`
   mail_subject="Server $public_ip installed with Debian $lsb_deb_version!"
   echo "Well done!" > /tmp/mail-body.txt
-  echo "You've finished the Debian ${lsb_deb_version^} Perfect Server installation on $public_ip at $timestamp_flag." >> /tmp/mail-body.txt
+  echo "You've finished the Debian ${lsb_deb_version} Perfect Server installation on $public_ip at $timestamp_flag." >> /tmp/mail-body.txt
   echo "" >> /tmp/mail-body.txt
   echo "Please review the attached install summarize report below, and keep for future references." >> /tmp/mail-body.txt
   echo "" >> /tmp/mail-body.txt
