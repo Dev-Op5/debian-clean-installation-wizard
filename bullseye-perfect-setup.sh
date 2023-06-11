@@ -86,7 +86,7 @@ fi
 #rebuild the software sources#
 ##############################
 
-apt install -y gnupg gnupg2 gnupg1 debian-keyring dirmngr lsb-release software-properties-common apt-transport-https
+apt install -y curl gnupg gnupg2 gnupg1 debian-keyring dirmngr lsb-release software-properties-common apt-transport-https
 
 repo=/etc/apt/sources.list
 repo_address=deb.debian.org
@@ -312,36 +312,15 @@ read -p "Press any key to continue..." any_key
   ################
   #install nodejs#
   ################
-  curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -
+  curl -fsSL https://deb.nodesource.com/setup_18.x | bash - &&\
+  apt-get install -y nodejs
   str_keyring=/etc/apt/trusted.gpg.d/yarn-archive-keyring.gpg
-  curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor |  tee $str_keyring
+  wget --no-check-certificate --quiet -O - https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor |  tee $str_keyring
   echo "deb [arch=$str_arch signed-by=$str_keyring] https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
-  apt update && apt install -y nodejs yarn
+  apt update && apt install -y yarn
   npm install -g npm@latest
   # install some cool server-administratives packages
-  npm install -g degit pm2 vtop
-
-  ################
-  #install redis #
-  ################
-  apt install -y redis-server
-  usermod -g www-data redis
-  mkdir -p /var/run/redis
-  chown -R redis:www-data /var/run/redis
-  sed -i '/\<supervised no\>/c\supervised systemd' /etc/redis/redis.conf
-  # set random password
-  redis_password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
-  sed -i "/# requirepass foobared/c\requirepass $redis_password" /etc/redis/redis.conf
-  # make redis-server just listen to unix socket rather dan listen to global network via TCP
-  sed -i '/\<# bind 127.0.0.1 ::1\>/c\bind 127.0.0.1 ::1' /etc/redis/redis.conf
-  sed -i '/\<# unixsocket /var/run/redis/redis-server.sock\>/c\unixsocket /var/run/redis/redis.sock' /etc/redis/redis.conf
-  sed -i '/\<# unixsocketperm 700\>/c\unixsocketperm 775' /etc/redis/redis.conf
-  # other optimization
-  sed -i '/\<stop-writes-on-bgsave-error yes\>/c\stop-writes-on-bgsave-error no' /etc/redis/redis.conf
-  echo "maxmemory 50M" >> /etc/redis/redis.conf
-  echo "maxmemory-policy allkeys-lru" >> /etc/redis/redis.conf
-
-  systemctl restart redis-server
+  npm install -g nsolid degit pm2 vtop
 
 fi
 
@@ -472,20 +451,6 @@ cat > $MARIADB_SYSTEMD_CONFIG_DIR/50-mysqld_safe.cnf << EOL
 socket                    = /var/run/mysqld/mysqld.sock
 log_error                 = /var/log/mysql/mariadb.err
 nice                      = 0
-
-EOL
-
-MARIADB_SYSTEMD_CONF=/etc/systemd/system/mariadb.service.d/migrated-from-my.cnf-settings.conf
-cat > $MARIADB_SYSTEMD_CONF << EOL
-#empty placeholder
-
-[Service]
-User=mysql
-StandardOutput=syslog
-StandardError=syslog
-SyslogFacility=daemon
-SyslogLevel=err
-SyslogIdentifier=mysqld
 
 EOL
 
@@ -664,6 +629,20 @@ innodb_flush_log_at_trx_commit  = 0
 
 EOL
 
+MARIADB_SYSTEMD_CONF=/etc/systemd/system/mariadb.service.d/migrated-from-my.cnf-settings.conf
+cat > $MARIADB_SYSTEMD_CONF << EOL
+#empty placeholder
+
+[Service]
+User=mysql
+StandardOutput=syslog
+StandardError=syslog
+SyslogFacility=daemon
+SyslogLevel=err
+SyslogIdentifier=mysqld
+
+EOL
+
 # restart the services
 systemctl daemon-reload
 systemctl restart mariadb.service
@@ -690,15 +669,18 @@ echo "Breakpoint #4 : will install nginx, apache (on port 77), php and composer"
 read -p "Press any key to continue..." any_key
 
   apt install -y nginx snmp-mibs-downloader libgeoip-dev \
-                 php7.4 php7.4-bcmath php7.4-bz2 php7.4-cgi php7.4-cli php7.4-common php7.4-curl php7.4-dba php7.4-dev php7.4-enchant \
-                 php7.4-fpm php7.4-gd php7.4-gmp php7.4-imap php7.4-interbase php7.4-intl php7.4-json php7.4-ldap php7.4-mbstring php7.4-mysql \
-                 php7.4-odbc php7.4-opcache php7.4-pgsql php7.4-pspell php7.4-readline php7.4-snmp php7.4-soap php7.4-sqlite3 php7.4-sybase \
-                 php7.4-tidy php7.4-xml php7.4-xmlrpc php7.4-xsl php7.4-zip php-mongodb php-geoip \
-                 php8.1 php8.1-bcmath php8.1-bz2 php8.1-cgi php8.1-cli php8.1-common php8.1-curl php8.1-dba php8.1-dev php8.1-enchant \
-                 php8.1-fpm php8.1-gd php8.1-gmp php8.1-imap php8.1-interbase php8.1-intl php8.1-ldap php8.1-mbstring php8.1-mysql php8.1-odbc \
-                 php8.1-opcache php8.1-pgsql php8.1-phpdbg php8.1-pspell php8.1-readline php8.1-snmp php8.1-soap php8.1-sqlite3 php8.1-sybase \
-                 php8.1-tidy php8.1-xml php8.1-xsl php8.1-zip
-
+                 php7.4 php7.4-apcu php7.4-bcmath php7.4-bz2 php7.4-cgi php7.4-cli php7.4-common php7.4-curl php7.4-dba php7.4-dev php7.4-decimal php7.4-enchant \
+                 php7.4-fpm php7.4-gd php7.4-gmagick php7.4-gmp php7.4-imap php7.4-interbase php7.4-intl php7.4-json php7.4-ldap php7.4-mailparse php7.4-mbstring php7.4-mongodb php7.4-mysql \
+                 php7.4-odbc php7.4-opcache php7.4-pgsql php7.4-pspell php7.4-readline php7.4-redis php7.4-rrd php7.4-snmp php7.4-soap php7.4-sqlite3 php7.4-stomp php7.4-sybase \
+                 php7.4-tidy php7.4-uploadprogress php7.4-uuid php7.4-xml php7.4-xmlrpc php7.4-xsl php7.4-zip php7.4-zmq \
+                 php8.1 php8.1-apcu php8.1-bcmath php8.1-bz2 php8.1-cgi php8.1-cli php8.1-common php8.1-curl php8.1-dba php8.1-dev php8.1-decimal php8.1-enchant \
+                 php8.1-fpm php8.1-gd php8.1-gmagick php8.1-gmp php8.1-imap php8.1-interbase php8.1-intl php8.1-ldap php8.1-mailparse php8.1-mbstring php8.1-mongodb php8.1-mysql php8.1-odbc \
+                 php8.1-opcache php8.1-pgsql php8.1-phpdbg php8.1-pspell php8.1-readline php8.1-redis php8.1-rrd php8.1-snmp php8.1-soap php8.1-sqlite3 php8.1-stomp php8.1-sybase \
+                 php8.1-tidy php8.1-uploadprogress php8.1-uuid php8.1-xml php8.1-xsl php8.1-zip php8.1-zmq \
+                 php8.2 php8.2-apcu php8.2-bcmath php8.2-bz2 php8.2-cgi php8.2-cli php8.2-common php8.2-curl php8.2-dba php8.2-dev php8.2-decimal php8.2-enchant \
+                 php8.2-fpm php8.2-gd php8.2-gmagick php8.2-gmp php8.2-imap php8.2-interbase php8.2-intl php8.2-ldap php8.2-mailparse php8.2-mbstring php8.2-mongodb php8.2-mysql php8.2-odbc \
+                 php8.2-opcache php8.2-pgsql php8.2-phpdbg php8.2-pspell php8.2-readline php8.2-redis php8.2-rrd php8.2-snmp php8.2-soap php8.2-sqlite3 php8.2-stomp php8.2-sybase \
+                 php8.2-tidy php8.2-uploadprogress php8.2-uuid php8.2-xml php8.2-xsl php8.2-zip php8.2-zmq 
 
 ##########################################
 # configuring the webservers             #
@@ -953,7 +935,7 @@ server {
     if (!-f $document_root$fastcgi_script_name) { return 404; }
     fastcgi_split_path_info ^(.+?\.php)(/.*)$;
     ## [alternative] ##  fastcgi_split_path_info ^(.+\.php)(/.+)$;
-    fastcgi_pass         unix:/var/run/php8.1-fpm.sock;
+    fastcgi_pass         unix:/var/run/php8.2-fpm.sock;
     fastcgi_index        index.php;
     include              /etc/nginx/fastcgi_params;
     fastcgi_param        SCRIPT_FILENAME  $document_root$fastcgi_script_name;
@@ -1004,7 +986,7 @@ server {
     if (!-f $document_root$fastcgi_script_name) { return 404; }
     fastcgi_split_path_info ^(.+?\.php)(/.*)$;
     ## [alternative] ##  fastcgi_split_path_info ^(.+\.php)(/.+)$;
-    fastcgi_pass         unix:/var/run/php8.1-fpm.sock;
+    fastcgi_pass         unix:/var/run/php8.2-fpm.sock;
     fastcgi_index        index.php;
     include              /etc/nginx/fastcgi_params;
     fastcgi_param        SCRIPT_FILENAME  $document_root$fastcgi_script_name;
@@ -1186,6 +1168,52 @@ EOL
   sed -i '/pm.min_spare_servers/c\pm.min_spare_servers = 2' $PHP_WWW_CONF_FILE
   sed -i '/pm.max_spare_servers/c\pm.max_spare_servers = 8' $PHP_WWW_CONF_FILE
 
+  ############################
+  ## configuring php8.2-fpm ##
+  ############################
+
+  mkdir -p /var/lib/php/8.2/sessions
+  chmod -R 777 /var/lib/php/8.2/sessions
+
+  # backup existing configuration
+  mkdir -p /etc/php/8.2/0riginal.config
+  cp /etc/php/8.2/fpm/php.ini /etc/php/8.2/0riginal.config/php-fpm.ini
+  cp /etc/php/8.2/cli/php.ini /etc/php/8.2/0riginal.config/php-cli.ini
+  cp /etc/php/8.2/fpm/pool.d/www.conf /etc/php/8.2/0riginal.config/fpm-pool.d-www.conf
+
+  PHP_INI_FILE=/etc/php/8.2/fpm/php.ini
+  sed -i '/post_max_size/c\post_max_size = 100M' $PHP_INI_FILE
+  sed -i '/;cgi.fix_pathinfo/c\cgi.fix_pathinfo=1' $PHP_INI_FILE
+  sed -i '/;upload_tmp_dir/c\upload_tmp_dir=/tmp' $PHP_INI_FILE
+  sed -i '/upload_max_filesize/c\upload_max_filesize=64M' $PHP_INI_FILE
+  sed -i '/;date.timezone/c\date.timezone=Asia/Jakarta' $PHP_INI_FILE
+  sed -i '/;date.default_latitude/c\date.default_latitude = -6.211544' $PHP_INI_FILE
+  sed -i '/;date.default_longitude/c\date.default_longitude = 106.84517200000005' $PHP_INI_FILE
+  sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/8.2/sessions"' $PHP_INI_FILE
+  sed -i '/;opcache.enable=1/c\opcache.enable=1' $PHP_INI_FILE
+  sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' $PHP_INI_FILE
+  sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
+
+  PHP_INI_FILE=/etc/php/8.2/cli/php.ini
+  sed -i '/post_max_size/c\post_max_size = 100M' $PHP_INI_FILE
+  sed -i '/;cgi.fix_pathinfo/c\cgi.fix_pathinfo=1' $PHP_INI_FILE
+  sed -i '/;upload_tmp_dir/c\upload_tmp_dir=/tmp' $PHP_INI_FILE
+  sed -i '/upload_max_filesize/c\upload_max_filesize=64M' $PHP_INI_FILE
+  sed -i '/;date.timezone/c\date.timezone=Asia/Jakarta' $PHP_INI_FILE
+  sed -i '/;date.default_latitude/c\date.default_latitude = -6.211544' $PHP_INI_FILE
+  sed -i '/;date.default_longitude/c\date.default_longitude = 106.84517200000005' $PHP_INI_FILE
+  sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/8.2/sessions"' $PHP_INI_FILE
+  sed -i '/;opcache.enable=1/c\opcache.enable=1' $PHP_INI_FILE
+  sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' $PHP_INI_FILE
+  sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
+
+  PHP_WWW_CONF_FILE=/etc/php/8.2/fpm/pool.d/www.conf
+  sed -i '/listen = \/run\/php\/php8.2-fpm.sock/c\listen = \/var\/run\/php8.2-fpm.sock' $PHP_WWW_CONF_FILE
+  sed -i '/;listen.mode = 0660/c\listen.mode = 0660' $PHP_WWW_CONF_FILE
+  sed -i '/pm.max_children/c\pm.max_children = 10' $PHP_WWW_CONF_FILE
+  sed -i '/pm.min_spare_servers/c\pm.min_spare_servers = 2' $PHP_WWW_CONF_FILE
+  sed -i '/pm.max_spare_servers/c\pm.max_spare_servers = 8' $PHP_WWW_CONF_FILE
+
   # create the webroot workspaces
   mkdir -p /var/www/
 
@@ -1216,7 +1244,7 @@ cat > /etc/apache2/sites-available/000-default.conf << 'EOL'
     </Directory>
 
     <FilesMatch \.php$>
-        SetHandler "proxy:unix:/var/run/php8.1-fpm.sock|fcgi://localhost"
+        SetHandler "proxy:unix:/var/run/php8.2-fpm.sock|fcgi://localhost"
     </FilesMatch>
 
     ErrorLog ${APACHE_LOG_DIR}/error.log
@@ -1236,6 +1264,7 @@ EOL
   systemctl restart nginx.service
   systemctl restart php7.4-fpm
   systemctl restart php8.1-fpm
+  systemctl restart php8.2-fpm
 
 # normalize the /etc/hosts values
 cfg_hostname=$(hostname)
@@ -1267,7 +1296,29 @@ EOL
   mv composer.phar /usr/local/bin/composer
 
   wget https://get.symfony.com/cli/installer -O - | bash
-  mv ~/.symfony/bin/symfony /usr/local/bin/symfony
+  mv ~/.symfony5/bin/symfony /usr/local/bin/symfony
+
+  ################
+  #install redis #
+  ################
+  apt install -y redis-server
+  usermod -g www-data redis
+  mkdir -p /var/run/redis
+  chown -R redis:www-data /var/run/redis
+  sed -i '/\<supervised no\>/c\supervised systemd' /etc/redis/redis.conf
+  # set random password
+  redis_password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
+  sed -i "/# requirepass foobared/c\requirepass $redis_password" /etc/redis/redis.conf
+  # make redis-server just listen to unix socket rather dan listen to global network via TCP
+  sed -i '/\<# bind 127.0.0.1 ::1\>/c\bind 127.0.0.1 ::1' /etc/redis/redis.conf
+  sed -i '/\<# unixsocket /var/run/redis/redis-server.sock\>/c\unixsocket /var/run/redis/redis.sock' /etc/redis/redis.conf
+  sed -i '/\<# unixsocketperm 700\>/c\unixsocketperm 775' /etc/redis/redis.conf
+  # other optimization
+  sed -i '/\<stop-writes-on-bgsave-error yes\>/c\stop-writes-on-bgsave-error no' /etc/redis/redis.conf
+  echo "maxmemory 50M" >> /etc/redis/redis.conf
+  echo "maxmemory-policy allkeys-lru" >> /etc/redis/redis.conf
+
+  systemctl restart redis-server
 
 fi
 
