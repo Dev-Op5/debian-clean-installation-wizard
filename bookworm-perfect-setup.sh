@@ -740,66 +740,66 @@ NGINX_CONFIG_FILE=/etc/nginx/nginx.conf
 
 cat > $NGINX_CONFIG_FILE << EOL
 ##---------------------------------------------##
-# Last Update Mar 14, 2023  05:32 WIB by eRQee  #
+# Last Update Sep 30, 2023  05:23 WIB by eRQee  #
 ##---------------------------------------------##
 
-user                    www-data;
-worker_processes        ${cpu_core_count};
+user                            www-data;
+worker_processes                ${cpu_core_count};
 
 EOL
 
 cat >> $NGINX_CONFIG_FILE << 'EOL'
-pid                     /var/run/nginx.pid;
-include                 /etc/nginx/modules-enabled/*.conf;
-worker_rlimit_nofile    8192;
+pid                             /var/run/nginx.pid;
+include                         /etc/nginx/modules-enabled/*.conf;
+worker_rlimit_nofile            8192;
 
 events {
-  worker_connections  8000;
+  worker_connections            8000;
 }
 
 http {
-  include       /etc/nginx/mime.types;
-  default_type  application/octet-stream;
-  charset       utf-8;
-  charset_types text/css text/plain text/vnd.wap.wml text/javascript text/markdown text/calendar text/x-component text/vcard text/cache-manifest text/vtt application/json application/manifest+json;
+  include                       /etc/nginx/mime.types;
+  default_type                  application/octet-stream;
+  charset                       utf-8;
+  charset_types                 text/css text/plain text/vnd.wap.wml text/javascript text/markdown text/calendar text/x-component text/vcard text/cache-manifest text/vtt application/json application/manifest+json;
 
-  log_format  main    '$status $time_local $remote_addr $body_bytes_sent "$request" "$http_referer" "$http_user_agent" "$http_x_forwarded_for"';
-  log_format  gzip    '$status $time_local $remote_addr $body_bytes_sent "$request" "$http_referer" "$http_user_agent" "$http_x_forwarded_for" "$gzip_ratio"';
-  log_format  scripts '$document_root$fastcgi_script_name > $request';
+  log_format  main              '$status $time_local $remote_addr $body_bytes_sent "$request" "$http_referer" "$http_user_agent" "$http_x_forwarded_for"';
+  log_format  gzip              '$status $time_local $remote_addr $body_bytes_sent "$request" "$http_referer" "$http_user_agent" "$http_x_forwarded_for" "$gzip_ratio"';
+  log_format  scripts           '$document_root$fastcgi_script_name > $request';
 
-  sendfile              on;
-  tcp_nopush            on;
-  tcp_nodelay           on;
-  types_hash_max_size   2048;
-  server_tokens         off;
-  server_names_hash_bucket_size       512;
-  server_name_in_redirect             off;
+  sendfile                      on;
+  tcp_nopush                    on;
+  tcp_nodelay                   on;
+  types_hash_max_size           2048;
+  server_tokens                 off;
+  server_names_hash_bucket_size 512;
+  server_name_in_redirect       off;
 
-  gzip                  on;
-  gzip_comp_level       6;
-  gzip_vary             on;
-  gzip_proxied          any;
-  gzip_buffers          16 8k;
-  gzip_http_version     1.1;
-  gzip_types            application/atom+xml application/geo+json application/javascript application/x-javascript application/json application/ld+json application/manifest+json application/rdf+xml application/rss+xml application/vnd.ms-fontobject application/wasm application/x-web-app-manifest+json application/xhtml+xml application/xml font/eot font/otf font/ttf image/bmp image/svg+xml text/cache-manifest text/calendar text/css text/javascript text/markdown text/plain text/xml text/vcard text/vnd.rim.location.xloc text/vtt text/x-component text/x-cross-domain-policy;
-  gzip_disable          "msie6";
+  gzip                          on;
+  gzip_comp_level               6;
+  gzip_vary                     on;
+  gzip_proxied                  any;
+  gzip_buffers                  16 8k;
+  gzip_http_version             1.1;
+  gzip_types                    application/atom+xml application/geo+json application/javascript application/x-javascript application/json application/ld+json application/manifest+json application/rdf+xml application/rss+xml application/vnd.ms-fontobject application/wasm application/x-web-app-manifest+json application/xhtml+xml application/xml font/eot font/otf font/ttf image/bmp image/svg+xml text/cache-manifest text/calendar text/css text/javascript text/markdown text/plain text/xml text/vcard text/vnd.rim.location.xloc text/vtt text/x-component text/x-cross-domain-policy;
+  gzip_disable                  "msie6";
 
-  access_log            /dev/null main;
-  error_log             /dev/null warn;
+  access_log                    /dev/null main;
+  error_log                     /dev/null warn;
 
-  keepalive_timeout     20s;
-  send_timeout          10;
-  proxy_connect_timeout 60;
-  proxy_send_timeout    60;
-  proxy_read_timeout    60;
-  client_header_timeout 12;
-  client_body_timeout   12;
-  fastcgi_read_timeout  600;
-  fastcgi_buffer_size   32k;
-  fastcgi_buffers       16 16k;
+  keepalive_timeout             20s;
+  send_timeout                  10;
+  proxy_connect_timeout         60;
+  proxy_send_timeout            60;
+  proxy_read_timeout            60;
+  client_header_timeout         12;
+  client_body_timeout           12;
+  fastcgi_read_timeout          600;
+  fastcgi_buffer_size           32k;
+  fastcgi_buffers               16 16k;
 
-  client_max_body_size       100M;
-  fastcgi_max_temp_file_size 0;
+  client_max_body_size          100M;
+  fastcgi_max_temp_file_size    0;
 
   map $http_upgrade $connection_upgrade {
     default   upgrade;
@@ -849,12 +849,12 @@ wget -O /etc/nginx/certs/lets-encrypt-x3-cross-signed.pem "https://letsencrypt.o
 openssl dhparam -out /etc/nginx/certs/dhparam.pem 2048
 
 cat > /etc/nginx/snippets/ssl-params.conf << 'EOL'
-ssl_protocols             TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
-ssl_prefer_server_ciphers on;
+ssl_protocols             TLSv1.2 TLSv1.3;
+ssl_prefer_server_ciphers off;
 
 ssl_session_cache         shared:le_nginx_SSL:10m;
-ssl_session_timeout       6h;
-ssl_session_tickets       on;
+ssl_session_timeout       1440m;
+ssl_session_tickets       off;
 
 ssl_ciphers               "ECDHE-ECDSA-CHACHA20-POLY1305:ECDHE-RSA-CHACHA20-POLY1305:ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384:DHE-RSA-AES128-GCM-SHA256:DHE-RSA-AES256-GCM-SHA384:ECDHE-ECDSA-AES128-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-ECDSA-AES128-SHA:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES128-SHA:ECDHE-ECDSA-AES256-SHA384:ECDHE-ECDSA-AES256-SHA:ECDHE-RSA-AES256-SHA:DHE-RSA-AES128-SHA256:DHE-RSA-AES128-SHA:DHE-RSA-AES256-SHA256:DHE-RSA-AES256-SHA:ECDHE-ECDSA-DES-CBC3-SHA:ECDHE-RSA-DES-CBC3-SHA:EDH-RSA-DES-CBC3-SHA:AES128-GCM-SHA256:AES256-GCM-SHA384:AES128-SHA256:AES256-SHA256:AES128-SHA:AES256-SHA:DES-CBC3-SHA:!DSS";
 ssl_ecdh_curve            secp521r1:secp384r1;
@@ -922,35 +922,35 @@ echo '<?php phpinfo(); ?>' > /usr/share/nginx/html/info.php
 
 cat > /etc/nginx/sites-available/000default.conf << 'EOL'
 server {
-  listen                 80;
-  listen                 [::]:80;
-  server_name            nginx.example.domain;
+  listen                     80;
+  listen                     [::]:80;
+  server_name                nginx.example.domain;
 
-  access_log             /dev/null gzip;
-  error_log              /dev/null notice;
+  access_log                 /dev/null gzip;
+  error_log                  /dev/null notice;
 
-  root                   /usr/share/nginx/html;
-  index                  index.php index.html info.php ;
+  root                       /usr/share/nginx/html;
+  index                      index.php index.html info.php ;
 
-  error_page             404              /404.html;
-  error_page             500 502 503 504  /50x.html;
-  location  =           /50x.html { root  /usr/share/nginx/html; }
+  error_page                 404              /404.html;
+  error_page                 500 502 503 504  /50x.html;
+  location =                 /50x.html { root  /usr/share/nginx/html; }
 
   # location / { try_files $uri $uri/ /index.php$is_args$args; }  ## enable this line if you use PHP framework
 
   location ~ [^/]\.php(/|$) {
     if (!-f $document_root$fastcgi_script_name) { return 404; }
-    fastcgi_split_path_info ^(.+?\.php)(/.*)$;
-    ## [alternative] ##  fastcgi_split_path_info ^(.+\.php)(/.+)$;
-    fastcgi_pass         unix:/var/run/php8.2-fpm.sock;
-    fastcgi_index        index.php;
-    include              /etc/nginx/fastcgi_params;
+    fastcgi_split_path_info  ^(.+?\.php)(/.*)$;
+    ## [alternative] ##      fastcgi_split_path_info ^(.+\.php)(/.+)$;
+    fastcgi_pass             unix:/var/run/php8.2-fpm.sock;
+    fastcgi_index            index.php;
+    include                  /etc/nginx/fastcgi_params;
   }
 
   location ~ /\.ht { deny all; }
 
-  include     /etc/nginx/snippets/security.conf;
-  client_max_body_size   20M;
+  include                    /etc/nginx/snippets/security.conf;
+  client_max_body_size       20M;
 }
 EOL
 
@@ -959,40 +959,41 @@ ln -s /etc/nginx/sites-available/000default.conf /etc/nginx/sites-enabled/000def
 
 cat > /etc/nginx/sites-available/000default-ssl.conf << 'EOL'
 server {
-  listen                 80;
-  listen                 [::]:80;
-  server_name            nginx.example.domain;
-  return 302             https://$server_name$request_uri;
+  listen                     80;
+  listen                     [::]:80;
+  server_name                nginx.example.domain;
+  return 301                 https://$server_name$request_uri;
 }
 
 server {
-  listen                 443 ssl http2;
-  listen                 [::]:443 ssl http2;
-  server_name            nginx.example.domain;
+  listen                     443 ssl http2;
+  listen                     [::]:443 ssl http2 ipv6only=on;
+  server_name                nginx.example.domain;
 
-  access_log             /dev/null gzip;
-  error_log              /dev/null notice;
+  access_log                 /dev/null gzip;
+  error_log                  /dev/null notice;
 
-  ssl_certificate        /etc/letsencrypt/live/nginx.example.domain/fullchain.pem;
-  ssl_certificate_key    /etc/letsencrypt/live/nginx.example.domain/privkey.pem;
-  include                /etc/nginx/snippets/ssl-params.conf;
+  ssl_certificate            /etc/letsencrypt/live/nginx.example.domain/fullchain.pem;
+  ssl_certificate_key        /etc/letsencrypt/live/nginx.example.domain/privkey.pem;
+  ssl_trusted_certificate    /etc/letsencrypt/live/nginx.example.domain/chain.pem; 
+  include                    /etc/nginx/snippets/ssl-params.conf;
 
-  root                   /var/www/nginx.example.domain/;
-  index                  index.php index.html info.php;
+  root                       /var/www/nginx.example.domain/;
+  index                      index.php index.html info.php;
 
-  error_page             404              /404.html;
-  error_page             500 502 503 504  /50x.html;
-  location            = /50x.html { root  /var/www/nginx.example.domain/; }
+  error_page                 404              /404.html;
+  error_page                 500 502 503 504  /50x.html;
+  location =                 /50x.html { root  /var/www/nginx.example.domain/; }
 
   # location / { try_files $uri $uri/ /index.php$is_args$args; }  ## enable this line if you use PHP framework
 
   location ~ [^/]\.php(/|$) {
     if (!-f $document_root$fastcgi_script_name) { return 404; }
-    fastcgi_split_path_info ^(.+?\.php)(/.*)$;
-    ## [alternative] ##  fastcgi_split_path_info ^(.+\.php)(/.+)$;
-    fastcgi_pass         unix:/var/run/php8.2-fpm.sock;
-    fastcgi_index        index.php;
-    include              /etc/nginx/fastcgi_params;
+    fastcgi_split_path_info  ^(.+?\.php)(/.*)$;
+    ## [alternative] ##      fastcgi_split_path_info ^(.+\.php)(/.+)$;
+    fastcgi_pass             unix:/var/run/php8.2-fpm.sock;
+    fastcgi_index            index.php;
+    include                  /etc/nginx/fastcgi_params;
   }
 
   location ~ /\.ht { deny all; }
@@ -1006,43 +1007,44 @@ EOL
 
 cat > /etc/nginx/sites-available/000default-ssl-reverse-proxy.conf << 'EOL'
 server {
-  listen                 80;
-  listen                 [::]:80;
-  server_name            nginx.example.domain;
-  return 302             https://$server_name$request_uri;
+  listen                     80;
+  listen                     [::]:80;
+  server_name                nginx.example.domain;
+  return 301                 https://$server_name$request_uri;
 }
 
 server {
-  listen                 443 ssl http2;
-  listen                 [::]:443 ssl http2;
-  server_name            nginx.example.domain;
+  listen                     443 ssl http2;
+  listen                     [::]:443 ssl http2 ipv6only=on;
+  server_name                nginx.example.domain;
 
-  access_log             /dev/null gzip;
-  error_log              /dev/null notice;
+  access_log                 /dev/null gzip;
+  error_log                  /dev/null notice;
 
-  ssl_certificate        /etc/letsencrypt/live/nginx.example.domain/fullchain.pem;
-  ssl_certificate_key    /etc/letsencrypt/live/nginx.example.domain/privkey.pem;
-  include                /etc/nginx/snippets/ssl-params.conf;
+  ssl_certificate            /etc/letsencrypt/live/nginx.example.domain/fullchain.pem;
+  ssl_certificate_key        /etc/letsencrypt/live/nginx.example.domain/privkey.pem;
+  ssl_trusted_certificate    /etc/letsencrypt/live/nginx.example.domain/chain.pem;
+  include                    /etc/nginx/snippets/ssl-params.conf;
 
-  root                   /var/www/nginx.example.domain/;
+  root                       /var/www/nginx.example.domain/;
 
   location / {
-    proxy_pass              http://apache;
-    error_page              502 = /502.html;
-    include                 /etc/nginx/snippets/reverse-proxy.conf;
-    send_timeout            60;
-    client_max_body_size    100M;
-    client_body_buffer_size 100M;
+    proxy_pass               http://apache;
+    error_page               502 = /502.html;
+    include                  /etc/nginx/snippets/reverse-proxy.conf;
+    send_timeout             60;
+    client_max_body_size     100M;
+    client_body_buffer_size  100M;
   }
 }
 EOL
 
 cat > /etc/nginx/sites-available/000default-ssl-websocket-reverse-proxy.conf << 'EOL'
 server {
-  listen                 80;
-  listen                 [::]:80;
-  server_name            nginx.example.domain;
-  return 302             https://$server_name$request_uri;
+  listen                     80;
+  listen                     [::]:80;
+  server_name                nginx.example.domain;
+  return 301                 https://$server_name$request_uri;
 }
 
 upstream mywebsocketapp {
@@ -1052,26 +1054,27 @@ upstream mywebsocketapp {
 }
 
 server {
-  listen                 443 ssl http2;
-  listen                 [::]:443 ssl http2;
-  server_name            nginx.example.domain;
+  listen                     443 ssl http2;
+  listen                     [::]:443 ssl http2 ipv6only=on;
+  server_name                nginx.example.domain;
 
-  access_log             /dev/null gzip;
-  error_log              /dev/null notice;
+  access_log                 /dev/null gzip;
+  error_log                  /dev/null notice;
 
-  ssl_certificate        /etc/letsencrypt/live/nginx.example.domain/fullchain.pem;
-  ssl_certificate_key    /etc/letsencrypt/live/nginx.example.domain/privkey.pem;
-  include                /etc/nginx/snippets/ssl-params.conf;
+  ssl_certificate            /etc/letsencrypt/live/nginx.example.domain/fullchain.pem;
+  ssl_certificate_key        /etc/letsencrypt/live/nginx.example.domain/privkey.pem;
+  ssl_trusted_certificate    /etc/letsencrypt/live/nginx.example.domain/chain.pem;
+  include                    /etc/nginx/snippets/ssl-params.conf;
 
-  root                   /var/www/nginx.example.domain/;
+  root                       /var/www/nginx.example.domain/;
 
   location / {
-    proxy_pass              http://mywebsocketapp;
-    error_page              502 = /502.html;
-    include                 /etc/nginx/snippets/websocket-reverse-proxy.conf;
-    send_timeout            60;
-    client_max_body_size    100M;
-    client_body_buffer_size 100M;
+    proxy_pass               http://mywebsocketapp;
+    error_page               502 = /502.html;
+    include                  /etc/nginx/snippets/websocket-reverse-proxy.conf;
+    send_timeout             60;
+    client_max_body_size     100M;
+    client_body_buffer_size  100M;
   }
 }
 EOL
