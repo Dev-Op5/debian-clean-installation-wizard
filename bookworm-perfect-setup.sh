@@ -97,12 +97,12 @@ fi
 mv $repo /etc/apt/sources.list.old && touch $repo
 
 cat > $repo << EOL
-deb http://${repo_address}/debian/ ${lsb_deb_version} main non-free-firmware contrib
-deb-src http://${repo_address}/debian/ ${lsb_deb_version} main non-free-firmware contrib
-deb http://${repo_address}/debian/ ${lsb_deb_version}-updates main non-free-firmware contrib
-deb-src http://${repo_address}/debian/ ${lsb_deb_version}-updates main non-free-firmware contrib
-deb http://security.debian.org/debian-security/ ${lsb_deb_version}-security main non-free-firmware contrib
-deb-src http://security.debian.org/debian-security/ ${lsb_deb_version}-security main non-free-firmware contrib
+deb http://${repo_address}/debian/ ${lsb_deb_version} main non-free non-free-firmware contrib
+deb-src http://${repo_address}/debian/ ${lsb_deb_version} main non-free non-free-firmware contrib
+deb http://${repo_address}/debian/ ${lsb_deb_version}-updates main non-free non-free-firmware contrib
+deb-src http://${repo_address}/debian/ ${lsb_deb_version}-updates main non-free non-free-firmware contrib
+deb http://security.debian.org/debian-security/ ${lsb_deb_version}-security main non-free non-free-firmware contrib
+deb-src http://security.debian.org/debian-security/ ${lsb_deb_version}-security main non-free non-free-firmware contrib
 EOL
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2'  ] || [ "$appserver_type" = '5' ]; then
@@ -119,20 +119,7 @@ fi
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
   str_keyring=/etc/apt/trusted.gpg.d/mariadb-archive-keyring.asc
   wget --no-check-certificate --quiet -O - https://mariadb.org/mariadb_release_signing_key.asc | tee -a $str_keyring >/dev/null
-
-cat > /etc/apt/sources.list.d/mariadb.sources << EOL
-# MariaDB 11.1 [RC] repository list - created 2023-06-11 09:51 UTC
-# https://mariadb.org/download/
-X-Repolib-Name: MariaDB
-Types: deb
-# deb.mariadb.org is a dynamic mirror if your preferred mirror goes offline. See https://mariadb.org/mirrorbits/ for details.
-# URIs: https://deb.mariadb.org/11.1/debian
-URIs: https://mirror.djvg.sg/mariadb/repo/11.1/debian
-Suites: sid
-Components: main
-Signed-By: ${str_keyring}
-EOL
-
+  echo "deb [arch=$str_arch signed-by=$str_keyring] https://suro.ubaya.ac.id/mariadb/repo/11.1/debian $lsb_deb_version main" > /etc/apt/sources.list.d/mariadb.sources
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
