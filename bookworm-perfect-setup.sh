@@ -450,8 +450,9 @@ cat > $MARIADB_SYSTEMD_CONFIG_DIR/50-mariadb_safe.cnf << EOL
 # especially if they contain "#" chars...
 #
 socket                    = /var/run/mysqld/mysqld.sock
-log_error                 = /var/log/mysql/mariadb.err
 nice                      = 0
+skip_log_error
+syslog
 
 EOL
 
