@@ -514,7 +514,7 @@ big_tables                = 1
 event_scheduler           = 1
 lower_case_table_names    = 1
 performance_schema        = 1
-group_concat_max_len      = 4294967295
+group_concat_max_len      = 858993459
 skip-external-locking     = 1
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : CONNECTION SETTING
