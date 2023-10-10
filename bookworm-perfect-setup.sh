@@ -512,17 +512,15 @@ skip-character-set-client-handshake
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : GENERIC FEATURES
 big_tables                = 1
 event_scheduler           = 1
-lower_case_table_names    = 1
 performance_schema        = 1
-group_concat_max_len      = 858993459
+group_concat_max_len      = 268435456
 skip-external-locking     = 1
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : CONNECTION SETTING
 max_connections           = 100
-max_connect_errors        = 9999
 connect_timeout           = 60
-wait_timeout              = 600
-interactive_timeout       = 600
+wait_timeout              = 300
+interactive_timeout       = 300
 max_allowed_packet        = 128M
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : CACHE SETTING
@@ -533,9 +531,13 @@ bulk_insert_buffer_size   = 64M
 tmp_table_size            = 256M
 max_heap_table_size       = 256M
 table_cache               = 64
+table_open_cache          = 400
 query_cache_limit         = 128K    ## default: 128K
 query_cache_size          = 64      ## default: 64M
 query_cache_type          = DEMAND  ## for more write intensive setups, set to DEMAND or OFF
+read_buffer_size          = 2M
+read_rnd_buffer_size      = 1M
+key_buffer_size           = 128M
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : Logging
 general_log               = 0
@@ -571,14 +573,9 @@ innodb_doublewrite        = 1
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : MyISAM
 myisam_recover_options    = BACKUP
-key_buffer_size           = 128M
-open-files-limit          = 4000
-table_open_cache          = 400
 myisam_sort_buffer_size   = 512M
+open-files-limit          = 4000
 concurrent_insert         = 2
-read_buffer_size          = 2M
-read_rnd_buffer_size      = 1M
-
 #auto_increment_increment = 2
 #auto_increment_offset    = 1
 
@@ -611,7 +608,8 @@ cat > $MARIADB_SYSTEMD_CONFIG_DIR/60-galera.cnf << EOL
 #
 # * Galera-related settings
 #
-# See the examples of server wsrep.cnf files in /usr/share/mysql
+# See the examples of server wsrep.cnf files in /usr/share/mariadb
+# Read more at https://mariadb.com/kb/en/galera-cluster/
 
 [galera]
 # Mandatory Settings
