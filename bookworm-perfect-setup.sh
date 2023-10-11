@@ -675,10 +675,10 @@ echo "Breakpoint #4 : will install nginx, apache (on port 77), php and composer"
 read -p "Press any key to continue..." any_key
 
   apt install -y nginx nginx-doc libnginx-mod-stream-geoip libnginx-mod-http-geoip libgeoip-dev \
-                 php8.2 php8.2-{cli,fpm,common,dev} \
-                 php8.2-{bcmath,bz2,curl,dba,enchant,gd,gnupg,imagick,imap,intl,mailparse,mbstring} \
-                 php8.2-{mcrypt,mongodb,msgpack,mysql,odbc,opcache,pgsql,http,ps,pspell,psr,readline} \
-                 php8.2-{redis,raphf,sqlite3,ssh2,stomp,uploadprogress,uuid,xml,xmlrpc,yaml,zip}
+                 php8.2 php8.2-cli php8.2-fpm php8.2-common php8.2-dev \
+                 php8.2-bcmath php8.2-bz2 php8.2-curl php8.2-dba php8.2-enchant php8.2-gd php8.2-gnupg php8.2-imagick php8.2-imap php8.2-intl php8.2-mailparse php8.2-mbstring \
+                 php8.2-mcrypt php8.2-mongodb php8.2-msgpack php8.2-mysql php8.2-odbc php8.2-opcache php8.2-pgsql php8.2-http php8.2-ps php8.2-pspell php8.2-psr php8.2-readline \
+                 php8.2-redis php8.2-raphf php8.2-sqlite3 php8.2-ssh2 php8.2-stomp php8.2-uploadprogress php8.2-uuid php8.2-xml php8.2-xmlrpc php8.2-yaml php8.2-zip
 
 ##########################################
 # configuring the webservers             #
