@@ -958,8 +958,9 @@ server {
 }
 
 server {
-  listen                     443 ssl http2;
-  listen                     [::]:443 ssl http2 ipv6only=on;
+  listen                     443 ssl;
+  #listen                    [::]:443 ssl ipv6only=on;
+  http2                      on;
   server_name                nginx.example.domain;
 
   access_log                 /dev/null gzip;
@@ -967,7 +968,7 @@ server {
 
   ssl_certificate            /etc/letsencrypt/live/nginx.example.domain/fullchain.pem;
   ssl_certificate_key        /etc/letsencrypt/live/nginx.example.domain/privkey.pem;
-  ssl_trusted_certificate    /etc/letsencrypt/live/nginx.example.domain/chain.pem; 
+  #ssl_trusted_certificate   /etc/letsencrypt/live/nginx.example.domain/chain.pem; 
   include                    /etc/nginx/snippets/ssl-params.conf;
 
   root                       /var/www/nginx.example.domain/;
@@ -975,7 +976,7 @@ server {
 
   error_page                 404              /404.html;
   error_page                 500 502 503 504  /50x.html;
-  location =                 /50x.html { root  /var/www/nginx.example.domain/; }
+  location =                 /50x.html { root  /usr/share/nginx/html/; }
 
   # location / { try_files $uri $uri/ /index.php$is_args$args; }  ## enable this line if you use PHP framework
 
@@ -1006,8 +1007,9 @@ server {
 }
 
 server {
-  listen                     443 ssl http2;
-  listen                     [::]:443 ssl http2 ipv6only=on;
+  listen                     443 ssl;
+  #listen                    [::]:443 ssl ipv6only=on;
+  http2                      on;
   server_name                nginx.example.domain;
 
   access_log                 /dev/null gzip;
@@ -1015,7 +1017,7 @@ server {
 
   ssl_certificate            /etc/letsencrypt/live/nginx.example.domain/fullchain.pem;
   ssl_certificate_key        /etc/letsencrypt/live/nginx.example.domain/privkey.pem;
-  ssl_trusted_certificate    /etc/letsencrypt/live/nginx.example.domain/chain.pem;
+  #ssl_trusted_certificate   /etc/letsencrypt/live/nginx.example.domain/chain.pem;
   include                    /etc/nginx/snippets/ssl-params.conf;
 
   root                       /var/www/nginx.example.domain/;
@@ -1046,8 +1048,9 @@ upstream mywebsocketapp {
 }
 
 server {
-  listen                     443 ssl http2;
-  listen                     [::]:443 ssl http2 ipv6only=on;
+  listen                     443 ssl;
+  #listen                    [::]:443 ssl ipv6only=on;
+  http2                      on;
   server_name                nginx.example.domain;
 
   access_log                 /dev/null gzip;
@@ -1055,7 +1058,7 @@ server {
 
   ssl_certificate            /etc/letsencrypt/live/nginx.example.domain/fullchain.pem;
   ssl_certificate_key        /etc/letsencrypt/live/nginx.example.domain/privkey.pem;
-  ssl_trusted_certificate    /etc/letsencrypt/live/nginx.example.domain/chain.pem;
+  #ssl_trusted_certificate   /etc/letsencrypt/live/nginx.example.domain/chain.pem;
   include                    /etc/nginx/snippets/ssl-params.conf;
 
   root                       /var/www/nginx.example.domain/;
