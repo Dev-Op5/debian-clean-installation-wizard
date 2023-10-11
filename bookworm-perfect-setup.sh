@@ -179,7 +179,7 @@ apt update && apt upgrade -y
 echo "Breakpoint #1 : will install essentials packages, mail, git, and some scripts"
 read -p "Press any key to continue..." any_key
 
-apt install -y certbot dnsutils git hdparm libsqlite3-dev libtool locales-all locate lynx module-assistant \
+apt install -y acl certbot dnsutils git hdparm libsqlite3-dev libtool locales-all locate lynx module-assistant \
                net-tools openssl optipng pcregrep python3-pip rsync sudo tcpdump traceroute uuid-dev whois \
                imagemagick pdftk wkhtmltopdf 
 
@@ -930,6 +930,10 @@ server {
   }
 
   location ~ /\.ht { deny all; }
+
+  location ~ /.well-known/acme-challenge {
+    allow all;
+  }
 
   include                    /etc/nginx/snippets/security.conf;
   client_max_body_size       20M;
