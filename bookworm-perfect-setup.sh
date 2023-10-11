@@ -179,13 +179,15 @@ apt update && apt upgrade -y
 echo "Breakpoint #1 : will install essentials packages, mail, git, and some scripts"
 read -p "Press any key to continue..." any_key
 
-apt install -y certbot dnsutils ffmpeg fontconfig git hdparm imagemagick libbz2-dev libcurl4-gnutls-dev \
-               libevent-dev libexpat1-dev libffi-dev libfontconfig1-dev libgif-dev libicu-dev libjpeg-dev \
-               libldap2-dev libmcrypt-dev libncurses5-dev libpcre3-dev libpng-dev libreadline-dev \
-               libsasl2-dev libsqlite3-dev libssl-dev libtool libx11-dev libxml-parser-perl libxml2-dev \
-               locales-all locate lynx module-assistant net-tools openssl optipng pcregrep pdftk \
-               python3-pip rsync sudo sysv-rc-conf tcpdump traceroute uuid-dev whois wkhtmltopdf \
-               xfonts-75dpi xfonts-scalable
+apt install -y certbot dnsutils git hdparm locales-all locate lynx module-assistant net-tools openssl optipng \
+               pcregrep python3-pip rsync sudo tcpdump traceroute uuid-dev whois \
+               imagemagick pdftk wkhtmltopdf 
+
+#               libbz2-dev libcurl4-gnutls-dev \
+#               libevent-dev libexpat1-dev libffi-dev libfontconfig1-dev libgif-dev libicu-dev libjpeg-dev \
+#               libldap2-dev libmcrypt-dev libncurses5-dev libpcre3-dev libpng-dev libreadline-dev \
+#               libsasl2-dev libsqlite3-dev libssl-dev libtool libx11-dev libxml-parser-perl libxml2-dev \
+#               ffmpeg fontconfig  xfonts-75dpi xfonts-scalable
 
 /sbin/locale-gen en_US en_US.UTF-8 id_ID id_ID.UTF-8
 /usr/bin/localedef -i en_US -f UTF-8 en_US.UTF-8
