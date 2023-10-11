@@ -2,6 +2,10 @@
 
 export PATH=$PATH:/sbin
 
+# temporarily disable ipv6
+/sbin/sysctl -w net.ipv6.conf.all.disable_ipv6=1
+/sbin/sysctl -w net.ipv6.conf.default.disable_ipv6=1
+
 clear
 ##############
 # Am I root? #
@@ -32,9 +36,6 @@ if [ -f $install_summarize ]; then
   cat $install_summarize
   exit 0
 fi
-# temporarily disable ipv6
-/sbin/sysctl -w net.ipv6.conf.all.disable_ipv6=1
-/sbin/sysctl -w net.ipv6.conf.default.disable_ipv6=1
 
 echo ""
 echo "****************************************************************"
@@ -117,14 +118,14 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2'  ] || [ "$appserver_
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
-  str_keyring=/etc/apt/trusted.gpg.d/mariadb-archive-keyring.asc
-  wget --no-check-certificate --quiet -O - https://mariadb.org/mariadb_release_signing_key.asc | tee -a $str_keyring >/dev/null
-  echo "deb [arch=$str_arch signed-by=$str_keyring] https://suro.ubaya.ac.id/mariadb/repo/11.1/debian $lsb_deb_version main" > /etc/apt/sources.list.d/mariadb.sources
+  str_keyring=/etc/apt/trusted.gpg.d/mariadb-archive-keyring.pgp
+  wget --no-check-certificate --quiet -O - https://mariadb.org/mariadb_release_signing_key.pgp | tee $str_keyring >/dev/null
+  echo "deb [arch=$str_arch signed-by=$str_keyring] https://suro.ubaya.ac.id/mariadb/repo/11.1/debian/ $lsb_deb_version main" > /etc/apt/sources.list.d/mariadb.list
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
   str_keyring=/etc/apt/trusted.gpg.d/postgresql-archive-keyring.gpg
-  wget --no-check-certificate --quiet -O -  https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | sudo tee ${str_keyring} >/dev/null
+  wget --no-check-certificate --quiet -O - https://www.postgresql.org/media/keys/ACCC4CF8.asc | gpg --dearmor | tee ${str_keyring} >/dev/null
   echo "deb [arch=$str_arch signed-by=$str_keyring] https://apt.postgresql.org/pub/repos/apt/ $lsb_deb_version-pgdg main" > /etc/apt/sources.list.d/postgresql.list
   echo "deb-src [arch=$str_arch signed-by=$str_keyring] https://apt.postgresql.org/pub/repos/apt/ $lsb_deb_version-pgdg main" >> /etc/apt/sources.list.d/postgresql.list
 fi
@@ -310,10 +311,15 @@ read -p "Press any key to continue..." any_key
   ################
   #install nodejs#
   ################
-  curl -fsSL https://deb.nodesource.com/setup_20.x | bash - 
+  str_keyring=/etc/apt/trusted.gpg.d/nodesource-archive-keyring.gpg
+  wget --no-check-certificate --quiet -O - https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor |  tee $str_keyring >/dev/null
+  NODE_MAJOR=20
+  echo "deb [signed-by=$str_keyring] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
+
   str_keyring=/etc/apt/trusted.gpg.d/yarn-archive-keyring.gpg
   wget --no-check-certificate --quiet -O - https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor |  tee $str_keyring >/dev/null
   echo "deb [arch=$str_arch signed-by=$str_keyring] https://dl.yarnpkg.com/debian/ stable main" | tee /etc/apt/sources.list.d/yarn.list
+
   apt update && apt install -y nodejs yarn
   npm install -g npm@latest
   # install some cool server-administratives packages
