@@ -968,7 +968,6 @@ server {
 
   ssl_certificate            /etc/letsencrypt/live/nginx.example.domain/fullchain.pem;
   ssl_certificate_key        /etc/letsencrypt/live/nginx.example.domain/privkey.pem;
-  #ssl_trusted_certificate   /etc/letsencrypt/live/nginx.example.domain/chain.pem; 
   include                    /etc/nginx/snippets/ssl-params.conf;
 
   root                       /var/www/nginx.example.domain/;
@@ -1017,7 +1016,6 @@ server {
 
   ssl_certificate            /etc/letsencrypt/live/nginx.example.domain/fullchain.pem;
   ssl_certificate_key        /etc/letsencrypt/live/nginx.example.domain/privkey.pem;
-  #ssl_trusted_certificate   /etc/letsencrypt/live/nginx.example.domain/chain.pem;
   include                    /etc/nginx/snippets/ssl-params.conf;
 
   root                       /var/www/nginx.example.domain/;
@@ -1058,7 +1056,6 @@ server {
 
   ssl_certificate            /etc/letsencrypt/live/nginx.example.domain/fullchain.pem;
   ssl_certificate_key        /etc/letsencrypt/live/nginx.example.domain/privkey.pem;
-  #ssl_trusted_certificate   /etc/letsencrypt/live/nginx.example.domain/chain.pem;
   include                    /etc/nginx/snippets/ssl-params.conf;
 
   root                       /var/www/nginx.example.domain/;
