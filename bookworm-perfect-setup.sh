@@ -183,12 +183,6 @@ apt install -y certbot dnsutils git hdparm libsqlite3-dev libtool locales-all lo
                net-tools openssl optipng pcregrep python3-pip rsync sudo tcpdump traceroute uuid-dev whois \
                imagemagick pdftk wkhtmltopdf 
 
-#               libbz2-dev libcurl4-gnutls-dev \
-#               libevent-dev libexpat1-dev libffi-dev libfontconfig1-dev libgif-dev libicu-dev libjpeg-dev \
-#               libldap2-dev libmcrypt-dev libncurses5-dev libpcre3-dev libpng-dev libreadline-dev \
-#               libsasl2-dev  libssl-dev libtool libx11-dev libxml-parser-perl libxml2-dev \
-#               ffmpeg fontconfig  xfonts-75dpi xfonts-scalable
-
 /sbin/locale-gen en_US en_US.UTF-8 id_ID id_ID.UTF-8
 /usr/bin/localedef -i en_US -f UTF-8 en_US.UTF-8
 
