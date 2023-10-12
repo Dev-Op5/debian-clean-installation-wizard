@@ -911,7 +911,7 @@ echo '<?php phpinfo(); ?>' > /usr/share/nginx/html/info.php
 cat > /etc/nginx/sites-available/000default.conf << 'EOL'
 server {
   listen                     80;
-  listen                     [::]:80;
+  #listen                    [::]:80;
   server_name                nginx.example.domain;
 
   access_log                 /dev/null gzip;
@@ -952,7 +952,7 @@ ln -s /etc/nginx/sites-available/000default.conf /etc/nginx/sites-enabled/000def
 cat > /etc/nginx/sites-available/000default-ssl.conf << 'EOL'
 server {
   listen                     80;
-  listen                     [::]:80;
+  #listen                    [::]:80;
   server_name                nginx.example.domain;
   return 301                 https://$server_name$request_uri;
 }
@@ -1000,7 +1000,7 @@ EOL
 cat > /etc/nginx/sites-available/000default-ssl-reverse-proxy.conf << 'EOL'
 server {
   listen                     80;
-  listen                     [::]:80;
+  #listen                    [::]:80;
   server_name                nginx.example.domain;
   return 301                 https://$server_name$request_uri;
 }
@@ -1034,7 +1034,7 @@ EOL
 cat > /etc/nginx/sites-available/000default-ssl-websocket-reverse-proxy.conf << 'EOL'
 server {
   listen                     80;
-  listen                     [::]:80;
+  #listen                    [::]:80;
   server_name                nginx.example.domain;
   return 301                 https://$server_name$request_uri;
 }
@@ -1132,8 +1132,8 @@ EOL
 
   this_server_name="$(hostname).apache"
   sed -i "/#ServerRoot/a ServerName $this_server_name" /etc/apache2/apache2.conf
-  sed -i '/Listen 80/c\Listen 77' /etc/apache2/ports.conf
-  sed -i '/Listen 443/c\Listen 7447' /etc/apache2/ports.conf
+  sed -i '/Listen 80/c\Listen 0.0.0.0:77' /etc/apache2/ports.conf
+  sed -i '/Listen 443/c\Listen 0.0.0.0:7447' /etc/apache2/ports.conf
 
 cat > /etc/apache2/sites-available/000-default.conf << 'EOL'
 <VirtualHost 127.0.0.1:77>
