@@ -1211,7 +1211,7 @@ EOL
   redis_password=$(cat /dev/urandom | tr -dc 'a-zA-Z0-9' | fold -w 32 | head -n 1)
   sed -i "/# requirepass foobared/c\requirepass $redis_password" /etc/redis/redis.conf
   # make redis-server just listen to unix socket rather dan listen to global network via TCP
-  sed -i '/\<# bind 127.0.0.1 ::1\>/c\bind 127.0.0.1 ::1' /etc/redis/redis.conf
+  sed -i '/\<# bind 127.0.0.1 ::1\>/c\bind 127.0.0.1' /etc/redis/redis.conf
   sed -i '/\<# unixsocket /var/run/redis/redis-server.sock\>/c\unixsocket /var/run/redis/redis.sock' /etc/redis/redis.conf
   sed -i '/\<# unixsocketperm 700\>/c\unixsocketperm 775' /etc/redis/redis.conf
   # other optimization
