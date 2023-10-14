@@ -120,7 +120,7 @@ fi
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
   str_keyring=/etc/apt/trusted.gpg.d/mariadb-archive-keyring.pgp
   wget --no-check-certificate --quiet -O - https://mariadb.org/mariadb_release_signing_key.pgp | tee $str_keyring >/dev/null
-  echo "deb [arch=$str_arch signed-by=$str_keyring] https://suro.ubaya.ac.id/mariadb/repo/11.1/debian/ $lsb_deb_version main" > /etc/apt/sources.list.d/mariadb.list
+  echo "deb [arch=$str_arch signed-by=$str_keyring] https://suro.ubaya.ac.id/mariadb/repo/11.2/debian/ $lsb_deb_version main" > /etc/apt/sources.list.d/mariadb.list
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
@@ -596,10 +596,10 @@ concurrent_insert         = 2
 # you can put MariaDB-only options here
 [mariadbd]
 
-# This group is only read by MariaDB-11.1 servers.
+# This group is only read by MariaDB-11.2 servers.
 # If you use the same .cnf file for MariaDB of different versions,
 # use this group for options that older servers don't understand
-[mariadb-11.1]
+[mariadb-11.2]
 
 EOL
 
@@ -1132,8 +1132,8 @@ EOL
 
   this_server_name="$(hostname).apache"
   sed -i "/#ServerRoot/a ServerName $this_server_name" /etc/apache2/apache2.conf
-  sed -i '/Listen 80/c\Listen 0.0.0.0:77' /etc/apache2/ports.conf
-  sed -i '/Listen 443/c\Listen 0.0.0.0:7447' /etc/apache2/ports.conf
+  sed -i '/Listen 80/c\Listen 127.0.0.1:77' /etc/apache2/ports.conf
+  sed -i '/Listen 443/c\Listen 127.0.0.1:7447' /etc/apache2/ports.conf
 
 cat > /etc/apache2/sites-available/000-default.conf << 'EOL'
 <VirtualHost 127.0.0.1:77>
