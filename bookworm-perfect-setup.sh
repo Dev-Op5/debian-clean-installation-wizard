@@ -678,7 +678,9 @@ read -p "Press any key to continue..." any_key
                  php8.2 php8.2-cli php8.2-fpm php8.2-common php8.2-dev \
                  php8.2-bcmath php8.2-bz2 php8.2-curl php8.2-dba php8.2-enchant php8.2-gd php8.2-gnupg php8.2-imagick php8.2-imap php8.2-intl php8.2-mailparse php8.2-mbstring \
                  php8.2-mcrypt php8.2-mongodb php8.2-msgpack php8.2-mysql php8.2-odbc php8.2-opcache php8.2-pgsql php8.2-http php8.2-ps php8.2-pspell php8.2-psr php8.2-readline \
-                 php8.2-redis php8.2-raphf php8.2-sqlite3 php8.2-ssh2 php8.2-stomp php8.2-uploadprogress php8.2-uuid php8.2-xml php8.2-xmlrpc php8.2-yaml php8.2-zip
+                 php8.2-redis php8.2-raphf php8.2-sqlite3 php8.2-ssh2 php8.2-stomp php8.2-uploadprogress php8.2-uuid php8.2-xml php8.2-xmlrpc php8.2-yaml php8.2-zip \
+                 php8.3 php8.3-cli php8.3-fpm php8.3-common php8.3-dev php8.3-bcmath php8.3-bz2 php8.3-curl php8.3-dba php8.3-enchant php8.3-gd php8.3-imap php8.3-intl \
+                 php8.3-mbstring php8.3-mysql php8.3-odbc php8.3-opcache php8.3-pgsql php8.3-pspell php8.3-readline php8.3-sqlite3 php8.3-xml php8.3-zip 
 
 ##########################################
 # configuring the webservers             #
@@ -1117,6 +1119,52 @@ EOL
   sed -i '/pm.min_spare_servers/c\pm.min_spare_servers = 2' $PHP_WWW_CONF_FILE
   sed -i '/pm.max_spare_servers/c\pm.max_spare_servers = 8' $PHP_WWW_CONF_FILE
 
+  ############################
+  ## configuring php8.3-fpm ##
+  ############################
+
+  mkdir -p /var/lib/php/8.3/sessions
+  chmod -R 777 /var/lib/php/8.3/sessions
+
+  # backup existing configuration
+  mkdir -p /etc/php/8.3/0riginal.config
+  cp /etc/php/8.3/fpm/php.ini /etc/php/8.3/0riginal.config/php-fpm.ini
+  cp /etc/php/8.3/cli/php.ini /etc/php/8.3/0riginal.config/php-cli.ini
+  cp /etc/php/8.3/fpm/pool.d/www.conf /etc/php/8.3/0riginal.config/fpm-pool.d-www.conf
+
+  PHP_INI_FILE=/etc/php/8.3/fpm/php.ini
+  sed -i '/post_max_size/c\post_max_size = 100M' $PHP_INI_FILE
+  sed -i '/;cgi.fix_pathinfo/c\cgi.fix_pathinfo=1' $PHP_INI_FILE
+  sed -i '/;upload_tmp_dir/c\upload_tmp_dir=/tmp' $PHP_INI_FILE
+  sed -i '/upload_max_filesize/c\upload_max_filesize=64M' $PHP_INI_FILE
+  sed -i '/;date.timezone/c\date.timezone=Asia/Jakarta' $PHP_INI_FILE
+  sed -i '/;date.default_latitude/c\date.default_latitude = -6.211544' $PHP_INI_FILE
+  sed -i '/;date.default_longitude/c\date.default_longitude = 106.84517200000005' $PHP_INI_FILE
+  sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/8.3/sessions"' $PHP_INI_FILE
+  sed -i '/;opcache.enable=1/c\opcache.enable=1' $PHP_INI_FILE
+  sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' $PHP_INI_FILE
+  sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
+
+  PHP_INI_FILE=/etc/php/8.3/cli/php.ini
+  sed -i '/post_max_size/c\post_max_size = 100M' $PHP_INI_FILE
+  sed -i '/;cgi.fix_pathinfo/c\cgi.fix_pathinfo=1' $PHP_INI_FILE
+  sed -i '/;upload_tmp_dir/c\upload_tmp_dir=/tmp' $PHP_INI_FILE
+  sed -i '/upload_max_filesize/c\upload_max_filesize=64M' $PHP_INI_FILE
+  sed -i '/;date.timezone/c\date.timezone=Asia/Jakarta' $PHP_INI_FILE
+  sed -i '/;date.default_latitude/c\date.default_latitude = -6.211544' $PHP_INI_FILE
+  sed -i '/;date.default_longitude/c\date.default_longitude = 106.84517200000005' $PHP_INI_FILE
+  sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/8.3/sessions"' $PHP_INI_FILE
+  sed -i '/;opcache.enable=1/c\opcache.enable=1' $PHP_INI_FILE
+  sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' $PHP_INI_FILE
+  sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
+
+  PHP_WWW_CONF_FILE=/etc/php/8.3/fpm/pool.d/www.conf
+  sed -i '/listen = \/run\/php\/php8.3-fpm.sock/c\listen = \/var\/run\/php8.3-fpm.sock' $PHP_WWW_CONF_FILE
+  sed -i '/;listen.mode = 0660/c\listen.mode = 0660' $PHP_WWW_CONF_FILE
+  sed -i '/pm.max_children/c\pm.max_children = 10' $PHP_WWW_CONF_FILE
+  sed -i '/pm.min_spare_servers/c\pm.min_spare_servers = 2' $PHP_WWW_CONF_FILE
+  sed -i '/pm.max_spare_servers/c\pm.max_spare_servers = 8' $PHP_WWW_CONF_FILE
+
   # create the webroot workspaces
   mkdir -p /var/www/
 
@@ -1166,6 +1214,7 @@ EOL
   systemctl restart apache2.service
   systemctl restart nginx.service
   systemctl restart php8.2-fpm
+  systemctl restart php8.3-fpm
 
 # normalize the /etc/hosts values
 cfg_hostname=$(hostname)
