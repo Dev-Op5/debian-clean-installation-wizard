@@ -1282,7 +1282,7 @@ if [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
 echo "Breakpoint #5 : will install postgresql database"
 read -p "Press any key to continue..." any_key
 
-  apt install -y postgresql-15 postgresql-client-15 postgresql-server-dev-15 libpq-dev
+  apt install -y postgresql-16 postgresql-client-16 postgresql-server-dev-16 libpq-dev
 
   if [ "$appserver_type" = '4' ]; then
     adduser --system --quiet --shell=/bin/bash --home=/home/enterprise --gecos 'enterprise' --group enterprise
@@ -1313,9 +1313,9 @@ read -p "Press any key to continue..." any_key
                pyparsing reportlab requests tz unicodecsv unittest2 \
                vatnumber vobject
 
-  echo "--------------------------------"
-  echo " INSTALLING odoo v15 ..........."
-  echo "--------------------------------"
+  echo "---------------------------------------------------"
+  echo " INSTALLING Odoo Community Backport v16 ..........."
+  echo "---------------------------------------------------"
 
   cd /tmp
   adduser --system --quiet --shell=/bin/bash --home=/opt/odoo --gecos 'odoo' --group odoo
@@ -1327,9 +1327,9 @@ read -p "Press any key to continue..." any_key
   sudo -u postgres -H psql -c"ALTER user odoo WITH PASSWORD '$db_root_password'"
   service postgresql restart
 
-  echo "Clone the Odoo 15 latest sources"
+  echo "Clone the Odoo Community Backport (OCB) latest sources"
   cd /opt/odoo
-  sudo -u odoo -H git clone https://github.com/odoo/odoo --depth 1 --branch 16.0 --single-branch .
+  sudo -u odoo -H git clone https://github.com/OCA/OCB --depth 1 --branch 16.0 --single-branch .
   mkdir -p /opt/odoo/addons
   chown -R odoo:odoo /opt/odoo
   chown -R odoo:odoo /var/log/odoo/
@@ -1371,7 +1371,7 @@ cat > /etc/init.d/odoo-server << 'EOL'
 # Default-Start:        2 3 4 5
 # Default-Stop:         0 1 6
 # Short-Description:    Complete Business Application software
-# Description:          Odoo is a complete suite of business tools.
+# Description:          Odoo Community Backport is a complete suite of business tools.
 ### END INIT INFO
 PATH=/bin:/sbin:/usr/bin:/usr/local/bin
 DAEMON=/opt/odoo/odoo-bin
