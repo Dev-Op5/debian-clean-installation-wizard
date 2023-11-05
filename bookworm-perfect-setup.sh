@@ -30,6 +30,7 @@ fi
 ###########################################
 install_summarize=/root/.setup_perfectly.txt
 lsb_deb_version=$( dpkg --status tzdata|grep Provides|cut -f2 -d'-' )
+cfg_hostname=$(hostname)
 str_arch=$(dpkg --print-architecture)
 if [ -f $install_summarize ]; then
   clear
@@ -198,6 +199,8 @@ if [ ! -z "$zoho_mail_account" ]; then
   if [ ! -z "$zoho_mail_from" ]; then
     zoho_mail_from=$zoho_mail_account
   fi
+
+  DEBIAN_FRONTEND=noninteractive
   apt install -y msmtp-mta mailutils
 
 cat > /etc/msmtprc << EOL
@@ -323,7 +326,8 @@ read -p "Press any key to continue..." any_key
   apt update && apt install -y nodejs yarn
   npm install -g npm@latest
   # install some cool server-administratives packages
-  npm install -g degit vtop
+  npm install -g uuid@latest
+  npm install -g degit vtop pm2
 
 fi
 
@@ -671,17 +675,49 @@ fi
 ##########################################
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
 
-echo "Breakpoint #4 : will install nginx, apache (on port 77), php and composer"
-read -p "Press any key to continue..." any_key
+  echo "Breakpoint #4 : will install nginx, apache (on port 77), php and composer"
+  read -p "Press any key to continue..." any_key
 
-  apt install -y nginx nginx-doc libnginx-mod-stream-geoip libnginx-mod-http-geoip libgeoip-dev \
-                 php8.2 php8.2-cli php8.2-fpm php8.2-common php8.2-dev \
-                 php8.2-bcmath php8.2-bz2 php8.2-curl php8.2-dba php8.2-enchant php8.2-gd php8.2-gnupg php8.2-imagick php8.2-imap php8.2-intl php8.2-mailparse php8.2-mbstring \
-                 php8.2-mcrypt php8.2-mongodb php8.2-msgpack php8.2-mysql php8.2-odbc php8.2-opcache php8.2-pgsql php8.2-http php8.2-ps php8.2-pspell php8.2-psr php8.2-readline \
-                 php8.2-redis php8.2-raphf php8.2-sqlite3 php8.2-ssh2 php8.2-stomp php8.2-uploadprogress php8.2-uuid php8.2-xml php8.2-xmlrpc php8.2-yaml php8.2-zip \
-                 php8.3 php8.3-cli php8.3-fpm php8.3-common php8.3-dev php8.3-bcmath php8.3-bz2 php8.3-curl php8.3-dba php8.3-enchant php8.3-gd php8.3-imap php8.3-intl \
-                 php8.3-mbstring php8.3-mysql php8.3-odbc php8.3-opcache php8.3-pgsql php8.3-pspell php8.3-readline php8.3-sqlite3 php8.3-xml php8.3-zip 
+  apt install -y nginx nginx-doc libnginx-mod-stream-geoip libnginx-mod-http-geoip libgeoip-dev
+  
+  #################################
+  ## Apache2 Redundant Webserver ##
+  #################################
+  # create secondary webserver instance (Apache) that runs in port 77 (HTTP) and 7447 (HTTP/SSL)
+  
+  systemctl stop nginx.service
+  apt install -y apache2
+  a2enmod actions alias deflate expires headers http2 negotiation proxy proxy_fcgi proxy_http2 reflector remoteip rewrite setenvif substitute vhost_alias
 
+  this_server_name="$(hostname).apache"
+  sed -i "/#ServerRoot/a ServerName $this_server_name" /etc/apache2/apache2.conf
+  sed -i '/Listen 80/c\Listen 127.0.0.1:77' /etc/apache2/ports.conf
+  sed -i '/Listen 443/c\Listen 127.0.0.1:7447' /etc/apache2/ports.conf
+
+cat > /etc/apache2/sites-available/000-default.conf << 'EOL'
+<VirtualHost 127.0.0.1:77>
+    ServerName apache.example.domain
+    DocumentRoot /usr/share/apache2/default-site
+
+    <Directory /usr/share/apache2/default-site>
+        Options -Indexes +FollowSymLinks +MultiViews
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    <FilesMatch \.php$>
+        SetHandler "proxy:unix:/var/run/php8.2-fpm.sock|fcgi://localhost"
+    </FilesMatch>
+
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
+</VirtualHost>
+EOL
+  
+  rm -R /var/www/html
+  echo '<?php phpinfo(); ?>' > /usr/share/apache2/default-site/info.php
+
+ 
 ##########################################
 # configuring the webservers             #
 ##########################################
@@ -1072,6 +1108,13 @@ server {
   }
 }
 EOL
+  
+  apt install -y php8.2 php8.2-cli php8.2-fpm php8.2-common php8.2-dev \
+                 php8.2-bcmath php8.2-bz2 php8.2-curl php8.2-dba php8.2-enchant php8.2-gd php8.2-gnupg php8.2-imagick php8.2-imap php8.2-intl php8.2-mailparse php8.2-mbstring \
+                 php8.2-mcrypt php8.2-mongodb php8.2-msgpack php8.2-mysql php8.2-odbc php8.2-opcache php8.2-pgsql php8.2-http php8.2-ps php8.2-pspell php8.2-psr php8.2-readline \
+                 php8.2-redis php8.2-raphf php8.2-sqlite3 php8.2-ssh2 php8.2-stomp php8.2-uploadprogress php8.2-uuid php8.2-xml php8.2-xmlrpc php8.2-yaml php8.2-zip \
+                 php8.3 php8.3-cli php8.3-fpm php8.3-common php8.3-dev php8.3-bcmath php8.3-bz2 php8.3-curl php8.3-dba php8.3-enchant php8.3-gd php8.3-imap php8.3-intl \
+                 php8.3-mbstring php8.3-mysql php8.3-odbc php8.3-opcache php8.3-pgsql php8.3-pspell php8.3-readline php8.3-sqlite3 php8.3-xml php8.3-zip 
 
   ############################
   ## configuring php8.2-fpm ##
@@ -1097,7 +1140,9 @@ EOL
   sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/8.2/sessions"' $PHP_INI_FILE
   sed -i '/;opcache.enable=1/c\opcache.enable=1' $PHP_INI_FILE
   sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' $PHP_INI_FILE
-  sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
+  if [ ! -z "$zoho_mail_account" ]; then
+    sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
+  fi 
 
   PHP_INI_FILE=/etc/php/8.2/cli/php.ini
   sed -i '/post_max_size/c\post_max_size = 100M' $PHP_INI_FILE
@@ -1110,7 +1155,9 @@ EOL
   sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/8.2/sessions"' $PHP_INI_FILE
   sed -i '/;opcache.enable=1/c\opcache.enable=1' $PHP_INI_FILE
   sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' $PHP_INI_FILE
-  sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
+  if [ ! -z "$zoho_mail_account" ]; then
+    sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
+  fi  
 
   PHP_WWW_CONF_FILE=/etc/php/8.2/fpm/pool.d/www.conf
   sed -i '/listen = \/run\/php\/php8.2-fpm.sock/c\listen = \/var\/run\/php8.2-fpm.sock' $PHP_WWW_CONF_FILE
@@ -1143,7 +1190,9 @@ EOL
   sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/8.3/sessions"' $PHP_INI_FILE
   sed -i '/;opcache.enable=1/c\opcache.enable=1' $PHP_INI_FILE
   sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' $PHP_INI_FILE
-  sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
+  if [ ! -z "$zoho_mail_account" ]; then
+    sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
+  fi
 
   PHP_INI_FILE=/etc/php/8.3/cli/php.ini
   sed -i '/post_max_size/c\post_max_size = 100M' $PHP_INI_FILE
@@ -1156,7 +1205,9 @@ EOL
   sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/8.3/sessions"' $PHP_INI_FILE
   sed -i '/;opcache.enable=1/c\opcache.enable=1' $PHP_INI_FILE
   sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' $PHP_INI_FILE
-  sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
+  if [ ! -z "$zoho_mail_account" ]; then
+    sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
+  fi 
 
   PHP_WWW_CONF_FILE=/etc/php/8.3/fpm/pool.d/www.conf
   sed -i '/listen = \/run\/php\/php8.3-fpm.sock/c\listen = \/var\/run\/php8.3-fpm.sock' $PHP_WWW_CONF_FILE
@@ -1167,45 +1218,6 @@ EOL
 
   # create the webroot workspaces
   mkdir -p /var/www/
-
-  #################################
-  ## Apache2 Redundant Webserver ##
-  #################################
-  # create secondary webserver instance (Apache) that runs in port 77 (HTTP) and 7447 (HTTP/SSL)
-  #
-
-  systemctl stop nginx.service
-  apt install -y apache2
-  a2enmod actions alias deflate expires headers http2 negotiation proxy proxy_fcgi proxy_http2 reflector remoteip rewrite setenvif substitute vhost_alias
-
-  this_server_name="$(hostname).apache"
-  sed -i "/#ServerRoot/a ServerName $this_server_name" /etc/apache2/apache2.conf
-  sed -i '/Listen 80/c\Listen 127.0.0.1:77' /etc/apache2/ports.conf
-  sed -i '/Listen 443/c\Listen 127.0.0.1:7447' /etc/apache2/ports.conf
-
-cat > /etc/apache2/sites-available/000-default.conf << 'EOL'
-<VirtualHost 127.0.0.1:77>
-    ServerName apache.example.domain
-    DocumentRoot /usr/share/apache2/default-site
-
-    <Directory /usr/share/apache2/default-site>
-        Options -Indexes +FollowSymLinks +MultiViews
-        AllowOverride All
-        Require all granted
-    </Directory>
-
-    <FilesMatch \.php$>
-        SetHandler "proxy:unix:/var/run/php8.2-fpm.sock|fcgi://localhost"
-    </FilesMatch>
-
-    ErrorLog ${APACHE_LOG_DIR}/error.log
-    CustomLog ${APACHE_LOG_DIR}/access.log combined
-</VirtualHost>
-EOL
-
-  echo '<?php phpinfo(); ?>' > /usr/share/apache2/default-site/info.php
-
-  rm -R /var/www/html
   chown -R www-data:www-data /var/www/
 
   # restart all of the webserver's daemon
@@ -1217,7 +1229,6 @@ EOL
   systemctl restart php8.3-fpm
 
 # normalize the /etc/hosts values
-cfg_hostname=$(hostname)
 cat > /etc/hosts << EOL
 127.0.0.1       localhost
 127.0.0.1       ${cfg_hostname}   ${cfg_hostname}.apache
@@ -1252,7 +1263,7 @@ EOL
   #install redis #
   ################
   apt install -y redis-server
-  usermod -g www-data redis
+  usermod -a -G www-data redis
   mkdir -p /var/run/redis
   chown -R redis:www-data /var/run/redis
   sed -i '/\<supervised no\>/c\supervised systemd' /etc/redis/redis.conf
@@ -1302,8 +1313,8 @@ fi
 cd /tmp
 if [ "$appserver_type" = '5' ]; then
 
-echo "Breakpoint #6 : will install odoo"
-read -p "Press any key to continue..." any_key
+  echo "Breakpoint #6 : will install odoo"
+  read -p "Press any key to continue..." any_key
 
   echo "Installing necessary python libraries"
   apt install -y python3-pip python3-setuptools python3-dev python3-openid python3-yaml python3-ldap
@@ -1428,8 +1439,8 @@ exit 0
 
 EOL
 
-chmod 755 /etc/init.d/odoo-server
-chown root: /etc/init.d/odoo-server
+  chmod 755 /etc/init.d/odoo-server
+  chown root: /etc/init.d/odoo-server
 
   mkdir -p /var/log/odoo
   chown -R odoo:root /var/log/odoo
@@ -1453,13 +1464,13 @@ echo "                      INSTALL SUMMARIZE                        " >> $insta
 echo "***************************************************************" >> $install_summarize
 echo "" >> $install_summarize
 echo "Done installing at $timestamp_flag" >> $install_summarize
-echo "Using repo http://$repo_src" >> $install_summarize
+echo "Using repo http://$repo_address" >> $install_summarize
 echo "" >> $install_summarize
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ]  || [ "$appserver_type" = '5' ]; then
-  nginx_ver=$(nginx -v 2>&1)
-  apache_ver=$(apache2ctl -v | grep "version")
-  php_ver=$(php -v | grep "(cli)")
+  nginx_ver=$(/usr/sbin/nginx -v 2>&1)
+  apache_ver=$(/usr/sbin/apache2ctl -v | grep "version")
+  php_ver=$(/usr/bin/php -v | grep "(cli)")
   echo "[Web Server Information]"  >> $install_summarize
   echo "$nginx_ver" >> $install_summarize
   echo "$apache_ver" >> $install_summarize
@@ -1467,8 +1478,8 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ]  || [ "$appserver_
   echo "" >> $install_summarize
 fi
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ]  || [ "$appserver_type" = '5' ]; then
-  mysql_ver=$(mysql --version)
-  mysqltuner_ver=$(mysqltuner --test | grep "High Performance Tuning Script" 2>&1)
+  mysql_ver=$(/usr/bin/mariadb/mariadb --version)
+  mysqltuner_ver=$(/scripts/mysqltuner/mysqltuner.pl --test | grep "High Performance Tuning Script" 2>&1)
   echo "[MariaDB Information]" >> $install_summarize
   echo "$mysql_ver" >> $install_summarize
   echo "MariaDB root Password : $db_root_password" >> $install_summarize
@@ -1530,7 +1541,7 @@ cat $install_summarize
 if [ ! -z "$zoho_mail_account" ]; then
   public_ip=$( curl https://ifconfig.me/ip  )
   timestamp_flag=` date +%F-%H-%M-%S`
-  mail_subject="Server $public_ip installed with Debian $lsb_deb_version!"
+  mail_subject="Server $cfg_hostname on IP $public_ip installed with Debian $lsb_deb_version!"
   echo "Well done!" > /tmp/mail-body.txt
   echo "You've finished the Debian ${lsb_deb_version} Perfect Server installation on $public_ip at $timestamp_flag." >> /tmp/mail-body.txt
   echo "" >> /tmp/mail-body.txt
