@@ -25,18 +25,27 @@ if [ ! -e '/usr/bin/wget' ]; then
         exit 1
     fi
 fi
+
 ###########################################
 #Check if the server has been setup before#
 ###########################################
 install_summarize=/root/.setup_perfectly.txt
-lsb_deb_version=$( dpkg --status tzdata|grep Provides|cut -f2 -d'-' )
-cfg_hostname=$(hostname)
-str_arch=$(dpkg --print-architecture)
 if [ -f $install_summarize ]; then
   clear
   cat $install_summarize
   exit 0
 fi
+
+###########################################
+#Fetch some constants values              #
+###########################################
+cpu_core_count=$( nproc )
+memtotal=$( less /proc/meminfo | grep MemTotal )
+cfg_hostname=$(hostname)
+str_arch=$(dpkg --print-architecture)
+lsb_deb_version=$( dpkg --status tzdata|grep Provides|cut -f2 -d'-' )
+repo=/etc/apt/sources.list
+repo_address=deb.debian.org
 
 echo ""
 echo "****************************************************************"
@@ -49,7 +58,7 @@ echo "1. Perfect Server for Nginx, PHP-FPM, and MariaDB"
 echo "2. Dedicated Nginx & PHP-FPM Web Server only"
 echo "3. Dedicated MariaDB Database Server only"
 echo "4. Dedicated PostgreSQL Database Server only"
-echo "5. Odoo 15 Perfect Server"
+echo "5. Odoo Community Backport (OCB) 17.0"
 read -p "Your Choice (1/2/3/4/5) : " appserver_type
 
 if [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
@@ -99,9 +108,6 @@ fi
 
 apt install -y apt-transport-https ca-certificates curl debian-keyring dirmngr ed gnupg gnupg1 gnupg2 lsb-release p7zip-full software-properties-common unzip zip
 
-repo=/etc/apt/sources.list
-repo_address=deb.debian.org
-
 if [ -f /etc/apt/sources.list.old ]; then
   rm /etc/apt/sources.list.old
 fi
@@ -140,7 +146,6 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_t
   echo "deb-src [arch=$str_arch signed-by=$str_keyring] https://apt.postgresql.org/pub/repos/apt/ $lsb_deb_version-pgdg main" >> /etc/apt/sources.list.d/postgresql.list
 fi
 
-
 ###########################################################
 # system configuration
 ###########################################################
@@ -150,10 +155,14 @@ ln -sf /usr/share/zoneinfo/Asia/Jakarta /etc/localtime
 
 # change filesystem's file limit to the max
 cat >> /etc/security/limits.conf << EOL
-root soft nofile 65536
-root hard nofile 65536
-* soft nofile 65536
-* hard nofile 65536
+root soft nofile 524288
+root hard nofile 524288
+root soft nproc 524288
+root hard nproc 524288
+* soft nofile 524288
+* hard nofile 524288
+* soft nproc 524288
+* hard nproc 524288
 EOL
 
 # tuning up the IPv4 port registration capabilities
@@ -170,7 +179,6 @@ net.ipv4.ip_local_port_range = 10240    65535
 # for 1 GigE, increase this to 2500
 # for 10 GigE, increase this to 30000
 net.core.netdev_max_backlog = 2500
-
 EOL
 
 # prioritize IPv4 over IPv6 rather than completely disable the IPv6 support.
@@ -302,10 +310,14 @@ chmod +x /scripts/secure-poweroff/reboot
 
 echo "" >> /etc/bash.bashrc
 echo "" >> /etc/bash.bashrc
-echo "alias sedot='wget --recursive --page-requisites --html-extension --convert-links --no-parent --random-wait -r -p -E -e robots=off'" >> /etc/bash.bashrc
+echo "alias sedot='wget -nH -r -p -E -k -np'" >> /etc/bash.bashrc
 echo "alias cp='rsync -ravz --progress'" >> /etc/bash.bashrc
 echo "alias mkdir='mkdir -pv'" >> /etc/bash.bashrc
 echo "alias wget='wget -c'" >> /etc/bash.bashrc
+echo "" >> /etc/wgetrc
+echo "user_agent=Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36" >> /etc/wgetrc
+echo "robots=off" >> /etc/wgetrc
+echo "random_wait=on" >> /etc/wgetrc
 echo "" >> /etc/bash.bashrc
 echo "alias poweroff='/scripts/secure-poweroff/poweroff'" >> /etc/bash.bashrc
 echo "alias reboot='/scripts/secure-poweroff/reboot'" >> /etc/bash.bashrc
@@ -471,9 +483,13 @@ if [ "$appserver_type" = '3' ]; then
   cfg_binded_address=0.0.0.0
 fi
 
-memfree=$( less /proc/meminfo | grep MemFree )
-set -- $( echo $memfree )
-ibbuffer=$((${2}/2000))
+set -- $( echo $memtotal )
+if [ "$appserver_type" = '3' ]; then
+  ibbuffer=$((${2}*60/100/1000000)) # for dedicated database server: the innodb_buffer_pool_size value will set to 60% RAM
+fi
+if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ]; then
+  ibbuffer=$((${2}*25/100/1000000)) # for dedicated database server: the innodb_buffer_pool_size value will set to 25% RAM
+fi
 
 cat > $MARIADB_SYSTEMD_CONFIG_DIR/50-server.cnf << EOL
 # MariaDB database server configuration file.
@@ -573,11 +589,14 @@ max_binlog_size           = 100M
 
 default_storage_engine    = InnoDB
 #innodb_log_file_size     = 50M     ## you can't just change log file size, requires special procedure
-innodb_buffer_pool_size   = ${ibbuffer}M
+innodb_buffer_pool_size   = ${ibbuffer}G
 innodb_log_buffer_size    = 8M
 innodb_file_per_table     = 1
 innodb_open_files         = 400
-innodb_io_capacity        = 400
+innodb_io_capacity        = 2000
+innodb_thread_concurrency = 0
+innodb_read_io_threads    = 64
+innodb_write_io_threads   = 64
 innodb_flush_method       = O_DIRECT
 innodb_doublewrite        = 1
 
@@ -673,7 +692,6 @@ systemctl restart mariadb.service
   cd /tmp
 fi
 
-
 ##########################################
 #install (and configure) nginx & php-fpm #
 ##########################################
@@ -710,7 +728,7 @@ cat > /etc/apache2/sites-available/000-default.conf << 'EOL'
     </Directory>
 
     <FilesMatch \.php$>
-        SetHandler "proxy:unix:/var/run/php8.2-fpm.sock|fcgi://localhost"
+        SetHandler "proxy:unix:/var/run/php8.3-fpm.sock|fcgi://localhost"
     </FilesMatch>
 
     ErrorLog ${APACHE_LOG_DIR}/error.log
@@ -720,7 +738,6 @@ EOL
   
   rm -R /var/www/html
   echo '<?php phpinfo(); ?>' > /usr/share/apache2/default-site/info.php
-
  
 ##########################################
 # configuring the webservers             #
@@ -765,7 +782,6 @@ fastcgi_param  PATH_TRANSLATED    $document_root$fastcgi_path_info;
 EOL
 
 # configure nginx.conf
-cpu_core_count=$( nproc )
 NGINX_CONFIG_FILE=/etc/nginx/nginx.conf
 
 cat > $NGINX_CONFIG_FILE << EOL
@@ -950,7 +966,7 @@ mkdir -p /etc/nginx/sites-available
 mkdir -p /etc/nginx/sites-enabled
 echo '<?php phpinfo(); ?>' > /usr/share/nginx/html/info.php
 
-cat > /etc/nginx/sites-available/000default.conf << 'EOL'
+cat > /etc/nginx/sites-available/000-default.conf << 'EOL'
 server {
   listen                     80;
   server_name                nginx.example.domain;
@@ -971,7 +987,7 @@ server {
     if (!-f $document_root$fastcgi_script_name) { return 404; }
     fastcgi_split_path_info  ^(.+?\.php)(/.*)$;
     ## [alternative] ##      fastcgi_split_path_info ^(.+\.php)(/.+)$;
-    fastcgi_pass             unix:/var/run/php8.2-fpm.sock;
+    fastcgi_pass             unix:/var/run/php8.3-fpm.sock;
     fastcgi_index            index.php;
     include                  /etc/nginx/fastcgi_params;
   }
@@ -988,9 +1004,9 @@ server {
 EOL
 
 rm /etc/nginx/sites-enabled/default
-ln -s /etc/nginx/sites-available/000default.conf /etc/nginx/sites-enabled/000default.conf
+ln -s /etc/nginx/sites-available/000-default.conf /etc/nginx/sites-enabled/000-default.conf
 
-cat > /etc/nginx/sites-available/000default-ssl.conf << 'EOL'
+cat > /etc/nginx/sites-available/000-default-ssl.conf << 'EOL'
 server {
   listen                     80;
   server_name                nginx.example.domain;
@@ -1022,7 +1038,7 @@ server {
     if (!-f $document_root$fastcgi_script_name) { return 404; }
     fastcgi_split_path_info  ^(.+?\.php)(/.*)$;
     ## [alternative] ##      fastcgi_split_path_info ^(.+\.php)(/.+)$;
-    fastcgi_pass             unix:/var/run/php8.2-fpm.sock;
+    fastcgi_pass             unix:/var/run/php8.3-fpm.sock;
     fastcgi_index            index.php;
     include                  /etc/nginx/fastcgi_params;
   }
@@ -1036,7 +1052,7 @@ server {
 EOL
 
 
-cat > /etc/nginx/sites-available/000default-ssl-reverse-proxy.conf << 'EOL'
+cat > /etc/nginx/sites-available/000-default-ssl-reverse-proxy.conf << 'EOL'
 server {
   listen                     80;
   server_name                nginx.example.domain;
@@ -1068,7 +1084,7 @@ server {
 }
 EOL
 
-cat > /etc/nginx/sites-available/000default-ssl-websocket-reverse-proxy.conf << 'EOL'
+cat > /etc/nginx/sites-available/000-default-ssl-websocket-reverse-proxy.conf << 'EOL'
 server {
   listen                     80;
   server_name                nginx.example.domain;
@@ -1077,8 +1093,8 @@ server {
 
 upstream mywebsocketapp {
   ip_hash;
-  server 127.0.0.1:8888;
-  server 127.0.0.1:8989;
+  server 127.0.0.1:8888; ##example listening port
+  server 127.0.0.1:8989; ##example listening port
 }
 
 server {
@@ -1110,8 +1126,9 @@ EOL
                  php8.2-bcmath php8.2-bz2 php8.2-curl php8.2-dba php8.2-enchant php8.2-gd php8.2-gnupg php8.2-imagick php8.2-imap php8.2-intl php8.2-mailparse php8.2-mbstring \
                  php8.2-mcrypt php8.2-mongodb php8.2-msgpack php8.2-mysql php8.2-odbc php8.2-opcache php8.2-pgsql php8.2-http php8.2-ps php8.2-pspell php8.2-psr php8.2-readline \
                  php8.2-redis php8.2-raphf php8.2-sqlite3 php8.2-ssh2 php8.2-stomp php8.2-uploadprogress php8.2-uuid php8.2-xml php8.2-xmlrpc php8.2-yaml php8.2-zip \
-                 php8.3 php8.3-cli php8.3-fpm php8.3-common php8.3-dev php8.3-bcmath php8.3-bz2 php8.3-curl php8.3-dba php8.3-enchant php8.3-gd php8.3-imap php8.3-intl \
-                 php8.3-mbstring php8.3-mysql php8.3-odbc php8.3-opcache php8.3-pgsql php8.3-pspell php8.3-readline php8.3-sqlite3 php8.3-xml php8.3-zip 
+                 php8.3 php8.3-cli php8.3-fpm php8.3-common php8.3-dev \
+                 php8.3-bcmath php8.3-bz2 php8.3-curl php8.3-dba php8.3-enchant php8.3-gd php8.3-imap php8.3-intl php8.3-mbstring \
+                 php8.3-mysql php8.3-odbc php8.3-opcache php8.3-pgsql php8.3-pspell php8.3-readline php8.3-sqlite3 php8.3-xml php8.3-zip 
 
   ############################
   ## configuring php8.2-fpm ##
@@ -1156,12 +1173,22 @@ EOL
     sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
   fi  
 
+  set -- $( echo $memtotal )
+  if [ "$appserver_type" = '2' ]; then
+    recommended_max_children=$(((${2}*75/100/(64*1024))/10*10)) #for dedicated webserver : set PHP-FPM to using max 75% total RAM for about allocated 64MB per process threads
+  fi
+  if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '5' ]; then
+    recommended_max_children=$(((${2}*35/100/(64*1024))/10*10)) #for multifunctional server : set PHP-FPM to using max 35% total RAM for about allocated 64MB per process threads
+  fi
+  min_spare_server=$(($recommended_max_children*10/100))
+  max_spare_server=$(($recommended_max_children*75/100))
+
   PHP_WWW_CONF_FILE=/etc/php/8.2/fpm/pool.d/www.conf
   sed -i '/listen = \/run\/php\/php8.2-fpm.sock/c\listen = \/var\/run\/php8.2-fpm.sock' $PHP_WWW_CONF_FILE
   sed -i '/;listen.mode = 0660/c\listen.mode = 0660' $PHP_WWW_CONF_FILE
-  sed -i '/pm.max_children/c\pm.max_children = 10' $PHP_WWW_CONF_FILE
-  sed -i '/pm.min_spare_servers/c\pm.min_spare_servers = 2' $PHP_WWW_CONF_FILE
-  sed -i '/pm.max_spare_servers/c\pm.max_spare_servers = 8' $PHP_WWW_CONF_FILE
+  sed -i "/pm.max_children/c\pm.max_children = $recommended_max_children" $PHP_WWW_CONF_FILE
+  sed -i "/pm.min_spare_servers/c\pm.min_spare_servers = $min_spare_server" $PHP_WWW_CONF_FILE
+  sed -i "/pm.max_spare_servers/c\pm.max_spare_servers = $max_spare_server" $PHP_WWW_CONF_FILE
 
   ############################
   ## configuring php8.3-fpm ##
@@ -1206,12 +1233,22 @@ EOL
     sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
   fi 
 
+  set -- $( echo $memtotal )
+  if [ "$appserver_type" = '2' ]; then
+    recommended_max_children=$(((${2}*75/100/(64*1024))/10*10)) #for dedicated webserver : set PHP-FPM to using max 75% total RAM for about allocated 64MB per process threads
+  fi
+  if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '5' ]; then
+    recommended_max_children=$(((${2}*35/100/(64*1024))/10*10)) #for multifunctional server : set PHP-FPM to using max 35% total RAM for about allocated 64MB per process threads
+  fi
+  min_spare_server=$(($recommended_max_children*10/100))
+  max_spare_server=$(($recommended_max_children*75/100))
+
   PHP_WWW_CONF_FILE=/etc/php/8.3/fpm/pool.d/www.conf
   sed -i '/listen = \/run\/php\/php8.3-fpm.sock/c\listen = \/var\/run\/php8.3-fpm.sock' $PHP_WWW_CONF_FILE
   sed -i '/;listen.mode = 0660/c\listen.mode = 0660' $PHP_WWW_CONF_FILE
-  sed -i '/pm.max_children/c\pm.max_children = 10' $PHP_WWW_CONF_FILE
-  sed -i '/pm.min_spare_servers/c\pm.min_spare_servers = 2' $PHP_WWW_CONF_FILE
-  sed -i '/pm.max_spare_servers/c\pm.max_spare_servers = 8' $PHP_WWW_CONF_FILE
+  sed -i "/pm.max_children/c\pm.max_children = $recommended_max_children" $PHP_WWW_CONF_FILE
+  sed -i "/pm.min_spare_servers/c\pm.min_spare_servers = $min_spare_server" $PHP_WWW_CONF_FILE
+  sed -i "/pm.max_spare_servers/c\pm.max_spare_servers = $max_spare_server" $PHP_WWW_CONF_FILE
 
   # create the webroot workspaces
   mkdir -p /var/www/
@@ -1252,9 +1289,6 @@ EOL
   curl -sS https://getcomposer.org/installer | php
   chmod +x composer.phar
   mv composer.phar /usr/local/bin/composer
-
-  wget https://get.symfony.com/cli/installer -O - | bash
-  mv ~/.symfony5/bin/symfony /usr/local/bin/symfony
 
   ################
   #install redis #
@@ -1303,26 +1337,26 @@ read -p "Press any key to continue..." any_key
 
 fi
 
-#############################################
-# install (and configure) odoo 15           #
-#############################################
+###################################################
+# install (and configure) odoo community backport #
+###################################################
 
 cd /tmp
 if [ "$appserver_type" = '5' ]; then
 
-  echo "Breakpoint #6 : will install odoo"
+  echo "Breakpoint #6 : will install odoo community backport"
   read -p "Press any key to continue..." any_key
 
   echo "Installing necessary python libraries"
   apt install -y python3-pip python3-setuptools python3-dev python3-openid python3-yaml python3-ldap
   pip3 install babel psycopg2 werkzeug simplejson pillow lxml cups \
                dateutils decorator docutils feedparser geoip gevent \
-               jinja2 mako mock passlib psutil pydot \
+               jinja2 mako mock num2words passlib psutil pydot \
                pyparsing reportlab requests tz unicodecsv unittest2 \
-               vatnumber vobject
+               vatnumber vobject xlwt
 
   echo "---------------------------------------------------"
-  echo " INSTALLING Odoo Community Backport v16 ..........."
+  echo " INSTALLING Odoo Community Backport v17 ..........."
   echo "---------------------------------------------------"
 
   cd /tmp
@@ -1337,7 +1371,7 @@ if [ "$appserver_type" = '5' ]; then
 
   echo "Clone the Odoo Community Backport (OCB) latest sources"
   cd /opt/odoo
-  sudo -u odoo -H git clone https://github.com/OCA/OCB --depth 1 --branch 16.0 --single-branch .
+  sudo -u odoo -H git clone https://github.com/OCA/OCB --depth 1 --branch 17.0 --single-branch .
   mkdir -p /opt/odoo/addons
   chown -R odoo:odoo /opt/odoo
   chown -R odoo:odoo /var/log/odoo/
