@@ -41,7 +41,6 @@ fi
 echo ""
 echo "****************************************************************"
 echo "   DEBIAN ${lsb_deb_version} PERFECT APPLICATION SERVER INSTALLER    "
-echo "    -- proudly present by eRQee (rizky@prihanto.web.id)  --     "
 echo "****************************************************************"
 echo ""
 echo ""
@@ -55,25 +54,35 @@ read -p "Your Choice (1/2/3/4/5) : " appserver_type
 
 if [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
   echo ""
-  read -p "Enter the default database root password: " db_root_password
+  read -p "Enter your preffered PostgreSQL database root password: " db_root_password
 fi
 
 echo ""
-echo "Enter ZOHO Email Account Credentials below"
-echo "~ this will be used for *will-not-be-marked-as-spam* mail notification services among your apps ~"
-echo "~ leave empty to disable the MAIL features ~"
+echo "Enter Your Email Account Credentials below"
+echo "1. use Google Mail Account"
+echo "2. use Zoho Mail Account"
+echo "0. do not use mail features"
 echo ""
-read -p "Mail Account : " zoho_mail_account
-if [ ! -z "$zoho_mail_account" ]; then
-  read -p "Password : " zoho_mail_password
-  read -p "Mail From Alias : " zoho_mail_from
+read -p "Choose provider (1/2/0 or leave empty): " email_provider
+echo ""
+if [ ! -z "$email_provider" ]; then
+  if [ "$email_provider" = '1' ]; then  
+    smtp_address="smtp.gmail.com"
+  fi
+  if [ "$email_provider" = '2' ]; then  
+    smtp_address="smtp.zoho.com"
+  fi
+read -p "Mail Account : " email_account
+fi
+if [ ! -z "$email_account" ]; then
+  read -p "Password : " email_password
 fi
 echo ""
-echo "Enter your DevOps name/email below."
+echo "Enter your Git/Github/Gitlab name & email below."
 echo "~ the information will be used as this server's Git identity ~"
 echo ""
-read -p "DevOps Name : " git_user_name
-read -p "DevOps Email : " git_user_email
+read -p "Git Account Name : " git_user_name
+read -p "Git Account Email : " git_user_email
 
 echo ""
 read -p "Proceed to Install? (Y/N) : " lets_go
@@ -194,15 +203,12 @@ apt install -y acl certbot dnsutils git hdparm libsqlite3-dev libtool locales-al
 
 /sbin/update-ca-certificates
 
-if [ ! -z "$zoho_mail_account" ]; then
-
-  if [ ! -z "$zoho_mail_from" ]; then
-    zoho_mail_from=$zoho_mail_account
+if [ ! -z "$email_account" ]; then
+  if [ ! -z "$email_from" ]; then
+    zoho_mail_from=$email_account
   fi
-
   DEBIAN_FRONTEND=noninteractive
   apt install -y msmtp-mta mailutils
-
 cat > /etc/msmtprc << EOL
 defaults
   auth on
@@ -210,17 +216,16 @@ defaults
   tls_trust_file /etc/ssl/certs/ca-certificates.crt
   logfile /var/log/msmtp.log
 account default
-  host smtp.zoho.com
+  host ${smtp_address}
   port 465
   auth on
-  user ${zoho_mail_account}
-  password ${zoho_mail_password}
-  from ${zoho_mail_from}
+  user ${email_account}
+  password ${email_password}
+  from ${email_account}
   tls on
   tls_starttls off
   tls_certcheck off
 EOL
-
   chmod 0640 /etc/msmtprc
   touch /var/log/msmtp.log
   chmod 666 /var/log/msmtp.log
@@ -229,12 +234,11 @@ cat > /root/.mailrc << EOL
 set sendmail=/usr/bin/msmtp
 set use_from=yes
 set realname="Mail Notification"
-set from="${zoho_mail_from}"
+set from="${email_from}"
 set envelope_from=yes
 EOL
 
   systemctl restart msmtpd.service
-
   apt install -y mutt
   cp /root/.mailrc /root/.muttrc
 fi
@@ -1133,7 +1137,7 @@ EOL
   sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/8.2/sessions"' $PHP_INI_FILE
   sed -i '/;opcache.enable=1/c\opcache.enable=1' $PHP_INI_FILE
   sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' $PHP_INI_FILE
-  if [ ! -z "$zoho_mail_account" ]; then
+  if [ ! -z "$email_account" ]; then
     sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
   fi 
 
@@ -1148,7 +1152,7 @@ EOL
   sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/8.2/sessions"' $PHP_INI_FILE
   sed -i '/;opcache.enable=1/c\opcache.enable=1' $PHP_INI_FILE
   sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' $PHP_INI_FILE
-  if [ ! -z "$zoho_mail_account" ]; then
+  if [ ! -z "$email_account" ]; then
     sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
   fi  
 
@@ -1183,7 +1187,7 @@ EOL
   sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/8.3/sessions"' $PHP_INI_FILE
   sed -i '/;opcache.enable=1/c\opcache.enable=1' $PHP_INI_FILE
   sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' $PHP_INI_FILE
-  if [ ! -z "$zoho_mail_account" ]; then
+  if [ ! -z "$email_account" ]; then
     sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
   fi
 
@@ -1198,7 +1202,7 @@ EOL
   sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/8.3/sessions"' $PHP_INI_FILE
   sed -i '/;opcache.enable=1/c\opcache.enable=1' $PHP_INI_FILE
   sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' $PHP_INI_FILE
-  if [ ! -z "$zoho_mail_account" ]; then
+  if [ ! -z "$email_account" ]; then
     sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
   fi 
 
@@ -1451,7 +1455,6 @@ touch $install_summarize
 timestamp_flag=` date +%F\ %H:%M:%S`
 echo "***************************************************************" > $install_summarize
 echo "   DEBIAN ${lsb_deb_version} PERFECT APPLICATION SERVER INSTALLER   " >> $install_summarize
-echo "    -- proudly present by eRQee (rizky@prihanto.web.id)  --    " >> $install_summarize
 echo "                          *   *   *                            " >> $install_summarize
 echo "                      INSTALL SUMMARIZE                        " >> $install_summarize
 echo "***************************************************************" >> $install_summarize
