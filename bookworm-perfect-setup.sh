@@ -949,7 +949,6 @@ echo '<?php phpinfo(); ?>' > /usr/share/nginx/html/info.php
 cat > /etc/nginx/sites-available/000default.conf << 'EOL'
 server {
   listen                     80;
-  #listen                    [::]:80;
   server_name                nginx.example.domain;
 
   access_log                 /dev/null gzip;
@@ -990,14 +989,12 @@ ln -s /etc/nginx/sites-available/000default.conf /etc/nginx/sites-enabled/000def
 cat > /etc/nginx/sites-available/000default-ssl.conf << 'EOL'
 server {
   listen                     80;
-  #listen                    [::]:80;
   server_name                nginx.example.domain;
   return 301                 https://$server_name$request_uri;
 }
 
 server {
   listen                     443 ssl;
-  #listen                    [::]:443 ssl ipv6only=on;
   http2                      on;
   server_name                nginx.example.domain;
 
@@ -1038,14 +1035,12 @@ EOL
 cat > /etc/nginx/sites-available/000default-ssl-reverse-proxy.conf << 'EOL'
 server {
   listen                     80;
-  #listen                    [::]:80;
   server_name                nginx.example.domain;
   return 301                 https://$server_name$request_uri;
 }
 
 server {
   listen                     443 ssl;
-  #listen                    [::]:443 ssl ipv6only=on;
   http2                      on;
   server_name                nginx.example.domain;
 
@@ -1072,7 +1067,6 @@ EOL
 cat > /etc/nginx/sites-available/000default-ssl-websocket-reverse-proxy.conf << 'EOL'
 server {
   listen                     80;
-  #listen                    [::]:80;
   server_name                nginx.example.domain;
   return 301                 https://$server_name$request_uri;
 }
@@ -1085,7 +1079,6 @@ upstream mywebsocketapp {
 
 server {
   listen                     443 ssl;
-  #listen                    [::]:443 ssl ipv6only=on;
   http2                      on;
   server_name                nginx.example.domain;
 
