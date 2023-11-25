@@ -40,7 +40,7 @@ fi
 #Fetch some constants values              #
 ###########################################
 cpu_core_count=$( nproc )
-memtotal=$( less /proc/meminfo | grep MemTotal )
+memtotal=$(less /proc/meminfo | grep MemTotal) && set -- $(echo $memtotal) && memtotal=${2}
 cfg_hostname=$(hostname)
 str_arch=$(dpkg --print-architecture)
 lsb_deb_version=$( dpkg --status tzdata|grep Provides|cut -f2 -d'-' )
@@ -483,12 +483,11 @@ if [ "$appserver_type" = '3' ]; then
   cfg_binded_address=0.0.0.0
 fi
 
-set -- $( echo $memtotal )
 if [ "$appserver_type" = '3' ]; then
-  ibbuffer=$((${2}*80/100/1000000)) # for dedicated database server: the innodb_buffer_pool_size value will set to 80% RAM
+  ibbuffer=$(($memtotal*80/100/1000000)) # for dedicated database server: the innodb_buffer_pool_size value will set to 80% RAM
 fi
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ]; then
-  ibbuffer=$((${2}*40/100/1000000)) # for multipurpose server: the innodb_buffer_pool_size value will set to 40% RAM
+  ibbuffer=$(($memtotal*40/100/1000000)) # for multipurpose server: the innodb_buffer_pool_size value will set to 40% RAM
 fi
 
 max_iblog=1000
@@ -1133,11 +1132,11 @@ server {
 }
 EOL
   
-  apt install -y php8.2 php8.2-cli php8.2-fpm php8.2-common php8.2-dev \
+  apt install -y php8.2 php8.2-cli php8.2-fpm php8.2-common php8.2-dev libapache2-mod-php8.2 \
                  php8.2-bcmath php8.2-bz2 php8.2-curl php8.2-dba php8.2-enchant php8.2-gd php8.2-gnupg php8.2-imagick php8.2-imap php8.2-intl php8.2-mailparse php8.2-mbstring \
                  php8.2-mcrypt php8.2-mongodb php8.2-msgpack php8.2-mysql php8.2-odbc php8.2-opcache php8.2-pgsql php8.2-http php8.2-ps php8.2-pspell php8.2-psr php8.2-readline \
                  php8.2-redis php8.2-raphf php8.2-sqlite3 php8.2-ssh2 php8.2-stomp php8.2-uploadprogress php8.2-uuid php8.2-xml php8.2-xmlrpc php8.2-yaml php8.2-zip \
-                 php8.3 php8.3-cli php8.3-fpm php8.3-common php8.3-dev \
+                 php8.3 php8.3-cli php8.3-fpm php8.3-common php8.3-dev libapache2-mod-php8.3 \
                  php8.3-bcmath php8.3-bz2 php8.3-curl php8.3-dba php8.3-enchant php8.3-gd php8.3-imap php8.3-intl php8.3-mbstring \
                  php8.3-mysql php8.3-odbc php8.3-opcache php8.3-pgsql php8.3-pspell php8.3-readline php8.3-sqlite3 php8.3-xml php8.3-zip 
 
@@ -1184,22 +1183,24 @@ EOL
     sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
   fi  
 
-  set -- $( echo $memtotal )
-  if [ "$appserver_type" = '2' ]; then
-    recommended_max_children=$(((${2}*75/100/(64*1024))/10*10)) #for dedicated webserver : set PHP-FPM to using max 75% total RAM for about allocated 64MB per process threads
-  fi
-  if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '5' ]; then
-    recommended_max_children=$(((${2}*35/100/(64*1024))/10*10)) #for multifunctional server : set PHP-FPM to using max 35% total RAM for about allocated 64MB per process threads
-  fi
-  min_spare_server=$(($recommended_max_children*10/100))
-  max_spare_server=$(($recommended_max_children*75/100))
-
   PHP_WWW_CONF_FILE=/etc/php/8.2/fpm/pool.d/www.conf
   sed -i '/listen = \/run\/php\/php8.2-fpm.sock/c\listen = \/var\/run\/php8.2-fpm.sock' $PHP_WWW_CONF_FILE
   sed -i '/;listen.mode = 0660/c\listen.mode = 0660' $PHP_WWW_CONF_FILE
+
+  if [ "$appserver_type" = '2' ]; then
+    recommended_max_children=$((($memtotal*75/100/(64*1024))/10*10)) #for dedicated webserver : set PHP-FPM to using max 75% total RAM for about allocated 64MB per process threads
+  fi
+  if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '5' ]; then
+    recommended_max_children=$((($memtotal*35/100/(64*1024))/10*10)) #for multifunctional server : set PHP-FPM to using max 35% total RAM for about allocated 64MB per process threads
+  fi
+  min_spare_server=$(($recommended_max_children*10/100))
+  max_spare_server=$(($recommended_max_children*75/100))
+  max_spawn_rate=32
+  
   sed -i "/pm.max_children/c\pm.max_children = $recommended_max_children" $PHP_WWW_CONF_FILE
   sed -i "/pm.min_spare_servers/c\pm.min_spare_servers = $min_spare_server" $PHP_WWW_CONF_FILE
   sed -i "/pm.max_spare_servers/c\pm.max_spare_servers = $max_spare_server" $PHP_WWW_CONF_FILE
+  sed -i "/pm.max_spawn_rate/c\pm.max_spawn_rate = $max_spawn_rate" $PHP_WWW_CONF_FILE
 
   ############################
   ## configuring php8.3-fpm ##
@@ -1244,22 +1245,24 @@ EOL
     sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
   fi 
 
-  set -- $( echo $memtotal )
-  if [ "$appserver_type" = '2' ]; then
-    recommended_max_children=$(((${2}*75/100/(64*1024))/10*10)) #for dedicated webserver : set PHP-FPM to using max 75% total RAM for about allocated 64MB per process threads
-  fi
-  if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '5' ]; then
-    recommended_max_children=$(((${2}*35/100/(64*1024))/10*10)) #for multifunctional server : set PHP-FPM to using max 35% total RAM for about allocated 64MB per process threads
-  fi
-  min_spare_server=$(($recommended_max_children*10/100))
-  max_spare_server=$(($recommended_max_children*75/100))
-
   PHP_WWW_CONF_FILE=/etc/php/8.3/fpm/pool.d/www.conf
   sed -i '/listen = \/run\/php\/php8.3-fpm.sock/c\listen = \/var\/run\/php8.3-fpm.sock' $PHP_WWW_CONF_FILE
   sed -i '/;listen.mode = 0660/c\listen.mode = 0660' $PHP_WWW_CONF_FILE
+
+  if [ "$appserver_type" = '2' ]; then
+    recommended_max_children=$((($memtotal*75/100/(64*1024))/10*10)) #for dedicated webserver : set PHP-FPM to using max 75% total RAM for about allocated 64MB per process threads
+  fi
+  if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '5' ]; then
+    recommended_max_children=$((($memtotal*35/100/(64*1024))/10*10)) #for multifunctional server : set PHP-FPM to using max 35% total RAM for about allocated 64MB per process threads
+  fi
+  min_spare_server=$(($recommended_max_children*10/100))
+  max_spare_server=$(($recommended_max_children*75/100))
+  max_spawn_rate=32
+  
   sed -i "/pm.max_children/c\pm.max_children = $recommended_max_children" $PHP_WWW_CONF_FILE
   sed -i "/pm.min_spare_servers/c\pm.min_spare_servers = $min_spare_server" $PHP_WWW_CONF_FILE
   sed -i "/pm.max_spare_servers/c\pm.max_spare_servers = $max_spare_server" $PHP_WWW_CONF_FILE
+  sed -i "/pm.max_spawn_rate/c\pm.max_spawn_rate = $max_spawn_rate" $PHP_WWW_CONF_FILE
 
   # create the webroot workspaces
   mkdir -p /var/www/
