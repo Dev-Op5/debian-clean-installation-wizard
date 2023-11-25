@@ -485,11 +485,21 @@ fi
 
 set -- $( echo $memtotal )
 if [ "$appserver_type" = '3' ]; then
-  ibbuffer=$((${2}*60/100/1000000)) # for dedicated database server: the innodb_buffer_pool_size value will set to 60% RAM
+  ibbuffer=$((${2}*80/100/1000000)) # for dedicated database server: the innodb_buffer_pool_size value will set to 80% RAM
 fi
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ]; then
-  ibbuffer=$((${2}*25/100/1000000)) # for dedicated database server: the innodb_buffer_pool_size value will set to 25% RAM
+  ibbuffer=$((${2}*40/100/1000000)) # for multipurpose server: the innodb_buffer_pool_size value will set to 40% RAM
 fi
+
+max_iblog=1000
+iblog=$(($ibbuffer*1000/4))
+if [ "$iblog" -gt "$max_iblog" ]; then 
+   iblog=1000
+fi 
+
+#note: 
+# ibbuffer value in GB (gigabytes)
+# iblog value in MB (megabytes)
 
 cat > $MARIADB_SYSTEMD_CONFIG_DIR/50-server.cnf << EOL
 # MariaDB database server configuration file.
@@ -557,10 +567,10 @@ bulk_insert_buffer_size   = 64M
 tmp_table_size            = 256M
 max_heap_table_size       = 256M
 table_cache               = 64
-table_open_cache          = 400
-query_cache_limit         = 128K    ## default: 128K
-query_cache_size          = 64      ## default: 64M
-query_cache_type          = DEMAND  ## for more write intensive setups, set to DEMAND or OFF
+table_open_cache          = 2000
+query_cache_limit         = 1M
+query_cache_size          = 64M
+query_cache_type          = DEMAND
 read_buffer_size          = 2M
 read_rnd_buffer_size      = 1M
 key_buffer_size           = 128M
@@ -588,12 +598,13 @@ max_binlog_size           = 100M
 # https://mariadb.com/kb/en/innodb-system-variables/#innodb_buffer_pool_size
 
 default_storage_engine    = InnoDB
-#innodb_log_file_size     = 50M     ## you can't just change log file size, requires special procedure
+innodb_log_file_size      = ${iblog}M
 innodb_buffer_pool_size   = ${ibbuffer}G
-innodb_log_buffer_size    = 8M
+innodb_log_buffer_size    = 32M
 innodb_file_per_table     = 1
-innodb_open_files         = 400
+innodb_open_files         = 2000
 innodb_io_capacity        = 2000
+innodb_io_capacity_max    = 4000
 innodb_thread_concurrency = 0
 innodb_read_io_threads    = 64
 innodb_write_io_threads   = 64
@@ -603,7 +614,6 @@ innodb_doublewrite        = 1
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ : MyISAM
 myisam_recover_options    = BACKUP
 myisam_sort_buffer_size   = 512M
-open-files-limit          = 4000
 concurrent_insert         = 2
 #auto_increment_increment = 2
 #auto_increment_offset    = 1
@@ -677,8 +687,9 @@ SyslogIdentifier=mariadbd
 EOL
 
 # restart the services
+systemctl stop mariadb.service
+
 systemctl daemon-reload
-systemctl restart mariadb.service
 
   #mysqltuner
   mkdir -p /scripts/mysqltuner
