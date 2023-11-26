@@ -212,9 +212,6 @@ apt install -y acl certbot dnsutils git hdparm libsqlite3-dev libtool locales-al
 /sbin/update-ca-certificates
 
 if [ ! -z "$email_account" ]; then
-  if [ ! -z "$email_from" ]; then
-    zoho_mail_from=$email_account
-  fi
   DEBIAN_FRONTEND=noninteractive
   apt install -y msmtp-mta mailutils
 cat > /etc/msmtprc << EOL
@@ -242,7 +239,7 @@ cat > /root/.mailrc << EOL
 set sendmail=/usr/bin/msmtp
 set use_from=yes
 set realname="Mail Notification"
-set from="${email_from}"
+set from="${email_account}"
 set envelope_from=yes
 EOL
 
@@ -710,7 +707,7 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   echo "Breakpoint #4 : will install nginx, apache (on port 77), php and composer"
   read -p "Press any key to continue..." any_key
 
-  apt install -y nginx nginx-doc libnginx-mod-stream-geoip libnginx-mod-http-geoip libgeoip-dev
+  apt install -y nginx nginx-doc libnginx-mod-stream-geoip libnginx-mod-http-geoip libgeoip-dev libnginx-mod-http-fancyindex libnginx-mod-http-uploadprogress libnginx-mod-http-image-filter
   
   #################################
   ## Apache2 Redundant Webserver ##
