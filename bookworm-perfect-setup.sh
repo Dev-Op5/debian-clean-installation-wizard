@@ -707,14 +707,14 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   echo "Breakpoint #4 : will install nginx, apache (on port 77), php and composer"
   read -p "Press any key to continue..." any_key
 
-  apt install -y nginx nginx-doc libnginx-mod-stream-geoip libnginx-mod-http-geoip libgeoip-dev libnginx-mod-http-fancyindex libnginx-mod-http-uploadprogress libnginx-mod-http-image-filter
+  apt install -y nginx nginx-doc libnginx-mod-stream-geoip libnginx-mod-http-geoip libgeoip-dev \
+                 libnginx-mod-http-image-filter
   
   #################################
   ## Apache2 Redundant Webserver ##
   #################################
   # create secondary webserver instance (Apache) that runs in port 77 (HTTP) and 7447 (HTTP/SSL)
   
-  systemctl stop nginx.service
   apt install -y apache2
   a2enmod actions alias deflate expires headers http2 negotiation proxy proxy_fcgi proxy_http2 reflector remoteip rewrite setenvif substitute vhost_alias
 
