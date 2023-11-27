@@ -1190,7 +1190,7 @@ EOL
   if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '5' ]; then
     recommended_max_children=$((($memtotal*35/100/(64*1024))/10*10)) #for multifunctional server : set PHP-FPM to using max 35% total RAM for about allocated 64MB per process threads
   fi
-  min_spare_server=$(($recommended_max_children*10/100))
+  min_spare_server=2
   max_spare_server=$(($recommended_max_children*75/100))
   max_spawn_rate=32
   
@@ -1252,7 +1252,7 @@ EOL
   if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '5' ]; then
     recommended_max_children=$((($memtotal*35/100/(64*1024))/10*10)) #for multifunctional server : set PHP-FPM to using max 35% total RAM for about allocated 64MB per process threads
   fi
-  min_spare_server=$(($recommended_max_children*10/100))
+  min_spare_server=2
   max_spare_server=$(($recommended_max_children*75/100))
   max_spawn_rate=32
   
