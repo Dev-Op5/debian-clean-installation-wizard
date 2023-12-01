@@ -106,7 +106,7 @@ fi
 #rebuild the software sources#
 ##############################
 
-apt install -y apt-transport-https ca-certificates curl debian-keyring dirmngr ed gnupg gnupg1 gnupg2 lsb-release p7zip-full software-properties-common unzip zip
+apt install -y apt-transport-https debian-keyring dirmngr gnupg gnupg1 gnupg2 lsb-release software-properties-common 
 
 if [ -f /etc/apt/sources.list.old ]; then
   rm /etc/apt/sources.list.old
@@ -189,6 +189,15 @@ scopev4 ::ffff:127.0.0.0/104    2
 scopev4 ::ffff:0.0.0.0/96       14
 EOL
 
+# disable (opinionated) not-needed startup services
+systemctl disable dbus-fi.w1.wpa_supplicant1.service          # ----> disable WIFI Network searching
+systemctl disable dbus-org.freedesktop.ModemManager1.service  # ----> disable Modem
+systemctl disable dbus-org.freedesktop.Avahi.service          # ----> disable Avahi Daemon
+# you can re-enable the service later via systemctl enable <service name>
+
+# disable SSH root login
+sed -i '/#PermitRootLogin/c\PermitRootLogin no' /etc/ssh/sshd_config
+
 ############################
 #install essential packages#
 ############################
@@ -198,9 +207,9 @@ apt update && apt upgrade -y
 echo "Breakpoint #1 : will install essentials packages, mail, git, and some scripts"
 read -p "Press any key to continue..." any_key
 
-apt install -y acl certbot dnsutils git hdparm libsqlite3-dev libtool locales-all locate lynx module-assistant \
-               net-tools openssl optipng pcregrep python3-pip rsync sudo tcpdump traceroute uuid-dev whois \
-               imagemagick pdftk wkhtmltopdf 
+apt install -y acl ca-certificates certbot curl dnsutils ed git hdparm imagemagick libsqlite3-dev libtool locales-all \
+               locate lynx module-assistant net-tools openssl optipng p7zip-full pcregrep pdftk python3-pip rsync sudo \
+               tcpdump traceroute unzip uuid-dev whois wkhtmltopdf zip
 
 /sbin/locale-gen en_US en_US.UTF-8 id_ID id_ID.UTF-8
 /usr/bin/localedef -i en_US -f UTF-8 en_US.UTF-8
