@@ -67,19 +67,26 @@ if [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
 fi
 
 echo ""
-echo "Enter Your Email Account Credentials below"
+echo "Enter Your SMTP Server Account Credentials below"
 echo "1. use Google Mail Account"
 echo "2. use Zoho Mail Account"
-echo "0. do not use mail features"
+echo "3. use your own SMTP Server Account"
+echo "0. do not use SMTP features"
 echo ""
-read -p "Choose provider (1/2/0 or leave empty): " email_provider
+read -p "Choose provider (1/2/3/0 or leave empty): " email_provider
 echo ""
 if [ ! -z "$email_provider" ]; then
   if [ "$email_provider" = '1' ]; then  
     smtp_address="smtp.gmail.com"
+    smtp_port='465'
   fi
   if [ "$email_provider" = '2' ]; then  
     smtp_address="smtp.zoho.com"
+    smtp_port='465'
+  fi
+  if [ "$email_provider" = '2' ]; then  
+    read -p "SMTP Address: " smtp_address 
+    read -p "SMTP Port (587 for STARTTLS or 465 for SSL/TLS): " smtp_port
   fi
 read -p "Mail Account : " email_account
 fi
@@ -220,9 +227,21 @@ apt install -y acl ca-certificates certbot curl dnsutils ed git hdparm imagemagi
 
 /sbin/update-ca-certificates
 
-if [ ! -z "$email_account" ]; then
-  DEBIAN_FRONTEND=noninteractive
-  apt install -y msmtp-mta mailutils
+if [ "$smtp_port" = '465' ]; then
+  flag_tls='on'
+  flag_starttls='off'
+fi
+
+if [ "$smtp_port" = '587' ]; then
+  flag_tls='off'
+  flag_starttls='on'
+fi
+
+if [ ! -z "$smtp_address" ]; then
+  if [ ! -z "$email_account" ]; then
+    DEBIAN_FRONTEND=noninteractive
+    apt install -y msmtp-mta mailutils
+
 cat > /etc/msmtprc << EOL
 defaults
   auth on
@@ -231,18 +250,18 @@ defaults
   logfile /var/log/msmtp.log
 account default
   host ${smtp_address}
-  port 465
+  port ${587}
   auth on
   user ${email_account}
   password ${email_password}
   from ${email_account}
-  tls on
-  tls_starttls off
+  tls ${flag_tls}
+  tls_starttls ${flag_starttls}
   tls_certcheck off
 EOL
-  chmod 0640 /etc/msmtprc
-  touch /var/log/msmtp.log
-  chmod 666 /var/log/msmtp.log
+    chmod 0640 /etc/msmtprc
+    touch /var/log/msmtp.log
+    chmod 666 /var/log/msmtp.log
 
 cat > /root/.mailrc << EOL
 set sendmail=/usr/bin/msmtp
@@ -252,11 +271,11 @@ set from="${email_account}"
 set envelope_from=yes
 EOL
 
-  systemctl restart msmtpd.service
-  apt install -y mutt
-  cp /root/.mailrc /root/.muttrc
+    systemctl restart msmtpd.service
+    apt install -y mutt
+    cp /root/.mailrc /root/.muttrc
+  fi
 fi
-
 ###############
 #configure git#
 ###############
