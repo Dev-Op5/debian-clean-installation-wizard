@@ -84,7 +84,7 @@ if [ ! -z "$email_provider" ]; then
     smtp_address="smtp.zoho.com"
     smtp_port='465'
   fi
-  if [ "$email_provider" = '2' ]; then  
+  if [ "$email_provider" = '3' ]; then  
     read -p "SMTP Address: " smtp_address 
     read -p "SMTP Port (587 for STARTTLS or 465 for SSL/TLS): " smtp_port
   fi
