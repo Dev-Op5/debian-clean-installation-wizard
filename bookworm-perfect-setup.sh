@@ -196,12 +196,6 @@ scopev4 ::ffff:127.0.0.0/104    2
 scopev4 ::ffff:0.0.0.0/96       14
 EOL
 
-# disable (opinionated) not-needed startup services
-systemctl disable dbus-fi.w1.wpa_supplicant1.service          # ----> disable WIFI Network searching
-systemctl disable dbus-org.freedesktop.ModemManager1.service  # ----> disable Modem
-systemctl disable dbus-org.freedesktop.Avahi.service          # ----> disable Avahi Daemon
-# you can re-enable the service later via systemctl enable <service name>
-
 # disable SSH root login
 sed -i '/#PermitRootLogin/c\PermitRootLogin no' /etc/ssh/sshd_config
 
@@ -346,6 +340,12 @@ echo "random_wait=on" >> /etc/wgetrc
 echo "" >> /etc/bash.bashrc
 echo "alias poweroff='/scripts/secure-poweroff/poweroff'" >> /etc/bash.bashrc
 echo "alias reboot='/scripts/secure-poweroff/reboot'" >> /etc/bash.bashrc
+
+# disable (opinionated) not-needed startup services
+systemctl disable dbus-fi.w1.wpa_supplicant1.service          # ----> disable WIFI Network searching
+systemctl disable dbus-org.freedesktop.ModemManager1.service  # ----> disable Modem
+systemctl disable dbus-org.freedesktop.Avahi.service          # ----> disable Avahi Daemon
+# you can re-enable the service later via systemctl enable <service name>
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_type" = '5' ]; then
 
