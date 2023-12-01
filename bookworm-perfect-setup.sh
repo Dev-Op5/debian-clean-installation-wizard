@@ -136,7 +136,7 @@ fi
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
   str_keyring=/etc/apt/trusted.gpg.d/mariadb-archive-keyring.pgp
   wget --no-check-certificate --quiet -O - https://mariadb.org/mariadb_release_signing_key.pgp | tee $str_keyring >/dev/null
-  echo "deb [arch=$str_arch signed-by=$str_keyring] https://suro.ubaya.ac.id/mariadb/repo/11.2/debian/ $lsb_deb_version main" > /etc/apt/sources.list.d/mariadb.list
+  echo "deb [arch=$str_arch signed-by=$str_keyring] https://suro.ubaya.ac.id/mariadb/repo/11.3/debian/ $lsb_deb_version main" > /etc/apt/sources.list.d/mariadb.list
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
@@ -341,6 +341,8 @@ read -p "Press any key to continue..." any_key
   # install some cool server-administratives packages
   npm install -g uuid@latest
   npm install -g degit vtop pm2
+  # install node version manager
+  wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
 
 fi
 
