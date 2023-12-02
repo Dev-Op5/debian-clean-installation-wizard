@@ -727,6 +727,10 @@ systemctl daemon-reload
   echo "" >> /etc/bash.bashrc
   echo "alias mysqltuner='/scripts/mysqltuner/mysqltuner.pl --cvefile=/scripts/mysqltuner/vulnerabilities.csv --passwordfile=/scripts/mysqltuner/basic_passwords.txt'" >> /etc/bash.bashrc
   cd /tmp
+  wget https://raw.githubusercontent.com/Dev-Op5/mariadb-execute/master/execute
+  chmod +x /tmp/execute
+  sudo cp /tmp/execute /usr/local/bin
+
 fi
 
 ##########################################
@@ -1351,6 +1355,7 @@ EOL
   echo "maxmemory 50M" >> /etc/redis/redis.conf
   echo "maxmemory-policy allkeys-lru" >> /etc/redis/redis.conf
 
+  usermod -a -G redis www-data
   systemctl restart redis-server
 
 fi
