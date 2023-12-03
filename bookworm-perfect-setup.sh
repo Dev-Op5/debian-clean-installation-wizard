@@ -850,8 +850,8 @@ http {
   charset                       utf-8;
   charset_types                 text/css text/plain text/vnd.wap.wml text/javascript text/markdown text/calendar text/x-component text/vcard text/cache-manifest text/vtt application/json application/manifest+json;
 
-  log_format  main              '$status $time_local $remote_addr $body_bytes_sent "$request" "$http_referer" "$http_user_agent" "$http_x_forwarded_for"';
-  log_format  gzip              '$status $time_local $remote_addr $body_bytes_sent "$request" "$http_referer" "$http_user_agent" "$http_x_forwarded_for" "$gzip_ratio"';
+  log_format  main              '[$status] $time_local $http_x_real_ip $body_bytes_sent byte(s) "$request" "$http_referer" "$http_user_agent" [via proxy $remote_addr]';
+  log_format  gzip              '[$status] $time_local $http_x_real_ip $body_bytes_sent byte(s) "$request" "$http_referer" "$http_user_agent" [via proxy $remote_addr] GZip Ratio: "$gzip_ratio"';
   log_format  scripts           '$document_root$fastcgi_script_name > $request';
 
   sendfile                      on;
@@ -863,13 +863,47 @@ http {
   server_name_in_redirect       off;
 
   gzip                          on;
-  gzip_comp_level               6;
-  gzip_vary                     on;
-  gzip_proxied                  any;
-  gzip_buffers                  16 8k;
-  gzip_http_version             1.1;
-  gzip_types                    application/atom+xml application/geo+json application/javascript application/x-javascript application/json application/ld+json application/manifest+json application/rdf+xml application/rss+xml application/vnd.ms-fontobject application/wasm application/x-web-app-manifest+json application/xhtml+xml application/xml font/eot font/otf font/ttf image/bmp image/svg+xml text/cache-manifest text/calendar text/css text/javascript text/markdown text/plain text/xml text/vcard text/vnd.rim.location.xloc text/vtt text/x-component text/x-cross-domain-policy;
   gzip_disable                  "msie6";
+  gzip_comp_level               6;
+  gzip_proxied                  any;
+  gzip_http_version             1.1;
+  gzip_vary                     on;
+  gzip_buffers                  16 8k;
+  gzip_min_length               256;
+  gzip_types                    
+      application/atom+xml 
+      application/geo+json 
+      application/javascript 
+      application/x-javascript 
+      application/json 
+      application/ld+json 
+      application/manifest+json 
+      application/rdf+xml 
+      application/rss+xml 
+      application/vnd.ms-fontobject 
+      application/wasm 
+      application/x-web-app-manifest+json 
+      application/xhtml+xml 
+      application/xml 
+      font/eot 
+      font/otf 
+      font/ttf 
+      font/woff 
+      font/woff2
+      image/bmp 
+      image/svg+xml 
+      text/cache-manifest 
+      text/calendar 
+      text/css 
+      text/javascript 
+      text/markdown 
+      text/plain 
+      text/xml 
+      text/vcard 
+      text/vnd.rim.location.xloc 
+      text/vtt 
+      text/x-component 
+      text/x-cross-domain-policy;
 
   access_log                    /dev/null main;
   error_log                     /dev/null warn;
@@ -887,6 +921,8 @@ http {
 
   client_max_body_size          100M;
   fastcgi_max_temp_file_size    0;
+
+  real_ip_header                X-Forwarded-For;
 
   map $http_upgrade $connection_upgrade {
     default   upgrade;
