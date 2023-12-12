@@ -1204,8 +1204,10 @@ EOL
                  php8.2-mcrypt php8.2-mongodb php8.2-msgpack php8.2-mysql php8.2-odbc php8.2-opcache php8.2-pgsql php8.2-http php8.2-ps php8.2-pspell php8.2-psr php8.2-readline \
                  php8.2-redis php8.2-raphf php8.2-sqlite3 php8.2-ssh2 php8.2-stomp php8.2-uploadprogress php8.2-uuid php8.2-xml php8.2-xmlrpc php8.2-yaml php8.2-zip \
                  php8.3 php8.3-cli php8.3-fpm php8.3-common php8.3-dev libapache2-mod-php8.3 \
-                 php8.3-bcmath php8.3-bz2 php8.3-curl php8.3-dba php8.3-enchant php8.3-gd php8.3-imap php8.3-intl php8.3-mbstring \
-                 php8.3-mysql php8.3-odbc php8.3-opcache php8.3-pgsql php8.3-pspell php8.3-readline php8.3-sqlite3 php8.3-xml php8.3-zip 
+                 php8.3-apcu php8.3-bcmath php8.3-bz2 php8.3-curl php8.3-dba php8.3-enchant php8.3-gd php8.3-gmp php8.3-gnupg php8.3-http php8.3-imagick php8.3-igbinary \
+                 php8.3-imap php8.3-intl php8.3-mailparse php8.3-maxminddb php8.3-mbstring php8.3-memcached php8.3-mongodb php8.3-msgpack php8.3-mysql php8.3-oauth php8.3-odbc \
+                 php8.3-opcache php8.3-pgsql php8.3-ps php8.3-pspell php8.3-psr php8.3-raphf php8.3-readline php8.3-redis php8.3-rrd php8.3-sqlite3 php8.3-ssh2 php8.3-stomp \
+                 php8.3-tidy php8.3-uploadprogress php8.3-uuid php8.3-xml php8.3-xmlrpc php8.3-yaml php8.3-zip 
 
   ############################
   ## configuring php8.2-fpm ##
