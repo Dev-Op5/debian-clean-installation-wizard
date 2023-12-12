@@ -756,6 +756,8 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   sed -i "/#ServerRoot/a ServerName $this_server_name" /etc/apache2/apache2.conf
   sed -i '/Listen 80/c\Listen 127.0.0.1:77' /etc/apache2/ports.conf
   sed -i '/Listen 443/c\Listen 127.0.0.1:7447' /etc/apache2/ports.conf
+  echo "RemoteIPHeader X-Real-IP" > /etc/apache2/conf-available/remoteip.conf
+  ln -s /etc/apache2/conf-available/remoteip.conf /etc/apache2/conf-enabled/remoteip.conf
 
 cat > /etc/apache2/sites-available/000-default.conf << 'EOL'
 <VirtualHost 127.0.0.1:77>
@@ -989,6 +991,9 @@ resolver                  8.8.8.8 8.8.4.4 valid=300s;
 resolver_timeout          10s;
 ssl_trusted_certificate   /etc/nginx/certs/lets-encrypt-x3-cross-signed.pem;
 
+EOL
+
+cat > /etc/nginx/snippets/headers.conf << 'EOL'
 add_header                Strict-Transport-Security "max-age=63072000; includeSubDomains" always;
 add_header                X-Frame-Options SAMEORIGIN;
 add_header                X-Content-Type-Options nosniff always;
@@ -1054,6 +1059,8 @@ server {
   root                       /usr/share/nginx/html;
   index                      index.php index.html info.php ;
 
+  include                    /etc/nginx/snippets/headers.conf;
+  
   error_page                 404              /404.html;
   error_page                 500 502 503 504  /50x.html;
   location =                 /50x.html { root  /usr/share/nginx/html; }
@@ -1101,6 +1108,7 @@ server {
   ssl_certificate            /etc/letsencrypt/live/nginx.example.domain/fullchain.pem;
   ssl_certificate_key        /etc/letsencrypt/live/nginx.example.domain/privkey.pem;
   include                    /etc/nginx/snippets/ssl-params.conf;
+  include                    /etc/nginx/snippets/headers.conf;
 
   root                       /var/www/nginx.example.domain/;
   index                      index.php index.html info.php;
@@ -1147,6 +1155,7 @@ server {
   ssl_certificate            /etc/letsencrypt/live/nginx.example.domain/fullchain.pem;
   ssl_certificate_key        /etc/letsencrypt/live/nginx.example.domain/privkey.pem;
   include                    /etc/nginx/snippets/ssl-params.conf;
+  include                    /etc/nginx/snippets/headers.conf;
 
   root                       /var/www/nginx.example.domain/;
 
@@ -1185,6 +1194,7 @@ server {
   ssl_certificate            /etc/letsencrypt/live/nginx.example.domain/fullchain.pem;
   ssl_certificate_key        /etc/letsencrypt/live/nginx.example.domain/privkey.pem;
   include                    /etc/nginx/snippets/ssl-params.conf;
+  include                    /etc/nginx/snippets/headers.conf;
 
   root                       /var/www/nginx.example.domain/;
 
@@ -1335,7 +1345,6 @@ EOL
 
   # create the webroot workspaces
   mkdir -p /var/www/
-  chown -R www-data:www-data /var/www/
 
   # restart all of the webserver's daemon
   systemctl daemon-reload
@@ -1378,6 +1387,7 @@ EOL
   ################
   apt install -y redis-server
   usermod -a -G www-data redis
+  usermod -a -G redis www-data
   mkdir -p /var/run/redis
   chown -R redis:www-data /var/run/redis
   sed -i '/\<supervised no\>/c\supervised systemd' /etc/redis/redis.conf
@@ -1386,15 +1396,16 @@ EOL
   sed -i "/# requirepass foobared/c\requirepass $redis_password" /etc/redis/redis.conf
   # make redis-server just listen to unix socket rather dan listen to global network via TCP
   sed -i '/\<# bind 127.0.0.1 ::1\>/c\bind 127.0.0.1' /etc/redis/redis.conf
-  sed -i '/\<# unixsocket /var/run/redis/redis-server.sock\>/c\unixsocket /var/run/redis/redis.sock' /etc/redis/redis.conf
-  sed -i '/\<# unixsocketperm 700\>/c\unixsocketperm 775' /etc/redis/redis.conf
+  sed -i 's!# unixsocket /run/redis/redis-server.sock!unixsocket /var/run/redis/redis.sock!g' /etc/redis/redis.conf
+  sed -i 's!# unixsocketperm 700!unixsocketperm 775!g' /etc/redis/redis.conf
   # other optimization
-  sed -i '/\<stop-writes-on-bgsave-error yes\>/c\stop-writes-on-bgsave-error no' /etc/redis/redis.conf
+  sed -i 's!stop-writes-on-bgsave-error yes!stop-writes-on-bgsave-error no!g' /etc/redis/redis.conf
   echo "maxmemory 50M" >> /etc/redis/redis.conf
   echo "maxmemory-policy allkeys-lru" >> /etc/redis/redis.conf
 
-  usermod -a -G redis www-data
   systemctl restart redis-server
+
+  chown -R www-data:www-data /var/www/
 
 fi
 
@@ -1592,11 +1603,8 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ]  || [ "$appserver_
   echo "" >> $install_summarize
 fi
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ]  || [ "$appserver_type" = '5' ]; then
-  mysql_ver=$(/usr/bin/mariadb/mariadb --version)
   mysqltuner_ver=$(/scripts/mysqltuner/mysqltuner.pl --test | grep "High Performance Tuning Script" 2>&1)
   echo "[MariaDB Information]" >> $install_summarize
-  echo "$mysql_ver" >> $install_summarize
-  echo "MariaDB root Password : $db_root_password" >> $install_summarize
   echo "MySQLTuner : $mysqltuner_ver (installed at /scripts/mysqltuner/mysqltuner.pl)" >> $install_summarize
   echo "" >> $install_summarize
 fi
