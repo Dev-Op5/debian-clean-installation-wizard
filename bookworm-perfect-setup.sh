@@ -143,7 +143,7 @@ fi
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
   str_keyring=/etc/apt/trusted.gpg.d/mariadb-archive-keyring.pgp
   wget --no-check-certificate --quiet -O - https://mariadb.org/mariadb_release_signing_key.pgp | tee $str_keyring >/dev/null
-  echo "deb [arch=$str_arch signed-by=$str_keyring] https://suro.ubaya.ac.id/mariadb/repo/11.3/debian/ $lsb_deb_version main" > /etc/apt/sources.list.d/mariadb.list
+  echo "deb [arch=$str_arch signed-by=$str_keyring] https://download.nus.edu.sg/mirror/mariadb/repo/11.3/debian $lsb_deb_version main" > /etc/apt/sources.list.d/mariadb.list
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
@@ -659,10 +659,10 @@ concurrent_insert         = 2
 # you can put MariaDB-only options here
 [mariadbd]
 
-# This group is only read by MariaDB-11.2 servers.
+# This group is only read by MariaDB-11.3 servers.
 # If you use the same .cnf file for MariaDB of different versions,
 # use this group for options that older servers don't understand
-[mariadb-11.2]
+[mariadb-11.3]
 
 EOL
 
@@ -1208,82 +1208,17 @@ server {
   }
 }
 EOL
-  
-  apt install -y php8.2 php8.2-cli php8.2-fpm php8.2-common php8.2-dev libapache2-mod-php8.2 \
-                 php8.2-bcmath php8.2-bz2 php8.2-curl php8.2-dba php8.2-enchant php8.2-gd php8.2-gnupg php8.2-imagick php8.2-imap php8.2-intl php8.2-mailparse php8.2-mbstring \
-                 php8.2-mcrypt php8.2-mongodb php8.2-msgpack php8.2-mysql php8.2-odbc php8.2-opcache php8.2-pgsql php8.2-http php8.2-ps php8.2-pspell php8.2-psr php8.2-readline \
-                 php8.2-redis php8.2-raphf php8.2-sqlite3 php8.2-ssh2 php8.2-stomp php8.2-uploadprogress php8.2-uuid php8.2-xml php8.2-xmlrpc php8.2-yaml php8.2-zip \
-                 php8.3 php8.3-cli php8.3-fpm php8.3-common php8.3-dev libapache2-mod-php8.3 \
-                 php8.3-apcu php8.3-bcmath php8.3-bz2 php8.3-curl php8.3-dba php8.3-enchant php8.3-gd php8.3-gmp php8.3-gnupg php8.3-http php8.3-imagick php8.3-igbinary \
-                 php8.3-imap php8.3-intl php8.3-mailparse php8.3-maxminddb php8.3-mbstring php8.3-memcached php8.3-mongodb php8.3-msgpack php8.3-mysql php8.3-oauth php8.3-odbc \
-                 php8.3-opcache php8.3-pgsql php8.3-ps php8.3-pspell php8.3-psr php8.3-raphf php8.3-readline php8.3-redis php8.3-rrd php8.3-sqlite3 php8.3-ssh2 php8.3-stomp \
-                 php8.3-tidy php8.3-uploadprogress php8.3-uuid php8.3-xml php8.3-xmlrpc php8.3-yaml php8.3-zip 
-
-  ############################
-  ## configuring php8.2-fpm ##
-  ############################
-
-  mkdir -p /var/lib/php/8.2/sessions
-  chmod -R 777 /var/lib/php/8.2/sessions
-
-  # backup existing configuration
-  mkdir -p /etc/php/8.2/0riginal.config
-  cp /etc/php/8.2/fpm/php.ini /etc/php/8.2/0riginal.config/php-fpm.ini
-  cp /etc/php/8.2/cli/php.ini /etc/php/8.2/0riginal.config/php-cli.ini
-  cp /etc/php/8.2/fpm/pool.d/www.conf /etc/php/8.2/0riginal.config/fpm-pool.d-www.conf
-
-  PHP_INI_FILE=/etc/php/8.2/fpm/php.ini
-  sed -i '/post_max_size/c\post_max_size = 100M' $PHP_INI_FILE
-  sed -i '/;cgi.fix_pathinfo/c\cgi.fix_pathinfo=1' $PHP_INI_FILE
-  sed -i '/;upload_tmp_dir/c\upload_tmp_dir=/tmp' $PHP_INI_FILE
-  sed -i '/upload_max_filesize/c\upload_max_filesize=64M' $PHP_INI_FILE
-  sed -i '/;date.timezone/c\date.timezone=Asia/Jakarta' $PHP_INI_FILE
-  sed -i '/;date.default_latitude/c\date.default_latitude = -6.211544' $PHP_INI_FILE
-  sed -i '/;date.default_longitude/c\date.default_longitude = 106.84517200000005' $PHP_INI_FILE
-  sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/8.2/sessions"' $PHP_INI_FILE
-  sed -i '/;opcache.enable=1/c\opcache.enable=1' $PHP_INI_FILE
-  sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' $PHP_INI_FILE
-  if [ ! -z "$email_account" ]; then
-    sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
-  fi 
-
-  PHP_INI_FILE=/etc/php/8.2/cli/php.ini
-  sed -i '/post_max_size/c\post_max_size = 100M' $PHP_INI_FILE
-  sed -i '/;cgi.fix_pathinfo/c\cgi.fix_pathinfo=1' $PHP_INI_FILE
-  sed -i '/;upload_tmp_dir/c\upload_tmp_dir=/tmp' $PHP_INI_FILE
-  sed -i '/upload_max_filesize/c\upload_max_filesize=64M' $PHP_INI_FILE
-  sed -i '/;date.timezone/c\date.timezone=Asia/Jakarta' $PHP_INI_FILE
-  sed -i '/;date.default_latitude/c\date.default_latitude = -6.211544' $PHP_INI_FILE
-  sed -i '/;date.default_longitude/c\date.default_longitude = 106.84517200000005' $PHP_INI_FILE
-  sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/8.2/sessions"' $PHP_INI_FILE
-  sed -i '/;opcache.enable=1/c\opcache.enable=1' $PHP_INI_FILE
-  sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' $PHP_INI_FILE
-  if [ ! -z "$email_account" ]; then
-    sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
-  fi  
-
-  PHP_WWW_CONF_FILE=/etc/php/8.2/fpm/pool.d/www.conf
-  sed -i '/listen = \/run\/php\/php8.2-fpm.sock/c\listen = \/var\/run\/php8.2-fpm.sock' $PHP_WWW_CONF_FILE
-  sed -i '/;listen.mode = 0660/c\listen.mode = 0660' $PHP_WWW_CONF_FILE
-
-  if [ "$appserver_type" = '2' ]; then
-    recommended_max_children=$((($memtotal*75/100/(64*1024))/10*10)) #for dedicated webserver : set PHP-FPM to using max 75% total RAM for about allocated 64MB per process threads
-  fi
-  if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '5' ]; then
-    recommended_max_children=$((($memtotal*35/100/(64*1024))/10*10)) #for multifunctional server : set PHP-FPM to using max 35% total RAM for about allocated 64MB per process threads
-  fi
-  min_spare_server=2
-  max_spare_server=$(($recommended_max_children*75/100))
-  max_spawn_rate=32
-  
-  sed -i "/pm.max_children/c\pm.max_children = $recommended_max_children" $PHP_WWW_CONF_FILE
-  sed -i "/pm.min_spare_servers/c\pm.min_spare_servers = $min_spare_server" $PHP_WWW_CONF_FILE
-  sed -i "/pm.max_spare_servers/c\pm.max_spare_servers = $max_spare_server" $PHP_WWW_CONF_FILE
-  sed -i "/pm.max_spawn_rate/c\pm.max_spawn_rate = $max_spawn_rate" $PHP_WWW_CONF_FILE
 
   ############################
   ## configuring php8.3-fpm ##
   ############################
+
+  apt install -y php8.3 php8.3-cli php8.3-fpm php8.3-common php8.3-dev libapache2-mod-php8.3 \
+               php8.3-apcu php8.3-bcmath php8.3-bz2 php8.3-curl php8.3-dba php8.3-enchant php8.3-gd php8.3-gmp php8.3-gnupg php8.3-http php8.3-imagick php8.3-igbinary \
+               php8.3-imap php8.3-intl php8.3-mailparse php8.3-maxminddb php8.3-mbstring php8.3-memcached php8.3-mongodb php8.3-msgpack php8.3-mysql php8.3-oauth php8.3-odbc \
+               php8.3-opcache php8.3-pgsql php8.3-ps php8.3-pspell php8.3-psr php8.3-raphf php8.3-readline php8.3-redis php8.3-rrd php8.3-sqlite3 php8.3-ssh2 php8.3-stomp \
+               php8.3-tidy php8.3-uploadprogress php8.3-uuid php8.3-xml php8.3-xmlrpc php8.3-yaml php8.3-zip 
+
 
   mkdir -p /var/lib/php/8.3/sessions
   chmod -R 777 /var/lib/php/8.3/sessions
