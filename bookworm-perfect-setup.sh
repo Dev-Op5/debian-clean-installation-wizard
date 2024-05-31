@@ -143,7 +143,7 @@ fi
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '3' ] || [ "$appserver_type" = '5' ]; then
   str_keyring=/etc/apt/trusted.gpg.d/mariadb-archive-keyring.pgp
   wget --no-check-certificate --quiet -O - https://mariadb.org/mariadb_release_signing_key.pgp | tee $str_keyring >/dev/null
-  echo "deb [arch=$str_arch signed-by=$str_keyring] https://download.nus.edu.sg/mirror/mariadb/repo/11.3/debian $lsb_deb_version main" > /etc/apt/sources.list.d/mariadb.list
+  echo "deb [arch=$str_arch signed-by=$str_keyring] https://mariadb.sg.ssimn.org/repo/11.4/debian $lsb_deb_version main" > /etc/apt/sources.list.d/mariadb.list
 fi
 
 if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '4' ] || [ "$appserver_type" = '5' ]; then
@@ -183,9 +183,8 @@ net.ipv4.tcp_no_metrics_save = 1
 net.ipv4.tcp_tw_recycle = 1
 net.ipv4.tcp_tw_reuse = 1
 net.ipv4.ip_local_port_range = 10240    65535
-# for 1 GigE, increase this to 2500
-# for 10 GigE, increase this to 30000
 net.core.netdev_max_backlog = 2500
+# for 10 GigE, increase above value to 30000
 EOL
 
 # prioritize IPv4 over IPv6 rather than completely disable the IPv6 support.
@@ -209,8 +208,8 @@ echo "Breakpoint #1 : will install essentials packages, mail, git, and some scri
 read -p "Press any key to continue..." any_key
 
 apt install -y acl ca-certificates certbot curl dnsutils ed git hdparm imagemagick libsqlite3-dev libtool locales-all \
-               locate lynx module-assistant net-tools openssl optipng p7zip-full pcregrep pdftk python3-pip rsync sudo \
-               tcpdump traceroute unzip uuid-dev whois wkhtmltopdf zip
+               locate lynx module-assistant net-tools openssl optipng p7zip-full pcregrep pdftk python3-full python3-pip \
+               rsync sudo tcpdump traceroute unzip uuid-dev whois wkhtmltopdf zip
 
 /sbin/locale-gen en_US en_US.UTF-8 id_ID id_ID.UTF-8
 /usr/bin/localedef -i en_US -f UTF-8 en_US.UTF-8
@@ -358,7 +357,7 @@ read -p "Press any key to continue..." any_key
   str_keyring=/etc/apt/trusted.gpg.d/nodesource-archive-keyring.gpg
   wget --no-check-certificate --quiet -O - https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor |  tee $str_keyring >/dev/null
   NODE_MAJOR=20
-  echo "deb [signed-by=$str_keyring] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
+  echo "deb [arch=$str_arch signed-by=$str_keyring] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list
 
   str_keyring=/etc/apt/trusted.gpg.d/yarn-archive-keyring.gpg
   wget --no-check-certificate --quiet -O - https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor |  tee $str_keyring >/dev/null
@@ -370,7 +369,7 @@ read -p "Press any key to continue..." any_key
   npm install -g uuid@latest
   npm install -g degit vtop pm2
   # install node version manager
-  wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+  wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
 
 fi
 
@@ -384,10 +383,11 @@ echo "Breakpoint #3 : will install mariadb database"
 read -p "Press any key to continue..." any_key
 
   apt install -y mariadb-server mariadb-server-core mariadb-client mariadb-client-core \
-                 mariadb-plugin-connect mariadb-plugin-cracklib-password-check
+                 mariadb-backup \
+                 mariadb-plugin-connect mariadb-plugin-cracklib-password-check mariadb-plugin-columnstore
 
   # plugins that (commonly) will not installed:
-  # mariadb-plugin-gssapi-server mariadb-plugin-gssapi-client mariadb-plugin-oqgraph mariadb-plugin-mroonga mariadb-plugin-rocksdb mariadb-plugin-s3 mariadb-plugin-spider mariadb-plugin-columnstore 
+  # mariadb-plugin-gssapi-server mariadb-plugin-gssapi-client mariadb-plugin-oqgraph mariadb-plugin-mroonga mariadb-plugin-rocksdb mariadb-plugin-s3 mariadb-plugin-spider
 
   # reconfigure my.cnf
   mkdir -p /tmp/mariadb.config
@@ -538,7 +538,7 @@ cat > $MARIADB_SYSTEMD_CONFIG_DIR/50-server.cnf << EOL
 # this is read by the standalone daemon and embedded servers
 [server]
 
-[mysqld]
+[mariadbd]
 # ------------------------------------------------------------------------------- : SERVER PROFILE
 server_id                 = 1
 bind-address              = ${cfg_binded_address}
@@ -631,7 +631,6 @@ innodb_file_per_table     = 1
 innodb_open_files         = 2000
 innodb_io_capacity        = 2000
 innodb_io_capacity_max    = 4000
-innodb_thread_concurrency = 0
 innodb_read_io_threads    = 64
 innodb_write_io_threads   = 64
 innodb_flush_method       = O_DIRECT
@@ -662,7 +661,7 @@ concurrent_insert         = 2
 # This group is only read by MariaDB-11.3 servers.
 # If you use the same .cnf file for MariaDB of different versions,
 # use this group for options that older servers don't understand
-[mariadb-11.3]
+[mariadb-11.4]
 
 EOL
 
@@ -742,13 +741,15 @@ if [ "$appserver_type" = '1' ] || [ "$appserver_type" = '2' ] || [ "$appserver_t
   read -p "Press any key to continue..." any_key
 
   apt install -y nginx nginx-doc libnginx-mod-stream-geoip libnginx-mod-http-geoip libgeoip-dev \
-                 libnginx-mod-http-image-filter
+                 libnginx-mod-http-image-filter libnginx-mod-http-cache-purge libnginx-mod-http-fancyindex \
+                 libnginx-mod-http-uploadprogress
   
   #################################
   ## Apache2 Redundant Webserver ##
   #################################
   # create secondary webserver instance (Apache) that runs in port 77 (HTTP) and 7447 (HTTP/SSL)
   
+  systemctl stop nginx
   apt install -y apache2
   a2enmod actions alias deflate expires headers http2 negotiation proxy proxy_fcgi proxy_http2 reflector remoteip rewrite setenvif substitute vhost_alias
 
@@ -781,7 +782,9 @@ EOL
   
   rm -R /var/www/html
   echo '<?php phpinfo(); ?>' > /usr/share/apache2/default-site/info.php
- 
+
+systemctl stop apache2
+
 ##########################################
 # configuring the webservers             #
 ##########################################
@@ -965,7 +968,7 @@ if ($request_method !~ ^(GET|HEAD|POST|PUT|DELETE|OPTIONS)$ ) { return 444; }
 ## Deny certain Referers
 if ( $http_referer ~* (babes|love|nudit|poker|porn|sex) )  { return 404; return 403; }
 ## Cache the static contents
-location ~* ^.+.(jpg|jpeg|gif|png|ico|svg|woff|woff2|ttf|eot|txt|swf|mp4|ogg|flv|mp3|wav|mid|mkv|avi|3gp|webm|webp)$ { access_log off; expires max; }
+location ~* ^.+.(ico|woff|woff2|ttf|eot|swf|mp4|ogg|flv|mp3|wav|mid|mkv|avi|3gp|webm|webp)$ { access_log off; expires max; }
 EOL
 
 ### custom config 2 : SSL snippet
@@ -1214,10 +1217,14 @@ EOL
   ############################
 
   apt install -y php8.3 php8.3-cli php8.3-fpm php8.3-common php8.3-dev libapache2-mod-php8.3 \
-               php8.3-apcu php8.3-bcmath php8.3-bz2 php8.3-curl php8.3-dba php8.3-enchant php8.3-gd php8.3-gmp php8.3-gnupg php8.3-http php8.3-imagick php8.3-igbinary \
-               php8.3-imap php8.3-intl php8.3-mailparse php8.3-maxminddb php8.3-mbstring php8.3-memcached php8.3-mongodb php8.3-msgpack php8.3-mysql php8.3-oauth php8.3-odbc \
-               php8.3-opcache php8.3-pgsql php8.3-ps php8.3-pspell php8.3-psr php8.3-raphf php8.3-readline php8.3-redis php8.3-rrd php8.3-sqlite3 php8.3-ssh2 php8.3-stomp \
-               php8.3-tidy php8.3-uploadprogress php8.3-uuid php8.3-xml php8.3-xmlrpc php8.3-yaml php8.3-zip 
+               php8.3-apcu php8.3-bcmath php8.3-bz2 php8.3-curl php8.3-dba php8.3-decimal php8.3-enchant \
+               php8.3-gd php8.3-gmp php8.3-gnupg php8.3-http php8.3-imagick php8.3-igbinary php8.3-imap \
+               php8.3-intl php8.3-mailparse php8.3-maxminddb php8.3-mbstring php8.3-memcached \
+               php8.3-mongodb php8.3-msgpack php8.3-mysql php8.3-oauth php8.3-odbc php8.3-opcache \
+               php8.3-phalcon5 \
+               php8.3-pgsql php8.3-ps php8.3-pspell php8.3-psr php8.3-raphf php8.3-readline \
+               php8.3-redis php8.3-rrd php8.3-sqlite3 php8.3-ssh2 php8.3-stomp php8.3-tidy \
+               php8.3-uploadprogress php8.3-uuid php8.3-xml php8.3-xmlrpc php8.3-yaml php8.3-zip 
 
 
   mkdir -p /var/lib/php/8.3/sessions
@@ -1286,7 +1293,6 @@ EOL
   systemctl enable nginx
   systemctl restart apache2.service
   systemctl restart nginx.service
-  systemctl restart php8.2-fpm
   systemctl restart php8.3-fpm
 
 # normalize the /etc/hosts values
@@ -1378,12 +1384,15 @@ if [ "$appserver_type" = '5' ]; then
   read -p "Press any key to continue..." any_key
 
   echo "Installing necessary python libraries"
-  apt install -y python3-pip python3-setuptools python3-dev python3-openid python3-yaml python3-ldap
-  pip3 install babel psycopg2 werkzeug simplejson pillow lxml cups \
-               dateutils decorator docutils feedparser geoip gevent \
-               jinja2 mako mock num2words passlib psutil pydot \
-               pyparsing reportlab requests tz unicodecsv unittest2 \
-               vatnumber vobject xlwt
+  apt install -y libsasl2-dev libldap2-dev libssl-dev
+  apt install -y python-dev-is-python3 python3-babel python3-cups python3-decorator python3-dev \
+                 python3-docutils python3-feedparser python3-geoip python3-geoip2 python3-gevent \
+                 python3-jinja2 python3-ldap python3-libsass python3-lxml python3-mako python3-mock \
+                 python3-num2words python3-openid python3-passlib python3-pillow python3-pip \
+                 python3-polib python3-psutil python3-psycopg2 python3-pydot python3-pyparsing \
+                 python3-pypdf2 python3-reportlab python3-requests python3-rjsmin python3-setuptools \
+                 python3-simplejson python3-stdnum python3-tz python3-unicodecsv python3-unittest2 \
+                 python3-vobject python3-werkzeug python3-xlwt python3-yaml
 
   echo "---------------------------------------------------"
   echo " INSTALLING Odoo Community Backport v17 ..........."
@@ -1426,8 +1435,9 @@ EOL
 
   echo "install another odoo dependencies..."
   cd /opt/odoo
-  npm install -g less less-plugin-clean-css rtlcss generator-feathers graceful-fs@^4.0.0 yo minimatch@^3.0.2 -y
-  pip3 install -r requirements.txt
+  npm install -g less@3.10.3 less-plugin-clean-css rtlcss generator-feathers graceful-fs@^4.0.0 yo minimatch@^3.0.2 -y
+  python3 -m venv /opt/odoo
+  /opt/odoo/bin/pip3 install -r requirements.txt
 
   echo "Write odoo startup script to /etc/init.d/odoo-server"
 
