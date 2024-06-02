@@ -1415,6 +1415,12 @@ if [ "$appserver_type" = '5' ]; then
   chown -R odoo:odoo /opt/odoo
   chown -R odoo:odoo /var/log/odoo/
 
+  echo "install another odoo dependencies..."
+  cd /opt/odoo
+  npm install -g less@3.10.3 less-plugin-clean-css rtlcss generator-feathers graceful-fs@^4.0.0 yo minimatch@^3.0.2 -y
+  python3 -m venv /opt/odoo
+  /opt/odoo/bin/pip3 install -r requirements.txt
+
   echo "Write odoo global configuration to /etc/odoo-server.conf"
 
 cat > /etc/odoo-server.conf << EOL
@@ -1427,98 +1433,39 @@ db_user = odoo
 db_password = ${db_root_password}
 addons_path = /opt/odoo/addons
 logfile = /var/log/odoo/odoo-server.log
-
 EOL
 
   chown odoo: /etc/odoo-server.conf
   chmod 640 /etc/odoo-server.conf
-
-  echo "install another odoo dependencies..."
-  cd /opt/odoo
-  npm install -g less@3.10.3 less-plugin-clean-css rtlcss generator-feathers graceful-fs@^4.0.0 yo minimatch@^3.0.2 -y
-  python3 -m venv /opt/odoo
-  /opt/odoo/bin/pip3 install -r requirements.txt
-
-  echo "Write odoo startup script to /etc/init.d/odoo-server"
-
-cat > /etc/init.d/odoo-server << 'EOL'
-
-#!/bin/sh
-### BEGIN INIT INFO
-# Provides:             odoo-server
-# Required-Start:       $remote_fs $syslog
-# Required-Stop:        $remote_fs $syslog
-# Should-Start:         $network
-# Should-Stop:          $network
-# Default-Start:        2 3 4 5
-# Default-Stop:         0 1 6
-# Short-Description:    Complete Business Application software
-# Description:          Odoo Community Backport is a complete suite of business tools.
-### END INIT INFO
-PATH=/bin:/sbin:/usr/bin:/usr/local/bin
-DAEMON=/opt/odoo/odoo-bin
-NAME=odoo-server
-DESC=odoo-server
-# Specify the user name (Default: odoo).
-USER=odoo
-# Specify an alternate config file (Default: /etc/odoo-server.conf).
-CONFIGFILE="/etc/odoo-server.conf"
-# pidfile
-PIDFILE=/var/run/$NAME.pid
-# Additional options that are passed to the Daemon.
-DAEMON_OPTS="-c $CONFIGFILE"
-[ -x $DAEMON ] || exit 0
-[ -f $CONFIGFILE ] || exit 0
-checkpid() {
-    [ -f $PIDFILE ] || return 1
-    pid=`cat $PIDFILE`
-    [ -d /proc/$pid ] && return 0
-    return 1
-}
-case "${1}" in
-        start)
-                echo -n "Starting ${DESC}: "
-                start-stop-daemon --start --quiet --pidfile ${PIDFILE} \
-                        --chuid ${USER} --background --make-pidfile \
-                        --exec ${DAEMON} -- ${DAEMON_OPTS}
-                echo "${NAME}."
-                ;;
-        stop)
-                echo -n "Stopping ${DESC}: "
-                start-stop-daemon --stop --quiet --pidfile ${PIDFILE} \
-                        --oknodo
-                echo "${NAME}."
-                ;;
-        restart|force-reload)
-                echo -n "Restarting ${DESC}: "
-                start-stop-daemon --stop --quiet --pidfile ${PIDFILE} \
-                        --oknodo
-
-                sleep 1
-                start-stop-daemon --start --quiet --pidfile ${PIDFILE} \
-                        --chuid ${USER} --background --make-pidfile \
-                        --exec ${DAEMON} -- ${DAEMON_OPTS}
-                echo "${NAME}."
-                ;;
-        *)
-                N=/etc/init.d/${NAME}
-                echo "Usage: ${NAME} {start|stop|restart|force-reload}" >&2
-                exit 1
-                ;;
-esac
-exit 0
-
-EOL
-
-  chmod 755 /etc/init.d/odoo-server
-  chown root: /etc/init.d/odoo-server
-
   mkdir -p /var/log/odoo
   chown -R odoo:root /var/log/odoo
   chmod -R 777 /var/log/odoo
 
-  update-rc.d odoo-server defaults
-  /etc/init.d/odoo-server start
+  echo "Write odoo systemd service"
+
+cat > /etc/systemd/system/odoo.service << EOL
+[Unit]
+Description=Odoo
+Requires=postgresql.service
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+SyslogIdentifier=odoo
+PermissionsStartOnly=true
+User=odoo
+Group=odoo
+ExecStart=/opt/odoo/bin/python3 /opt/odoo/odoo-bin -c /etc/odoo-server.conf
+StandardOutput=journal+console
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+EOL
+
+  systemctl daemon-reload
+  systemctl enable odoo
+  systemctl start odoo.service
 
 fi
 
