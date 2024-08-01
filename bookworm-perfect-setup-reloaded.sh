@@ -369,11 +369,8 @@ read -p "Press any key to continue..." any_key
   npm install -g uuid@latest
   npm install -g degit vtop pm2
   # install node version manager
-<<<<<<< HEAD
+
   wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash
-=======
-  wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash
->>>>>>> 115d3f57d8d348077e649641454250ebdb460f0f
 
 fi
 
