@@ -370,7 +370,7 @@ read -p "Press any key to continue..." any_key
   npm install -g uuid@latest
   npm install -g degit vtop pm2
   # install node version manager
-  wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+  wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.0/install.sh | bash
 
 fi
 
@@ -390,13 +390,9 @@ read -p "Press any key to continue..." any_key
   # mariadb-plugin-gssapi-server mariadb-plugin-gssapi-client mariadb-plugin-oqgraph mariadb-plugin-mroonga mariadb-plugin-rocksdb mariadb-plugin-s3 mariadb-plugin-spider mariadb-plugin-columnstore 
 
   # reconfigure my.cnf
-  mkdir -p /tmp/mariadb.config
-
   MARIADB_SYSTEMD_CONFIG_DIR=/etc/mysql/mariadb.conf.d
   zip -r /etc/mysql/0riginal.config.zip $MARIADB_SYSTEMD_CONFIG_DIR
   cp -r $MARIADB_SYSTEMD_CONFIG_DIR /etc/mysql/0riginal.mariadb.conf.d
-
-  cd /tmp/mariadb.config
 
 cat > $MARIADB_SYSTEMD_CONFIG_DIR/50-client.cnf << EOL
 # MariaDB database server configuration file.
@@ -468,43 +464,6 @@ max_allowed_packet        = 1024M
 
 EOL
 
-cat > $MARIADB_SYSTEMD_CONFIG_DIR/50-mariadb_safe.cnf << EOL
-# MariaDB database server configuration file.
-# Configured template by eRQee (rizky@prihanto.web.id)
-# -------------------------------------------------------------------------------
-#
-# NOTE: THIS FILE IS READ ONLY BY THE TRADITIONAL SYSV INIT SCRIPT, NOT SYSTEMD.
-# MARIADB SYSTEMD DOES _NOT_ UTILIZE MYSQLD_SAFE NOR READ THIS FILE.
-#
-# For similar behavior, systemd users should create the following file:
-# /etc/systemd/system/mariadb.service.d/migrated-from-my.cnf-settings.conf
-#
-# To achieve the same result as the default 50-mysqld_safe.cnf, please create
-# /etc/systemd/system/mariadb.service.d/migrated-from-my.cnf-settings.conf
-# with the following contents:
-#
-# [Service]
-# User=mysql
-# StandardOutput=syslog
-# StandardError=syslog
-# SyslogFacility=daemon
-# SyslogLevel=err
-# SyslogIdentifier=mariadbd
-#
-# For more information, please read https://mariadb.com/kb/en/mariadb/systemd/
-
-[mariadbd-safe]
-# This will be passed to all mysql clients
-# It has been reported that passwords should be enclosed with ticks/quotes
-# especially if they contain "#" chars...
-#
-socket                    = /var/run/mysqld/mysqld.sock
-nice                      = 0
-skip_log_error
-syslog
-
-EOL
-
 cfg_binded_address=127.0.0.1
 if [ "$appserver_type" = '3' ]; then
   cfg_binded_address=0.0.0.0
@@ -538,7 +497,7 @@ cat > $MARIADB_SYSTEMD_CONFIG_DIR/50-server.cnf << EOL
 # this is read by the standalone daemon and embedded servers
 [server]
 
-[mysqld]
+[mariadbd]
 # ------------------------------------------------------------------------------- : SERVER PROFILE
 server_id                 = 1
 bind-address              = ${cfg_binded_address}
@@ -662,7 +621,7 @@ concurrent_insert         = 2
 # This group is only read by MariaDB-11.3 servers.
 # If you use the same .cnf file for MariaDB of different versions,
 # use this group for options that older servers don't understand
-[mariadb-11.3]
+[mariadb-11.4]
 
 EOL
 
@@ -1286,7 +1245,6 @@ EOL
   systemctl enable nginx
   systemctl restart apache2.service
   systemctl restart nginx.service
-  systemctl restart php8.2-fpm
   systemctl restart php8.3-fpm
 
 # normalize the /etc/hosts values
