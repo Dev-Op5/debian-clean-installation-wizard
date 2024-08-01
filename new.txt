@@ -1,0 +1,1 @@
+apt install apt-transport-https certbot curl ed ffmpeg fontconfig git gnupg gnupg1 gnupg2 hdparm imagemagick libsqlite3-dev locales-all locate nettools openssh-server openssh-sftp-server optipng p7zip-full p7zip-rar pcregrep pdftk python3-pip rsync software-properties-common sudo tcpdump traceroute uuid-dev util-linux-locales unzip wget whois zip
