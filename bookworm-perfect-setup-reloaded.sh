@@ -97,7 +97,7 @@ echo ""
 echo "Enter your Git/Github/Gitlab name & email below."
 echo "~ the information will be used as this server's Git identity ~"
 echo ""
-read -p "Git Account Name : " git_user_name
+read -p "Git Account Name  : " git_user_name
 read -p "Git Account Email : " git_user_email
 
 echo ""
