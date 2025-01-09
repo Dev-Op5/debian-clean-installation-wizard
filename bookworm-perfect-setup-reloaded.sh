@@ -732,7 +732,7 @@ cat > /etc/apache2/sites-available/000-default.conf << 'EOL'
     </Directory>
 
     <FilesMatch \.php$>
-        SetHandler "proxy:unix:/var/run/php8.3-fpm.sock|fcgi://localhost"
+        SetHandler "proxy:unix:/var/run/php8.4-fpm.sock|fcgi://localhost"
     </FilesMatch>
 
     ErrorLog ${APACHE_LOG_DIR}/error.log
@@ -1034,7 +1034,7 @@ server {
     if (!-f $document_root$fastcgi_script_name) { return 404; }
     fastcgi_split_path_info  ^(.+?\.php)(/.*)$;
     ## [alternative] ##      fastcgi_split_path_info ^(.+\.php)(/.+)$;
-    fastcgi_pass             unix:/var/run/php8.3-fpm.sock;
+    fastcgi_pass             unix:/var/run/php8.4-fpm.sock;
     fastcgi_index            index.php;
     include                  /etc/nginx/fastcgi_params;
   }
@@ -1086,7 +1086,7 @@ server {
     if (!-f $document_root$fastcgi_script_name) { return 404; }
     fastcgi_split_path_info  ^(.+?\.php)(/.*)$;
     ## [alternative] ##      fastcgi_split_path_info ^(.+\.php)(/.+)$;
-    fastcgi_pass             unix:/var/run/php8.3-fpm.sock;
+    fastcgi_pass             unix:/var/run/php8.4-fpm.sock;
     fastcgi_index            index.php;
     include                  /etc/nginx/fastcgi_params;
   }
@@ -1173,30 +1173,29 @@ server {
 EOL
 
   ############################
-  ## configuring php8.3-fpm ##
+  ## configuring php8.4-fpm ##
   ############################
 
-  apt install -y php8.3 php8.3-cli php8.3-fpm php8.3-common php8.3-dev libapache2-mod-php8.3 \
-               php8.3-apcu php8.3-bcmath php8.3-bz2 php8.3-curl php8.3-dba php8.3-decimal php8.3-enchant \
-               php8.3-gd php8.3-gmp php8.3-gnupg php8.3-http php8.3-imagick php8.3-igbinary php8.3-imap \
-               php8.3-intl php8.3-mailparse php8.3-maxminddb php8.3-mbstring php8.3-memcached \
-               php8.3-mongodb php8.3-msgpack php8.3-mysql php8.3-oauth php8.3-odbc php8.3-opcache \
-               php8.3-phalcon5 \
-               php8.3-pgsql php8.3-ps php8.3-pspell php8.3-psr php8.3-raphf php8.3-readline \
-               php8.3-redis php8.3-rrd php8.3-sqlite3 php8.3-ssh2 php8.3-stomp php8.3-tidy \
-               php8.3-uploadprogress php8.3-uuid php8.3-xml php8.3-xmlrpc php8.3-yaml php8.3-zip 
+  apt install -y php8.4 php8.4-cli php8.4-fpm php8.4-common php8.4-dev libapache2-mod-php8.4 \
+               php8.4-apcu php8.4-bcmath php8.4-bz2 php8.4-curl php8.4-dba php8.4-decimal php8.4-enchant \
+               php8.4-gd php8.4-gmp php8.4-gnupg php8.4-http php8.4-imagick php8.4-igbinary php8.4-imap \
+               php8.4-intl php8.4-mailparse php8.4-maxminddb php8.4-mbstring php8.4-memcached \
+               php8.4-mongodb php8.4-msgpack php8.4-mysql php8.4-oauth php8.4-odbc php8.4-opcache \
+               php8.4-phalcon \
+               php8.4-pgsql php8.4-ps php8.4-pspell php8.4-psr php8.4-raphf php8.4-readline \
+               php8.4-redis php8.4-rrd php8.4-sqlite3 php8.4-ssh2 php8.4-stomp php8.4-tidy \
+               php8.4-uploadprogress php8.4-uuid php8.4-xml php8.4-xmlrpc php8.4-yaml php8.4-zip 
 
-
-  mkdir -p /var/lib/php/8.3/sessions
-  chmod -R 777 /var/lib/php/8.3/sessions
+  mkdir -p /var/lib/php/8.4/sessions
+  chmod -R 777 /var/lib/php/8.4/sessions
 
   # backup existing configuration
-  mkdir -p /etc/php/8.3/0riginal.config
-  cp /etc/php/8.3/fpm/php.ini /etc/php/8.3/0riginal.config/php-fpm.ini
-  cp /etc/php/8.3/cli/php.ini /etc/php/8.3/0riginal.config/php-cli.ini
-  cp /etc/php/8.3/fpm/pool.d/www.conf /etc/php/8.3/0riginal.config/fpm-pool.d-www.conf
+  mkdir -p /etc/php/8.4/0riginal.config
+  cp /etc/php/8.4/fpm/php.ini /etc/php/8.4/0riginal.config/php-fpm.ini
+  cp /etc/php/8.4/cli/php.ini /etc/php/8.4/0riginal.config/php-cli.ini
+  cp /etc/php/8.4/fpm/pool.d/www.conf /etc/php/8.4/0riginal.config/fpm-pool.d-www.conf
 
-  PHP_INI_FILE=/etc/php/8.3/fpm/php.ini
+  PHP_INI_FILE=/etc/php/8.4/fpm/php.ini
   sed -i '/post_max_size/c\post_max_size = 100M' $PHP_INI_FILE
   sed -i '/;cgi.fix_pathinfo/c\cgi.fix_pathinfo=1' $PHP_INI_FILE
   sed -i '/;upload_tmp_dir/c\upload_tmp_dir=/tmp' $PHP_INI_FILE
@@ -1204,14 +1203,14 @@ EOL
   sed -i '/;date.timezone/c\date.timezone=Asia/Jakarta' $PHP_INI_FILE
   sed -i '/;date.default_latitude/c\date.default_latitude = -6.211544' $PHP_INI_FILE
   sed -i '/;date.default_longitude/c\date.default_longitude = 106.84517200000005' $PHP_INI_FILE
-  sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/8.3/sessions"' $PHP_INI_FILE
+  sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/8.4/sessions"' $PHP_INI_FILE
   sed -i '/;opcache.enable=1/c\opcache.enable=1' $PHP_INI_FILE
   sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' $PHP_INI_FILE
   if [ ! -z "$email_account" ]; then
     sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
   fi
 
-  PHP_INI_FILE=/etc/php/8.3/cli/php.ini
+  PHP_INI_FILE=/etc/php/8.4/cli/php.ini
   sed -i '/post_max_size/c\post_max_size = 100M' $PHP_INI_FILE
   sed -i '/;cgi.fix_pathinfo/c\cgi.fix_pathinfo=1' $PHP_INI_FILE
   sed -i '/;upload_tmp_dir/c\upload_tmp_dir=/tmp' $PHP_INI_FILE
@@ -1219,15 +1218,15 @@ EOL
   sed -i '/;date.timezone/c\date.timezone=Asia/Jakarta' $PHP_INI_FILE
   sed -i '/;date.default_latitude/c\date.default_latitude = -6.211544' $PHP_INI_FILE
   sed -i '/;date.default_longitude/c\date.default_longitude = 106.84517200000005' $PHP_INI_FILE
-  sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/8.3/sessions"' $PHP_INI_FILE
+  sed -i '/;session.save_path/c\session.save_path = "/var/lib/php/8.4/sessions"' $PHP_INI_FILE
   sed -i '/;opcache.enable=1/c\opcache.enable=1' $PHP_INI_FILE
   sed -i '/;opcache.enable_cli=0/c\opcache.enable_cli=1' $PHP_INI_FILE
   if [ ! -z "$email_account" ]; then
     sed -i '/;sendmail_path/c\sendmail_path = "/usr/bin/msmtp -C /etc/msmtprc -a -t"' $PHP_INI_FILE
   fi 
 
-  PHP_WWW_CONF_FILE=/etc/php/8.3/fpm/pool.d/www.conf
-  sed -i '/listen = \/run\/php\/php8.3-fpm.sock/c\listen = \/var\/run\/php8.3-fpm.sock' $PHP_WWW_CONF_FILE
+  PHP_WWW_CONF_FILE=/etc/php/8.4/fpm/pool.d/www.conf
+  sed -i '/listen = \/run\/php\/php8.4-fpm.sock/c\listen = \/var\/run\/php8.4-fpm.sock' $PHP_WWW_CONF_FILE
   sed -i '/;listen.mode = 0660/c\listen.mode = 0660' $PHP_WWW_CONF_FILE
 
   if [ "$appserver_type" = '2' ]; then
@@ -1253,7 +1252,7 @@ EOL
   systemctl enable nginx
   systemctl restart apache2.service
   systemctl restart nginx.service
-  systemctl restart php8.3-fpm
+  systemctl restart php8.4-fpm
 
 # normalize the /etc/hosts values
 cat > /etc/hosts << EOL
