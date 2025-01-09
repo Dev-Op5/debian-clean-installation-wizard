@@ -1354,7 +1354,7 @@ if [ "$appserver_type" = '5' ]; then
                  python3-vobject python3-werkzeug python3-xlwt python3-yaml
 
   echo "---------------------------------------------------"
-  echo " INSTALLING Odoo Community Backport v17 ..........."
+  echo " INSTALLING Odoo Community Backport v18 ..........."
   echo "---------------------------------------------------"
 
   cd /tmp
@@ -1369,7 +1369,7 @@ if [ "$appserver_type" = '5' ]; then
 
   echo "Clone the Odoo Community Backport (OCB) latest sources"
   cd /opt/odoo
-  sudo -u odoo -H git clone https://github.com/OCA/OCB --depth 1 --branch 17.0 --single-branch .
+  sudo -u odoo -H git clone https://github.com/OCA/OCB --depth 1 --branch 18.0 --single-branch .
   mkdir -p /opt/odoo/addons
   chown -R odoo:odoo /opt/odoo
   chown -R odoo:odoo /var/log/odoo/
